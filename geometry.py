@@ -55,8 +55,9 @@ class Vecr(Hat):
     def __init__(self, x_hat, r=[]):
         if not r:
             r = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-            x_hat /= r
-        super(CylHat,self).__init__(x_hat) # not correct, this will modify the angular variable.
+            x_hat[0] /= r
+            x_hat[2] /= r
+        super(CylHat,self).__init__(x_hat)
         self.flag = True
         self.r = r
         
@@ -85,19 +86,6 @@ class Point(Vector):
         self.error = scipy.array(err)
         self._origin = ref
         self._depth = ref._depth + 1
-
-    def dist(self, origin):
-        common = self._lca(origin)
-        for i in 
-
-    def err(self,origin):
-        
-
-    def r(self, origin):
-        return scipy.sqrt(scipy.sum(self.dist(origin)**2))
-
-    def r_err(self, origin):
-        return scipy.sqrt(scipy.sum((self.dist(origin)*self.err(origin))**2)/self.r(origin))
         
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
