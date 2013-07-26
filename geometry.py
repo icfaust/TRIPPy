@@ -3,7 +3,9 @@ import scipy
 class Hat(Object):
     """ explicitly just unit vector without error
     which is then defined for the various coordinate
-    systems based on classes based on this"""
+    systems based on classes based on this, a Hat class
+    never interacts with another Hat class, only one 
+    with a defined coordinate system"""
     def __init__(self, x_hat):
 
         self.r = SP.array((1,))
@@ -29,10 +31,11 @@ class CartHat(Hat):
     vector math defaults to first vector"""
 
     def __init__(self, x_hat):
-        norm = scipy.sqrt(scipy.sum(x_hat**2))
-        super(CartHat,self).__init__(x_hat/norm)
+        r = scipy.sqrt(scipy.sum(x_hat**2))
+        super(CartHat,self).__init__(x_hat/r)
         self.flag = False
-    
+        self.r = r
+        
     def c(self):
         """ convert to cylindrical coord """
         return CylHat((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
@@ -45,10 +48,11 @@ class CylHat(Hat):
     vector math defaults to first vector"""
     
     def __init__(self, x_hat):
-        norm = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-        super(CylHat,self).__init__(x_hat/norm, err=err)
+        r = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
+        super(CylHat,self).__init__(x_hat/r)
         self.flag = True
-
+        self.r = r
+        
     def c(self):
         """ convert to cartesian coord """
         return CartHat((self.unit[0]*scipy.cos(self.unit[1]),
@@ -59,8 +63,10 @@ def angle(Vec1,Vec2):
     return scipy.arccos(Vec1.hat * Vec2.hat) 
 
 def cross(Vec1,Vec2):
-    
-
+    if Vec1.flag == Vec2.flag:
+        return (Vec1.r*Vec2.r)*(Vec1.cross() * Vec2)      
+    else:
+        return (Vec1.r*Vec2.r)*(Vec1.cross() * Vec2.c())
 
 
 class Vector(Object)
