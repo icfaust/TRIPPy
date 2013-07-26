@@ -8,7 +8,6 @@ class Hat(Object):
     with a defined coordinate system"""
     def __init__(self, x_hat):
 
-        self.r = SP.array((1,))
         self.unit = scipy.matrix(x_hat)
         self.flag = []
 
@@ -19,66 +18,64 @@ class Hat(Object):
         else:
             return self.unit.T*hat.c().unit
 
-    def cross(self):
+    def _cross(self):
+        " matrix necessary for a cross-product calculation"""
         return  scipy.matrix(((0,-self.unit[2],self.unit[1]),
                               (self.unit[2],0,-self.unit[0]),
                               (-self.unit[1],self.unit[0],0)))
 
 
-class CartHat(Hat):
+class Vecx(Hat):
     """ explicitly a cartesian unit vector, but can be set as 
     a cylindrical unit vector by setting the flag to true, all
     vector math defaults to first vector"""
 
-    def __init__(self, x_hat):
-        r = scipy.sqrt(scipy.sum(x_hat**2))
-        super(CartHat,self).__init__(x_hat/r)
+    def __init__(self, x_hat,r=[]):
+        #if r is specified, it is assumed that x_hat has unit length
+        if not r:
+            r = scipy.sqrt(scipy.sum(x_hat**2))
+            x_hat /= r
+        super(CartHat,self).__init__(x_hat)
         self.flag = False
         self.r = r
         
     def c(self):
         """ convert to cylindrical coord """
-        return CylHat((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
-                       scipy.arctan2(self.unit[1],self.unit[0]),
-                       scipy.unit[2]))
+        return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
+                     scipy.arctan2(self.unit[1],self.unit[0]),
+                     scipy.unit[2]),
+                    r=r)
+                       
 
-class CylHat(Hat):
+class Vecr(Hat):
     """ explicitly a cylindrical unit vector, but can be set as 
-    a cartesian unit vector by using the cart call, all
+    a cartesian unit vector by using the c call, all
     vector math defaults to first vector"""
     
-    def __init__(self, x_hat):
-        r = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-        super(CylHat,self).__init__(x_hat/r)
+    def __init__(self, x_hat, r=[]):
+        if not r:
+            r = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
+            x_hat /= r
+        super(CylHat,self).__init__(x_hat) # not correct, this will modify the angular variable.
         self.flag = True
         self.r = r
         
     def c(self):
         """ convert to cartesian coord """
-        return CartHat((self.unit[0]*scipy.cos(self.unit[1]),
-                        self.unit[0]*scipy.sin(self.unit[1]),
-                        self.unit[2]))
+        return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
+                    self.unit[0]*scipy.sin(self.unit[1]),
+                    self.unit[2]),
+                    r=r)
 
 def angle(Vec1,Vec2):
     return scipy.arccos(Vec1.hat * Vec2.hat) 
 
 def cross(Vec1,Vec2):
     if Vec1.flag == Vec2.flag:
-        return (Vec1.r*Vec2.r)*(Vec1.cross() * Vec2)      
+        return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2)      
     else:
-        return (Vec1.r*Vec2.r)*(Vec1.cross() * Vec2.c())
-
-
-class Vector(Object)
-    
-    def __init__(self, x_hat, err=scipy.array((0,0,0)),flag=False):
-
-        self
-        if flag:
-            super():
+        return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2.c())
             
-    
-
 
 class Point(Vector):
     """ a point class can only be defined relative to an origin"""
