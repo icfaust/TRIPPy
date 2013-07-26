@@ -17,6 +17,11 @@ class Hat(Object):
         else:
             return self.unit.T*hat.c().unit
 
+    def cross(self):
+        return  scipy.matrix(((0,-self.unit[2],self.unit[1]),
+                              (self.unit[2],0,-self.unit[0]),
+                              (-self.unit[1],self.unit[0],0)))
+
 
 class CartHat(Hat):
     """ explicitly a cartesian unit vector, but can be set as 
