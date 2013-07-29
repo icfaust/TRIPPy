@@ -11,7 +11,7 @@ class Hat(Object):
         self.unit = scipy.matrix(x_hat)
         self.flag = []
 
-    def __mul__(self,hat):
+    def __mul__(self, hat):
         """ Dot product """
         if self.flag == hat.flag:
             return self.unit.T*hat.unit
@@ -30,7 +30,7 @@ class Vecx(Hat):
     a cylindrical unit vector by setting the flag to true, all
     vector math defaults to first vector"""
 
-    def __init__(self, x_hat,r=[]):
+    def __init__(self, x_hat, r=[]):
         #if r is specified, it is assumed that x_hat has unit length
         if not r:
             r = scipy.sqrt(scipy.sum(x_hat**2))
@@ -68,19 +68,19 @@ class Vecr(Hat):
                     self.unit[2]),
                     r=r)
 
-def angle(Vec1,Vec2):
+def angle(Vec1, Vec2):
     return scipy.arccos(Vec1.hat * Vec2.hat) 
 
-def cross(Vec1,Vec2):
+def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
         return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2)      
     else:
         return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2.c())
             
 
-class Point(Vector):
+class Point(Object):
     """ a point class can only be defined relative to an origin"""
-    def __init__(self, x_hat, ref, err=scipy.array((0,0,0))):
+    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0))):
         
         self.loc = scipy.array(x_hat)
         self.error = scipy.array(err)
@@ -98,7 +98,7 @@ class Point(Vector):
         self._origin = neworigin
         self._depth = neworigin._depth + 1
 
-    def _genPointsToParent(self, depth=self._depth):
+    def _genOriginsToParent(self, depth=self._depth):
         """ generate a list of points which leads to the overall basis
         origin of the geometry, its length will be depth"""
         temp = self
@@ -115,9 +115,9 @@ class Point(Vector):
         as given by a depth number starting from the base of the tree. It will return
         a number which then provides the looping for various computations."""
         
-        pt1 = self._getPointsToParent()
-        pt2 = point2._getPointsToParent()
-        lim = scipy.min((point2._depth,self._depth))
+        pt1 = self._getOriginsToParent()
+        pt2 = point2._getOriginsToParent()
+        lim = scipy.min((point2._depth, self._depth))
         found = []
 
         # find first uncommon ancestor
@@ -131,3 +131,38 @@ class Point(Vector):
                 found = -1 - idx
         
         return found
+
+class Origin(Point):
+
+    def __init__(self, x_hat, ref, Vec1, Vec2, err=scipy.matrix((0,0,0)), angle=[]):
+        """ an Origin is defined by a point and two vectors.
+        The two vectors being: 1st the normal to the surface,
+        principal axis, z-vector or the (0,0,1) vector of the
+        new system defined in the reference system . The 
+        second vector along with the first fully defines 
+        meridonial ray paths, x-vector or the (1,0,0) vector.
+        The sagittal ray path, y-vector or the (0,1,0)
+        is defined through a cross product.  Point position
+        and rotation matricies are stored at instantiation."""
+        # test Vec1 and Vec2 for ortho-normality
+
+        if not Vec1 * Vec2: 
+        # generate point based off of previous origin
+            if angle:
+                alpha = scipy.array(angle[0])
+                beta = scipy.array(angle[1])
+                gamma = scipy.array(angle[2])
+            else:
+                alpha = angle(Vec2,refvec1)
+                beta = angle(cross(Vec1,Vec2),refvec2)
+                gamma = angle(Vec2,refvec3)
+
+        # generate rotation matrix based off coordinate system matching (this could get very interesting)
+            self.rot = scipy.matrix(((
+
+
+class Center(Origin):
+    """ this is the class which underlies all positional calculation.
+    It is located at (0,0,0) and is inherently a cylindrical coordinate
+    system.  It is from the translation of inherently cylindrical data
+    into toroidal coordinates requires this rosetta stone"""
