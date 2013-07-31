@@ -30,21 +30,21 @@ class Vecx(Hat):
     a cylindrical unit vector by setting the flag to true, all
     vector math defaults to first vector"""
 
-    def __init__(self, x_hat, r=[]):
+    def __init__(self, x_hat, s=[]):
         #if r is specified, it is assumed that x_hat has unit length
-        if not r:
-            r = scipy.sqrt(scipy.sum(x_hat**2))
-            x_hat /= r
+        if not s:
+            s = scipy.sqrt(scipy.sum(x_hat**2))
+            x_hat /= s
         super(CartHat,self).__init__(x_hat)
         self.flag = False
-        self.r = r
+        self.s = s
         
     def c(self):
         """ convert to cylindrical coord """
         return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
                      scipy.arctan2(self.unit[1],self.unit[0]),
                      scipy.unit[2]),
-                    r=r)
+                    s=s)
                        
 
 class Vecr(Hat):
@@ -52,21 +52,21 @@ class Vecr(Hat):
     a cartesian unit vector by using the c call, all
     vector math defaults to first vector"""
     
-    def __init__(self, x_hat, r=[]):
-        if not r:
-            r = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-            x_hat[0] /= r
-            x_hat[2] /= r
+    def __init__(self, x_hat, s=[]):
+        if not s:
+            s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
+            x_hat[0] /= s
+            x_hat[2] /= s
         super(CylHat,self).__init__(x_hat)
         self.flag = True
-        self.r = r
+        self.s = s
         
     def c(self):
         """ convert to cartesian coord """
         return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
                     self.unit[0]*scipy.sin(self.unit[1]),
                     self.unit[2]),
-                    r=r)
+                    s=s)
 
 def angle(Vec1, Vec2):
     return scipy.arccos(Vec1.hat * Vec2.hat) 
@@ -79,14 +79,22 @@ def cross(Vec1, Vec2):
             
 
 class Point(Object):
-    """ a point class can only be defined relative to an origin"""
-    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0))):
+    """ a point class can only be defined relative to an origin,
+    there will be an additional point class which will be known
+    as grid which reduces the redundant reference to origin
+    and depth for memory savings, and will order points in 
+    such a way for easier calculation."""
+    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0)),flag=False):
         
         self.loc = scipy.array(x_hat)
-        self.error = scipy.array(err)
+        self.error = Vec
         self._origin = ref
         self._depth = ref._depth + 1
-        
+
+
+
+    def c():
+         
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
         origin, for calculations with respect to a flux grid, etc. this
@@ -113,7 +121,9 @@ class Point(Object):
     def _lca(self, point2):
         """ recursively solve for the common point of reference between two points
         as given by a depth number starting from the base of the tree. It will return
-        a number which then provides the looping for various computations."""
+        a number which then provides the looping for various computations. It requires
+        that they have the same node in memory as a reference.  Even points that are the
+        same positionally will not be recognized as similar origins."""
         
         pt1 = self._getOriginsToParent()
         pt2 = point2._getOriginsToParent()
@@ -132,9 +142,22 @@ class Point(Object):
         
         return found
 
+class Grid(Object):
+    
+    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0))):
+        """ a grid compartmentalizes a large set of points which
+        are easily defined on a regular grid. Unlike points, grids
+        points cannot change reference frames.  While this might
+        be okay for a flat plane of points, for shapes such as 
+        spheres, parabolas, ellipsoids and other complicated shapes
+        would not be easily defined.  When a reference frame change
+        is required, it will revert to a similarly sized array
+        of Point Objects, which use order mxn more memory"""
+
+
 class Origin(Point):
 
-    def __init__(self, x_hat, ref, Vec1, Vec2, err=scipy.matrix((0,0,0)), angle=[]):
+    def __init__(self, x_hat, ref, Vec=[], err=scipy.matrix((0,0,0)), angle=[]):
         """ an Origin is defined by a point and two vectors.
         The two vectors being: 1st the normal to the surface,
         principal axis, z-vector or the (0,0,1) vector of the
@@ -143,23 +166,52 @@ class Origin(Point):
         meridonial ray paths, x-vector or the (1,0,0) vector.
         The sagittal ray path, y-vector or the (0,1,0)
         is defined through a cross product.  Point position
-        and rotation matricies are stored at instantiation."""
+        and rotation matricies are stored at instantiation.
+
+        If the angles alpha, beta, and gamma are specified 
+        following the eulerian rotation formalism, it is
+        processed in the following manner: alpha is the 
+        rotation from the principal axis in the meridonial
+        plane, beta is the rotation about the plane normal
+        to the meridonial ray, or 2nd specified vector,
+        and gamma is the 2nd rotation about the principal
+        axis.  This might change based on what is most
+        physically intuitive."""
         # test Vec1 and Vec2 for ortho-normality
 
-        if not Vec1 * Vec2: 
-        # generate point based off of previous origin
-            if angle:
-                alpha = scipy.array(angle[0])
-                beta = scipy.array(angle[1])
-                gamma = scipy.array(angle[2])
-            else:
-                alpha = angle(Vec2,refvec1)
-                beta = angle(cross(Vec1,Vec2),refvec2)
-                gamma = angle(Vec2,refvec3)
+        if Vec:
+            if not Vec[0] * Vec[1]: 
+                # generate point based off of previous origin
+                super(Origin,self).__init__(x_hat, ref, err=err)
 
-        # generate rotation matrix based off coordinate system matching (this could get very interesting)
-            self.rot = scipy.matrix(((
+                # generate rotation matrix based off coordinate system matching (this could get very interesting)
+                self.rot = scipy.matrix((Vec[0].hat.T,
+                                         cross(Vec[0],Vec[1]).hat.T,
+                                         Vec[1].hat.T))
 
+        elif angle:
+            super(Origin,self).__init__(x_hat, ref, err=err)
+            a = scipy.array(angle[0])
+            b = scipy.array(angle[1])
+            g = scipy.array(angle[2])
+
+            # taken from the wikipedia convention, which will allow for easier modification.
+            # to make this extensive rather than intensive might require me flipping alpha
+            # and gamma.  This is to be seen when testing.
+            # https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
+            c1 = scipy.cos(a)
+            c2 = scipy.cos(b)
+            c3 = scipy.cos(g)
+            s1 = scipy.sin(a)
+            s2 = scipy.sin(b)
+            s3 = scipy.sin(g)
+
+            self.rot = scipy.matrix(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
+                                     (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),
+                                     (s2*s3, c3*s2, c2)))
+        else:
+            raise ValueError
+            #throw error here
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
