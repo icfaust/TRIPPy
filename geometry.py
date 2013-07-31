@@ -9,14 +9,13 @@ class Hat(Object):
     def __init__(self, x_hat):
 
         self.unit = scipy.matrix(x_hat)
-        self.flag = []
 
-    def __mul__(self, hat):
+    def __mul__(self, Vec):
         """ Dot product """
-        if self.flag == hat.flag:
-            return self.unit.T*hat.unit
+        if self.flag == Vec.flag:
+            return self.unit.T*Vec.unit
         else:
-            return self.unit.T*hat.c().unit
+            return self.unit.T*Vec.c().unit
 
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
@@ -29,15 +28,15 @@ class Vecx(Hat):
     """ explicitly a cartesian unit vector, but can be set as 
     a cylindrical unit vector by setting the flag to true, all
     vector math defaults to first vector"""
-
+    flag = False
+    
     def __init__(self, x_hat, s=[]):
         #if r is specified, it is assumed that x_hat has unit length
         if not s:
             s = scipy.sqrt(scipy.sum(x_hat**2))
             x_hat /= s
-        super(CartHat,self).__init__(x_hat)
-        self.flag = False
-        self.s = s
+        super(Vecx,self).__init__(x_hat)
+        self.s = SP.array(s)
         
     def c(self):
         """ convert to cylindrical coord """
@@ -51,25 +50,25 @@ class Vecr(Hat):
     """ explicitly a cylindrical unit vector, but can be set as 
     a cartesian unit vector by using the c call, all
     vector math defaults to first vector"""
-    
+    flag = True
+
     def __init__(self, x_hat, s=[]):
         if not s:
             s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
             x_hat[0] /= s
             x_hat[2] /= s
-        super(CylHat,self).__init__(x_hat)
-        self.flag = True
-        self.s = s
+        super(Vecr,self).__init__(x_hat)
+        self.s = SP.array(s)
         
     def c(self):
         """ convert to cartesian coord """
         return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
-                    self.unit[0]*scipy.sin(self.unit[1]),
-                    self.unit[2]),
+                     self.unit[0]*scipy.sin(self.unit[1]),
+                     self.unit[2]),
                     s=s)
 
 def angle(Vec1, Vec2):
-    return scipy.arccos(Vec1.hat * Vec2.hat) 
+    return scipy.arccos(Vec1 * Vec2) 
 
 def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
@@ -84,17 +83,23 @@ class Point(Object):
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
     such a way for easier calculation."""
-    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0)),flag=False):
+    def __init__(self, x_hat, ref, err=[]):
         
-        self.loc = scipy.array(x_hat)
-        self.error = Vec
+        self.x = scipy.array(x_hat)
+        if err:
+            self.error = err
+                        
         self._origin = ref
         self._depth = ref._depth + 1
-
-
-
-    def c():
          
+    def Vec(self, c=False):
+        """ c provides the ability to convert coordinate
+        systems"""
+        if c == self._origin.flag:
+            return Vecr(self.x)
+        else:
+            return Vecx(self.x)
+
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
         origin, for calculations with respect to a flux grid, etc. this
@@ -142,7 +147,7 @@ class Point(Object):
         
         return found
 
-class Grid(Object):
+class Grid(Point):
     
     def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0))):
         """ a grid compartmentalizes a large set of points which
@@ -185,9 +190,9 @@ class Origin(Point):
                 super(Origin,self).__init__(x_hat, ref, err=err)
 
                 # generate rotation matrix based off coordinate system matching (this could get very interesting)
-                self.rot = scipy.matrix((Vec[0].hat.T,
-                                         cross(Vec[0],Vec[1]).hat.T,
-                                         Vec[1].hat.T))
+                self.rot = scipy.matrix((Vec[0].unit.T,
+                                         cross(Vec[0],Vec[1]).unit.T,
+                                         Vec[1].unit.T))
 
         elif angle:
             super(Origin,self).__init__(x_hat, ref, err=err)
