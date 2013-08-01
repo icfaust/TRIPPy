@@ -8,11 +8,11 @@ class Hat(Object):
     with a defined coordinate system"""
     def __init__(self, x_hat):
 
-        self.unit = scipy.matrix(x_hat)
+        self.unit = scipy.array(x_hat)
 
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
-        return  scipy.matrix(((0,-self.unit[2],self.unit[1]),
+        return  scipy.array(((0,-self.unit[2],self.unit[1]),
                               (self.unit[2],0,-self.unit[0]),
                               (-self.unit[1],self.unit[0],0)))
 
@@ -102,14 +102,14 @@ def angle(Vec1, Vec2):
 
 def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
-        x_hat = (Vec1.s*Vec2.s)*(Vec1._cross() * Vec2)      
+        x_hat = scipy.dot(Vec1._cross(),Vec2)      
     else:
-        x_hat = (Vec1.s*Vec2.s)*(Vec1._cross() * Vec2.c())
+        x_hat = scipy.dot(Vec1._cross(),Vec2.c())
             
     if Vec1.flag:
-        return Vecr(x_hat)
+        return Vecr(x_hat, s=Vec1.s*Vec2.s)
     else:
-        return Vecx(x_hat)
+        return Vecx(x_hat, s=Vec1.s*Vec2.s)
 
 class Point(Object):
     """ a point class can only be defined relative to an origin,
