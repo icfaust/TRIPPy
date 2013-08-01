@@ -98,13 +98,13 @@ class Vecr(Hat):
                     s=s)
 
 def angle(Vec1, Vec2):
-    return scipy.arccos((Vec1 * Vec2)/(Vec1.s * Vec2.s)) 
+    return scipy.arccos(Vec1 * Vec2) 
 
 def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
-        x_hat = Vec1.s*(Vec1._cross() * Vec2)      
+        x_hat = (Vec1.s*Vec2.s)*(Vec1._cross() * Vec2)      
     else:
-        x_hat = Vec1.s*(Vec1._cross() * Vec2.c())
+        x_hat = (Vec1.s*Vec2.s)*(Vec1._cross() * Vec2.c())
             
     if Vec1.flag:
         return Vecr(x_hat)
