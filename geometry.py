@@ -177,7 +177,7 @@ class Point(Object):
         temp = org1[0].vec()
         for idx in range(len(org1)-1):
             temp = temp + org1[idx]
-        self.x =         
+        self.x = temp.x()
         self._origin = neworigin
         self._depth = neworigin._depth + 1
 
