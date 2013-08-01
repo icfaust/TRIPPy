@@ -102,9 +102,9 @@ def angle(Vec1, Vec2):
 
 def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
-        x_hat = scipy.dot(Vec1._cross(),Vec2)      
+        x_hat = scipy.dot(Vec1._cross(),Vec2.unit)      
     else:
-        x_hat = scipy.dot(Vec1._cross(),Vec2.c())
+        x_hat = scipy.dot(Vec1._cross(),Vec2.c().unit)
             
     if Vec1.flag:
         return Vecr(x_hat, s=Vec1.s*Vec2.s)
