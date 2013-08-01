@@ -222,7 +222,7 @@ class Point(Object):
                 idx += 1
                 temp = False
 
-        return (pt1[idx:],pt2[idx:])
+        return (pt1[:idx],pt2[:idx])
 
 class Grid(Point):
     
