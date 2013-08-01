@@ -36,13 +36,13 @@ class Vecx(Hat):
         add, and possibly convert back"""
         if Vec.flag:
             Vec = Vec.c()
-        return Vecx(self.s*self.unit + Vec.s*Vec.unit)
+        return Vecx(self.x() + Vec.x())
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
-        return Vecx(self.s*self.unit - Vec.s*Vec.unit)
+        return Vecx(self.x() - Vec.x())
 
     def __mul__(self, Vec):
         """ Dot product """
@@ -56,7 +56,22 @@ class Vecx(Hat):
                      scipy.arctan2(self.unit[1],self.unit[0]),
                      scipy.unit[2]),
                     s=s)
-                       
+    
+    def x0(self):
+        return self.s*self.hat[0]
+    
+    def x1(self):
+        return self.s*self.hat[1]
+    
+    def x2(self):
+        return self.s*self.hat[2]
+    
+    def x(self):
+        return self.s*self.hat
+
+    def point(self,ref,err=[]):
+        return Point(self.x(),ref,err=err)
+                   
 class Vecr(Hat):
     """ explicitly a cylindrical unit vector, but can be set as 
     a cartesian unit vector by using the c call, all
@@ -76,13 +91,13 @@ class Vecr(Hat):
         add, and possibly convert back"""
         if Vec.flag:
             Vec = Vec.c()
-        return Vecr(self.s*self.c().unit + Vec.s*Vec.unit)
+        return Vecr(self.c().x() + Vec.x())
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
-        return Vecr(self.s*self.c().unit - Vec.s*Vec.unit)
+        return Vecr(self.c().x() - Vec.x())
         
     def __mul__(self, Vec):
         """ Dot product """
@@ -96,6 +111,21 @@ class Vecr(Hat):
                      self.unit[0]*scipy.sin(self.unit[1]),
                      self.unit[2]),
                     s=s)
+    
+    def x0(self):
+        return self.s*self.hat[0]
+    
+    def x1(self):
+        return self.hat[1]
+    
+    def x2(self):
+        return self.s*self.hat[2]
+    
+    def x(self):
+        return scipy.array((self.x0,self.x1,self.x2))
+        
+    def point(self,ref,err=[]):
+        return Point(self.x(),ref,flag=True)
 
 def angle(Vec1, Vec2):
     return scipy.arccos(Vec1 * Vec2) 
@@ -117,14 +147,15 @@ class Point(Object):
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
     such a way for easier calculation."""
-    def __init__(self, x_hat, ref, err=[]):
+    def __init__(self, x_hat, ref, err=[],flag=False):
         
         self.x = scipy.array(x_hat)
         if err:
             self.error = err
-                        
+
+        self.flag = flag
         self._origin = ref
-        self._depth = ref._depth + 1
+        self._depth = ref._depth + 1 # basis origin is depth = 0
          
     def Vec(self, c=False):
         """ c provides the ability to convert coordinate
@@ -139,16 +170,21 @@ class Point(Object):
         origin, for calculations with respect to a flux grid, etc. this
         should reduce caluclation substantially."""
         
-        self.x_hat += self.dist(neworigin)
-        self.error += self.err(neworigin)
+        # use _lca to find common ancestor and return tree to common
+        org1,org2 = self._lca(neworigin)
         
+        # loop over the first 'path' of the current point
+        temp = org1[0].vec()
+        for idx in range(len(org1)-1):
+            temp = temp + org1[idx]
+        self.x =         
         self._origin = neworigin
         self._depth = neworigin._depth + 1
 
     def _genOriginsToParent(self, depth=self._depth):
         """ generate a list of points which leads to the overall basis
-        origin of the geometry, its length will be depth"""
-        temp = self
+        origin of the geometry, the number of elements will be the depth"""
+        temp = self.ref
         pnts = depth*[0]
         
         for idx in range(depth):
@@ -158,28 +194,35 @@ class Point(Object):
         return pnts
 
     def _lca(self, point2):
-        """ recursively solve for the common point of reference between two points
-        as given by a depth number starting from the base of the tree. It will return
-        a number which then provides the looping for various computations. It requires
-        that they have the same node in memory as a reference.  Even points that are the
-        same positionally will not be recognized as similar origins."""
+        """ recursively solve for the common point of reference
+        between two points as given by a depth number starting
+        from the base of the tree. It will return a tuple which
+        contains the nodes leading to the common point."""
+        
+        temp = True
+        idx = -1
         
         pt1 = self._getOriginsToParent()
         pt2 = point2._getOriginsToParent()
-        lim = scipy.min((point2._depth, self._depth))
-        found = []
-
-        # find first uncommon ancestor
-        idx = -1
-        while not found:       
-            if pt1[idx] is pt2[idx]:
-                idx += -1
-                if not lim + idx:
-                    found = lim
-            else:
-                found = -1 - idx
         
-        return found
+        # determine the shorter origins list
+        if len(pt1) > len(pt2):
+            lim = len(pt2) - 1
+        else:
+            lim = len(pt1) - 1
+            
+        # compare origins from the base (which should be the same)
+        # and when they don't match store the index.  Return the
+        # negative index which corresponds to the last match
+        while temp:
+
+            if (pt1[idx] is pt2[idx]) and (lim + idx):
+                idx -= 1
+            else:
+                idx += 1
+                temp = False
+
+        return (pt1[idx:],pt2[idx:])
 
 class Grid(Point):
     
