@@ -10,13 +10,6 @@ class Hat(Object):
 
         self.unit = scipy.matrix(x_hat)
 
-    def __mul__(self, Vec):
-        """ Dot product """
-        if self.flag == Vec.flag:
-            return self.unit.T*Vec.unit
-        else:
-            return self.unit.T*Vec.c().unit
-
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
         return  scipy.matrix(((0,-self.unit[2],self.unit[1]),
@@ -37,7 +30,26 @@ class Vecx(Hat):
             x_hat /= s
         super(Vecx,self).__init__(x_hat)
         self.s = SP.array(s)
-        
+
+    def __add__(self, Vec):
+        """ Vector addition, convert to cartesian
+        add, and possibly convert back"""
+        if Vec.flag:
+            Vec = Vec.c()
+        return Vecx(self.s*self.unit + Vec.s*Vec.unit)
+
+    def __sub__(self, Vec):
+        """ Vector subtraction """
+        if Vec.flag:
+            Vec = Vec.c()
+        return Vecx(self.s*self.unit - Vec.s*Vec.unit)
+
+    def __mul__(self, Vec):
+        """ Dot product """
+        if Vec.flag:
+            Vec = Vec.c()
+        return self.unit.T*Vec.unit
+
     def c(self):
         """ convert to cylindrical coord """
         return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
@@ -45,7 +57,6 @@ class Vecx(Hat):
                      scipy.unit[2]),
                     s=s)
                        
-
 class Vecr(Hat):
     """ explicitly a cylindrical unit vector, but can be set as 
     a cartesian unit vector by using the c call, all
@@ -59,7 +70,26 @@ class Vecr(Hat):
             x_hat[2] /= s
         super(Vecr,self).__init__(x_hat)
         self.s = SP.array(s)
+
+    def __add__(self, Vec):
+        """ Vector addition, convert to cartesian
+        add, and possibly convert back"""
+        if Vec.flag:
+            Vec = Vec.c()
+        return Vecr(self.s*self.c().unit + Vec.s*Vec.unit)
+
+    def __sub__(self, Vec):
+        """ Vector subtraction """
+        if Vec.flag:
+            Vec = Vec.c()
+        return Vecr(self.s*self.c().unit - Vec.s*Vec.unit)
         
+    def __mul__(self, Vec):
+        """ Dot product """
+        if not Vec.flag:
+            Vec = Vec.c()
+        return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
+
     def c(self):
         """ convert to cartesian coord """
         return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
@@ -68,14 +98,18 @@ class Vecr(Hat):
                     s=s)
 
 def angle(Vec1, Vec2):
-    return scipy.arccos(Vec1 * Vec2) 
+    return scipy.arccos((Vec1 * Vec2)/(Vec1.s * Vec2.s)) 
 
 def cross(Vec1, Vec2):
     if Vec1.flag == Vec2.flag:
-        return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2)      
+        x_hat = Vec1.s*(Vec1._cross() * Vec2)      
     else:
-        return (Vec1.r*Vec2.r)*(Vec1._cross() * Vec2.c())
+        x_hat = Vec1.s*(Vec1._cross() * Vec2.c())
             
+    if Vec1.flag:
+        return Vecr(x_hat)
+    else:
+        return Vecx(x_hat)
 
 class Point(Object):
     """ a point class can only be defined relative to an origin,
@@ -96,16 +130,16 @@ class Point(Object):
         """ c provides the ability to convert coordinate
         systems"""
         if c == self._origin.flag:
-            return Vecr(self.x)
-        else:
             return Vecx(self.x)
+        else:
+            return Vecr(self.x)
 
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
         origin, for calculations with respect to a flux grid, etc. this
         should reduce caluclation substantially."""
         
-        self.loc += self.dist(neworigin)
+        self.x_hat += self.dist(neworigin)
         self.error += self.err(neworigin)
         
         self._origin = neworigin
