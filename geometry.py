@@ -147,19 +147,18 @@ class Point(Object):
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
     such a way for easier calculation."""
-    def __init__(self, x_hat, ref, err=[],flag=False):
+    def __init__(self, x_hat, ref, err=[]):
         
         self.x = scipy.array(x_hat)
         if err:
             self.error = err
 
-        self.flag = flag
         self._origin = ref
         self._depth = ref._depth + 1 # basis origin is depth = 0
          
     def Vec(self, c=False):
         """ c provides the ability to convert coordinate
-        systems"""
+         systems"""
         if c == self._origin.flag:
             return Vecx(self.x)
         else:
@@ -171,22 +170,43 @@ class Point(Object):
         should reduce caluclation substantially."""
         
         # use _lca to find common ancestor and return tree to common
-        org1,org2 = self._lca(neworigin)
+        org,orgnew = self._lca(neworigin)
         
         # loop over the first 'path' of the current point
-        temp = org1[0].vec()
-        for idx in range(len(org1)-1):
-            temp = temp + org1[idx]
-        self.x = temp.x()
+        temp1 = org[0].Vec()
+        for idx in range(len(org)-2) + 1:
+            temp1 = org[idx].Vec() + temp1
+
+        temp2 = orgnew[0].Vec()
+        for idx in range(len(orgnew)-2) + 1:
+            temp2 = orgnew[idx].Vec() + temp2
+
+        # what is the vector which points from the new origin to the point?
+        temp = temp1 - temp2
+    
         self._origin = neworigin
         self._depth = neworigin._depth + 1
+
+        # convert vector to proper coordinate system matching new origin and save
+        if self._origin.flag == temp.flag:
+            self.x = temp.x()
+        else:
+            self.x = temp.c().x()
+
+
+    def x(self):
+        """ heavily redundant, but will smooth out variational differences
+        from the grid function"""
+        return self.x
 
     def _genOriginsToParent(self, depth=self._depth):
         """ generate a list of points which leads to the overall basis
         origin of the geometry, the number of elements will be the depth"""
         temp = self.ref
         pnts = depth*[0]
-        
+
+
+        # as index increases, the more in depth it goes.
         for idx in range(depth):
             temp = temp._origin
             pnts[idx] = temp
@@ -226,7 +246,7 @@ class Point(Object):
 
 class Grid(Point):
     
-    def __init__(self, x_hat, ref, err=scipy.matrix((0,0,0))):
+    def __init__(self, x_hat, ref,mask = (0,0,0), err=scipy.array((0,0,0))):
         """ a grid compartmentalizes a large set of points which
         are easily defined on a regular grid. Unlike points, grids
         points cannot change reference frames.  While this might
@@ -235,11 +255,23 @@ class Grid(Point):
         would not be easily defined.  When a reference frame change
         is required, it will revert to a similarly sized array
         of Point Objects, which use order mxn more memory"""
+        
+        self.x = x_hat
+        # mask provides an understanding of the nature of the grid, whether
+        # it is planar or follows a funciton in a specific dimension this
+        # should allow for various shapes to easily be implemented
+        self._mask = mask
 
+    def redefine(self,neworigin):
+        """ do not allow as it will break the simplicity of the grid"""
+        raise ValueError
+
+    def x(self):
+        
 
 class Origin(Point):
 
-    def __init__(self, x_hat, ref, Vec=[], err=scipy.matrix((0,0,0)), angle=[]):
+    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[]):
         """ an Origin is defined by a point and two vectors.
         The two vectors being: 1st the normal to the surface,
         principal axis, z-vector or the (0,0,1) vector of the
@@ -300,3 +332,4 @@ class Center(Origin):
     It is located at (0,0,0) and is inherently a cylindrical coordinate
     system.  It is from the translation of inherently cylindrical data
     into toroidal coordinates requires this rosetta stone"""
+    
