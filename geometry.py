@@ -1,6 +1,6 @@
 import scipy
 
-class Hat(Object):
+class Hat(object):
     """ explicitly just unit vector without error
     which is then defined for the various coordinate
     systems based on classes based on this, a Hat class
@@ -141,7 +141,7 @@ def cross(Vec1, Vec2):
     else:
         return Vecx(x_hat, s=Vec1.s*Vec2.s)
 
-class Point(Object):
+class Point(object):
     """ a point class can only be defined relative to an origin,
     there will be an additional point class which will be known
     as grid which reduces the redundant reference to origin
@@ -149,7 +149,7 @@ class Point(Object):
     such a way for easier calculation."""
     def __init__(self, x_hat, ref, err=[]):
         
-        self.x = scipy.array(x_hat)
+        self._x = scipy.array(x_hat)
         if err:
             self.error = err
 
@@ -189,25 +189,25 @@ class Point(Object):
 
         # convert vector to proper coordinate system matching new origin and save
         if self._origin.flag == temp.flag:
-            self.x = temp.x()
+            self._x = temp.x()
         else:
-            self.x = temp.c().x()
+            self._x = temp.c().x()
 
 
     def x(self):
         """ heavily redundant, but will smooth out variational differences
         from the grid function"""
-        return self.x
+        return self._x
 
-    def _genOriginsToParent(self, depth=self._depth):
+    def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis
         origin of the geometry, the number of elements will be the depth"""
         temp = self.ref
-        pnts = depth*[0]
+        pnts = self._depth*[0]
 
 
         # as index increases, the more in depth it goes.
-        for idx in range(depth):
+        for idx in range(self._depth):
             temp = temp._origin
             pnts[idx] = temp
 
@@ -246,7 +246,7 @@ class Point(Object):
 
 class Grid(Point):
     
-    def __init__(self, x_hat, ref,mask = (0,0,0), err=scipy.array((0,0,0))):
+    def __init__(self, x_hat, ref, mask=(False,False,False), err=scipy.array((0,0,0))):
         """ a grid compartmentalizes a large set of points which
         are easily defined on a regular grid. Unlike points, grids
         points cannot change reference frames.  While this might
@@ -256,18 +256,25 @@ class Grid(Point):
         is required, it will revert to a similarly sized array
         of Point Objects, which use order mxn more memory"""
         
-        self.x = x_hat
+        # x_hat is expected to be a tuple containing three entities.
+        # the entities are described with the mask variable which provides
+        # a basic descriptor of the functional dependence.  At most,
+        # only two variables may be dependent on the third.
+        self._x = x_hat
+        
         # mask provides an understanding of the nature of the grid, whether
         # it is planar or follows a funciton in a specific dimension this
         # should allow for various shapes to easily be implemented
         self._mask = mask
 
     def redefine(self,neworigin):
-        """ do not allow as it will break the simplicity of the grid"""
+        """ redefine will break the simplicity of the grid, have it spit back
+        a tuple of Points at memory cost"""
         raise ValueError
 
     def x(self):
-        
+        return self._x
+
 
 class Origin(Point):
 
