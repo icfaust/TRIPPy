@@ -322,7 +322,7 @@ class Origin(Point):
                 super(Origin,self).__init__(x_hat, ref, err=err)
 
                 # generate rotation matrix based off coordinate system matching (this could get very interesting)
-                self.rot = scipy.matrix((Vec[0].unit.T,
+                self._rot = scipy.matrix((Vec[0].unit.T,
                                          cross(Vec[0],Vec[1]).unit.T,
                                          Vec[1].unit.T))
 
@@ -343,7 +343,7 @@ class Origin(Point):
             s2 = scipy.sin(b)
             s3 = scipy.sin(g)
 
-            self.rot = scipy.matrix(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
+            self._rot = scipy.matrix(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
                                      (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),
                                      (s2*s3, c3*s2, c2)))
         else:
@@ -355,6 +355,11 @@ class Origin(Point):
             self.flag = flag
         else:
             self.flag = ref.flag
+
+
+        def rot(self,vec):
+            if not self.flag == vec.flag:
+                
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
@@ -370,7 +375,7 @@ class Center(Origin):
         self._x = scipy.array((0.,0.,0.))
         self._depth = 0
         self._origin = []
-        self.rot = scipy.eye(3)
+        self._rot = scipy.eye(3)
         self.flag = flag
         # could not use super due to the problem in defining the value of 
         # the depth.  This is simple, though slightly redundant.
