@@ -58,16 +58,16 @@ class Vecx(Hat):
                     s=self.s)
     
     def x0(self):
-        return self.s*self.hat[0]
+        return self.s*self.unit[0]
     
     def x1(self):
-        return self.s*self.hat[1]
+        return self.s*self.unit[1]
     
     def x2(self):
-        return self.s*self.hat[2]
+        return self.s*self.unit[2]
     
     def x(self):
-        return self.s*self.hat
+        return self.s*self.unit
 
     def point(self,ref,err=[]):
         return Point(self.x(),ref,err=err)
@@ -113,16 +113,18 @@ class Vecr(Hat):
                     s=self.s)
     
     def x0(self):
-        return self.s*self.hat[0]
+        return self.s*self.unit[0]
     
     def x1(self):
-        return self.hat[1]
+        return self.unit[1]
     
     def x2(self):
-        return self.s*self.hat[2]
+        return self.s*self.unit[2]
     
     def x(self):
-        return scipy.array((self.x0,self.x1,self.x2))
+        return scipy.array((self.x0(),
+                            self.x1(),
+                            self.x2()))
         
     def point(self,ref,err=[]):
         return Point(self.x(),ref,flag=True)
@@ -178,15 +180,20 @@ class Point(object):
             for idx in range(len(org)-2) + 1:
                 temp1 = org[idx].Vec() + temp1
         else:
-            
+            temp1 = self.Vec() 
 
-        temp2 = orgnew[0].Vec()
-        for idx in range(len(orgnew)-2) + 1:
-            temp2 = orgnew[idx].Vec() + temp2
+        print(temp1.x())
+        if len(orgnew):
+            temp2 = orgnew[0].Vec()
+            for idx in range(len(orgnew)-2) + 1:
+                temp2 = orgnew[idx].Vec() + temp2
+        else:
+            temp2 = neworigin.Vec()
 
+        print(temp2.x())
         # what is the vector which points from the new origin to the point?
         temp = temp1 - temp2
-    
+        print(temp.x())
         self._origin = neworigin
         self._depth = neworigin._depth + 1
 
@@ -208,7 +215,7 @@ class Point(object):
         temp = self._origin
         pnts = self._depth*[0]
 
-
+        print('depth '+str(self._depth))
         # as index increases, the more in depth it goes.
         for idx in range(self._depth):
             temp = temp._origin
@@ -226,6 +233,8 @@ class Point(object):
         idx = -1
         pt1 = self._genOriginsToParent()
         pt2 = point2._genOriginsToParent()
+        print(len(pt1))
+        print(len(pt2))
         
         # determine the shorter origins list
         if len(pt1) > len(pt2):
@@ -317,7 +326,7 @@ class Origin(Point):
                                          cross(Vec[0],Vec[1]).unit.T,
                                          Vec[1].unit.T))
 
-        elif angle:
+        elif len(angle):
             super(Origin,self).__init__(x_hat, ref, err=err)
             a = scipy.array(angle[0])
             b = scipy.array(angle[1])
@@ -358,12 +367,20 @@ class Center(Origin):
 
 
     def __init__(self, flag=True):
-        self._x = scipy.array((0,0,0))
+        self._x = scipy.array((0.,0.,0.))
         self._depth = 0
         self._origin = []
-        self._rot = scipy.eye(3)
+        self.rot = scipy.eye(3)
         self.flag = flag
         # could not use super due to the problem in defining the value of 
         # the depth.  This is simple, though slightly redundant.
         # large number of empty values provide knowledge that there are no
         # lower references or rotations to this, the main coordinate system
+
+    def Vec(self,c=False):
+        """ c provides the ability to convert coordinate
+        systems"""
+        if c == self.flag:
+            return Vecx(self._x,s=1)
+        else:
+            return Vecr(self._x,s=1)
