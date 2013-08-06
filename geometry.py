@@ -29,7 +29,7 @@ class Vecx(Hat):
             s = scipy.sqrt(scipy.sum(x_hat**2))
             x_hat /= s
         super(Vecx,self).__init__(x_hat)
-        self.s = SP.array(s)
+        self.s = scipy.array(s)
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
@@ -51,11 +51,11 @@ class Vecx(Hat):
         return self.unit.T*Vec.unit
 
     def c(self):
-        """ convert to cylindrical coord """
+        """ convert to cylindrical coordinates """
         return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
                      scipy.arctan2(self.unit[1],self.unit[0]),
-                     scipy.unit[2]),
-                    s=s)
+                     self.unit[2]),
+                    s=self.s)
     
     def x0(self):
         return self.s*self.hat[0]
@@ -84,7 +84,7 @@ class Vecr(Hat):
             x_hat[0] /= s
             x_hat[2] /= s
         super(Vecr,self).__init__(x_hat)
-        self.s = SP.array(s)
+        self.s = scipy.array(s)
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
@@ -110,7 +110,7 @@ class Vecr(Hat):
         return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
                      self.unit[0]*scipy.sin(self.unit[1]),
                      self.unit[2]),
-                    s=s)
+                    s=self.s)
     
     def x0(self):
         return self.s*self.hat[0]
@@ -150,7 +150,7 @@ class Point(object):
     def __init__(self, x_hat, ref, err=[]):
         
         self._x = scipy.array(x_hat)
-        if err:
+        if len(err):
             self.error = err
 
         self._origin = ref
@@ -160,9 +160,9 @@ class Point(object):
         """ c provides the ability to convert coordinate
          systems"""
         if c == self._origin.flag:
-            return Vecx(self.x)
+            return Vecx(self._x)
         else:
-            return Vecr(self.x)
+            return Vecr(self._x)
 
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
@@ -173,9 +173,12 @@ class Point(object):
         org,orgnew = self._lca(neworigin)
         
         # loop over the first 'path' of the current point
-        temp1 = org[0].Vec()
-        for idx in range(len(org)-2) + 1:
-            temp1 = org[idx].Vec() + temp1
+        if len(org):
+            temp1 = org[0].Vec()
+            for idx in range(len(org)-2) + 1:
+                temp1 = org[idx].Vec() + temp1
+        else:
+            
 
         temp2 = orgnew[0].Vec()
         for idx in range(len(orgnew)-2) + 1:
@@ -202,7 +205,7 @@ class Point(object):
     def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis
         origin of the geometry, the number of elements will be the depth"""
-        temp = self.ref
+        temp = self._origin
         pnts = self._depth*[0]
 
 
@@ -221,22 +224,26 @@ class Point(object):
         
         temp = True
         idx = -1
-        
-        pt1 = self._getOriginsToParent()
-        pt2 = point2._getOriginsToParent()
+        pt1 = self._genOriginsToParent()
+        pt2 = point2._genOriginsToParent()
         
         # determine the shorter origins list
         if len(pt1) > len(pt2):
-            lim = len(pt2) - 1
+            lim = scipy.absolute(len(pt2) - 1)
         else:
-            lim = len(pt1) - 1
+            lim = scipy.absolute(len(pt1) - 1)
+        print(lim)
             
         # compare origins from the base (which should be the same)
         # and when they don't match store the index.  Return the
         # negative index which corresponds to the last match
         while temp:
 
-            if (pt1[idx] is pt2[idx]) and (lim + idx):
+            print(idx)
+            if not (lim + idx):
+                temp = False
+                idx +=1
+            elif (pt1[idx] is pt2[idx]):                
                 idx -= 1
             else:
                 idx += 1
@@ -278,7 +285,7 @@ class Grid(Point):
 
 class Origin(Point):
 
-    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[]):
+    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=[]):
         """ an Origin is defined by a point and two vectors.
         The two vectors being: 1st the normal to the surface,
         principal axis, z-vector or the (0,0,1) vector of the
@@ -334,9 +341,29 @@ class Origin(Point):
             raise ValueError
             #throw error here
 
+        # set to coordinate system only if specified. otherwise inherit based on reference
+        if flag:
+            self.flag = flag
+        else:
+            self.flag = ref.flag
+
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
     It is located at (0,0,0) and is inherently a cylindrical coordinate
-    system.  It is from the translation of inherently cylindrical data
-    into toroidal coordinates requires this rosetta stone"""
-    
+    system (unless flag set otherwise). 
+    It is from the translation of inherently cylindrical data
+    into toroidal coordinates requires this rosetta stone, it can
+    be dynamically set to becoming an origin given a specification
+    of another origin."""
+
+
+    def __init__(self, flag=True):
+        self._x = scipy.array((0,0,0))
+        self._depth = 0
+        self._origin = []
+        self._rot = scipy.eye(3)
+        self.flag = flag
+        # could not use super due to the problem in defining the value of 
+        # the depth.  This is simple, though slightly redundant.
+        # large number of empty values provide knowledge that there are no
+        # lower references or rotations to this, the main coordinate system
