@@ -175,34 +175,27 @@ class Point(object):
         org,orgnew = self._lca(neworigin)
         
         # loop over the first 'path' of the current point
-        if len(org):
-            temp1 = org[0].Vec()
-            for idx in range(len(org)-2) + 1:
-                temp1 = org[idx].Vec() + temp1
-        else:
-            temp1 = self.Vec() 
+        temp = self.Vec()
+        for idx in range(len(org)):
+            # a origin's point is defined by its recursive coordinate system
+            # thus the value addition is not occuring in current origin system
+            # put in fact the coordinate system that defines the origin.
+            # thus this requires using the rotation matrix of the current origin
+            # system to define it in the 'parent' coordinate system
+            temp = org[idx].Vec() + org[idx].rot(temp)
 
-        print(temp1.x())
-        if len(orgnew):
-            temp2 = orgnew[0].Vec()
-            for idx in range(len(orgnew)-2) + 1:
-                temp2 = orgnew[idx].Vec() + temp2
-        else:
-            temp2 = neworigin.Vec()
+        for idx in range(-1,-len(orgnew)-1,-1):
+            # the arot allows for translating into the current coordinate system
+            temp = orgnew[idx].arot(temp - orgnew[idx].Vec())
 
-        print(temp2.x())
+        temp = neworigin.arot(temp - neworigin.Vec())
         # what is the vector which points from the new origin to the point?
-        temp = temp1 - temp2
-        print(temp.x())
         self._origin = neworigin
         self._depth = neworigin._depth + 1
 
         # convert vector to proper coordinate system matching new origin and save
-        if self._origin.flag == temp.flag:
-            self._x = temp.x()
-        else:
-            self._x = temp.c().x()
-
+        # arot forces the coordinate system to that of the new origin
+        self._x = temp.x()
 
     def x(self):
         """ heavily redundant, but will smooth out variational differences
@@ -215,11 +208,10 @@ class Point(object):
         temp = self._origin
         pnts = self._depth*[0]
 
-        print('depth '+str(self._depth))
         # as index increases, the more in depth it goes.
         for idx in range(self._depth):
-            temp = temp._origin
             pnts[idx] = temp
+            temp = temp._origin
 
         return pnts
 
@@ -233,33 +225,31 @@ class Point(object):
         idx = -1
         pt1 = self._genOriginsToParent()
         pt2 = point2._genOriginsToParent()
-        print(len(pt1))
-        print(len(pt2))
-        
+
         # determine the shorter origins list
         if len(pt1) > len(pt2):
-            lim = scipy.absolute(len(pt2) - 1)
+            lim = len(pt2) + 1
         else:
-            lim = scipy.absolute(len(pt1) - 1)
-        print(lim)
+            lim = len(pt1) + 1
             
+
         # compare origins from the base (which should be the same)
         # and when they don't match store the index.  Return the
         # negative index which corresponds to the last match
         while temp:
-
-            print(idx)
             if not (lim + idx):
+                idx += 1
                 temp = False
-                idx +=1
             elif (pt1[idx] is pt2[idx]):                
                 idx -= 1
             else:
                 idx += 1
                 temp = False
 
-        return (pt1[:idx],pt2[:idx])
-
+        if idx:
+            return (pt1[:idx],pt2[:idx])
+        else:
+            return (pt1,pt2)
 class Grid(Point):
     
     def __init__(self, x_hat, ref, mask=(False,False,False), err=scipy.array((0,0,0))):
@@ -322,7 +312,7 @@ class Origin(Point):
                 super(Origin,self).__init__(x_hat, ref, err=err)
 
                 # generate rotation matrix based off coordinate system matching (this could get very interesting)
-                self._rot = scipy.matrix((Vec[0].unit.T,
+                self._rot = scipy.array((Vec[0].unit.T,
                                          cross(Vec[0],Vec[1]).unit.T,
                                          Vec[1].unit.T))
 
@@ -343,7 +333,7 @@ class Origin(Point):
             s2 = scipy.sin(b)
             s3 = scipy.sin(g)
 
-            self._rot = scipy.matrix(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
+            self._rot = scipy.array(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
                                      (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),
                                      (s2*s3, c3*s2, c2)))
         else:
@@ -357,9 +347,23 @@ class Origin(Point):
             self.flag = ref.flag
 
 
-        def rot(self,vec):
-            if not self.flag == vec.flag:
+    def rot(self,vec):
+        if not self._origin.flag == vec.flag:
+            vec = vec.c()
+
+        if self.flag:
+            return Vecr(scipy.dot(self._rot,vec.unit),s=vec.s)
+        else:
+            return Vecx(scipy.dot(self._rot,vec.unit),s=vec.s)
                 
+    def arot(self,vec):
+        if not self.flag == vec.flag:
+            vec = vec.c()
+
+        if self.flag:
+            return Vecr(scipy.dot(self._rot.T,vec.unit),s=vec.s)
+        else:
+            return Vecx(scipy.dot(self._rot.T,vec.unit),s=vec.s)
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
@@ -389,3 +393,10 @@ class Center(Origin):
             return Vecx(self._x,s=1)
         else:
             return Vecr(self._x,s=1)
+
+    def rot(self,vec):
+
+        if self.flag:
+            return Vecr(vec.unit,s=vec.s)
+        else:
+            return Vecx(vec.unit,s=vec.s)
