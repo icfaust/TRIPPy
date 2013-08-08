@@ -25,10 +25,11 @@ class Vecx(Hat):
     
     def __init__(self, x_hat, s=[]):
         #if r is specified, it is assumed that x_hat has unit length
-        if not s:
+        xin = scipy.array(x_hat)
+        if not len(s):
             s = scipy.sqrt(scipy.sum(x_hat**2))
-            x_hat /= s
-        super(Vecx,self).__init__(x_hat)
+            xin /= s
+        super(Vecx,self).__init__(xin)
         self.s = scipy.array(s)
 
     def __add__(self, Vec):
@@ -67,7 +68,9 @@ class Vecx(Hat):
         return self.s*self.unit[2]
     
     def x(self):
-        return self.s*self.unit
+        return [self.x0(),
+                self.x1(),
+                self.x2()]
 
     def point(self,ref,err=[]):
         return Point(self.x(),ref,err=err)
@@ -79,11 +82,12 @@ class Vecr(Hat):
     flag = True
 
     def __init__(self, x_hat, s=[]):
-        if not s:
+        xin = scipy.array(x_hat)
+        if not len(s):
             s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-            x_hat[0] /= s
-            x_hat[2] /= s
-        super(Vecr,self).__init__(x_hat)
+            xin[0] /= s
+            xin[2] /= s
+        super(Vecr,self).__init__(xin)
         self.s = scipy.array(s)
 
     def __add__(self, Vec):
@@ -122,9 +126,9 @@ class Vecr(Hat):
         return self.s*self.unit[2]
     
     def x(self):
-        return scipy.array((self.x0(),
-                            self.x1(),
-                            self.x2()))
+        return [self.x0(),
+                self.x1(),
+                self.x2()]
         
     def point(self,ref,err=[]):
         return Point(self.x(),ref,flag=True)
@@ -176,7 +180,7 @@ class Point(object):
         
         # loop over the first 'path' of the current point
         temp = self.Vec()
-        for idx in range(len(org)):
+        for idx in range(len(org)-1,-1,-1):
             # a origin's point is defined by its recursive coordinate system
             # thus the value addition is not occuring in current origin system
             # put in fact the coordinate system that defines the origin.
@@ -184,7 +188,7 @@ class Point(object):
             # system to define it in the 'parent' coordinate system
             temp = org[idx].Vec() + org[idx].rot(temp)
 
-        for idx in range(-1,-len(orgnew)-1,-1):
+        for idx in range(len(orgnew)):
             # the arot allows for translating into the current coordinate system
             temp = orgnew[idx].arot(temp - orgnew[idx].Vec())
 
@@ -208,8 +212,8 @@ class Point(object):
         temp = self._origin
         pnts = self._depth*[0]
 
-        # as index increases, the more in depth it goes.
-        for idx in range(self._depth):
+        # as index increases, the closer to the point it becomes.
+        for idx in range(self._depth-1,-1,-1):
             pnts[idx] = temp
             temp = temp._origin
 
@@ -222,34 +226,33 @@ class Point(object):
         contains the nodes leading to the common point."""
         
         temp = True
-        idx = -1
+        idx = 0
         pt1 = self._genOriginsToParent()
         pt2 = point2._genOriginsToParent()
 
         # determine the shorter origins list
-        if len(pt1) > len(pt2):
-            lim = len(pt2) + 1
+        if self._depth > point2._depth:
+            lim = point2._depth
         else:
-            lim = len(pt1) + 1
+            lim = self._depth
             
 
         # compare origins from the base (which should be the same)
         # and when they don't match store the index.  Return the
         # negative index which corresponds to the last match
         while temp:
-            if not (lim + idx):
-                idx += 1
+            if not (lim - idx):
+                idx += 1 # this takes care of ambiguity associated with the centerpoint
                 temp = False
             elif (pt1[idx] is pt2[idx]):                
-                idx -= 1
-            else:
                 idx += 1
+            else:
                 temp = False
 
-        if idx:
-            return (pt1[:idx],pt2[:idx])
-        else:
-            return (pt1,pt2)
+        print(idx)
+        return (pt1[idx:],pt2[idx:])
+
+
 class Grid(Point):
     
     def __init__(self, x_hat, ref, mask=(False,False,False), err=scipy.array((0,0,0))):
