@@ -9,13 +9,14 @@ class Hat(object):
     def __init__(self, x_hat):
 
         self.unit = scipy.array(x_hat)
+        if self.unit.shape[0] != 3:
+            raise ValueError
 
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
         return  scipy.array(((0,-self.unit[2],self.unit[1]),
-                              (self.unit[2],0,-self.unit[0]),
-                              (-self.unit[1],self.unit[0],0)))
-
+                             (self.unit[2],0,-self.unit[0]),
+                             (-self.unit[1],self.unit[0],0)))
 
 class Vecx(Hat):
     """ explicitly a cartesian unit vector, but can be set as 
@@ -25,24 +26,27 @@ class Vecx(Hat):
     
     def __init__(self, x_hat, s=[]):
         #if r is specified, it is assumed that x_hat has unit length
-        xin = scipy.array(x_hat)
+        xin = scipy.array(x_hat,dtype=float)
         if not len(s):
-            s = scipy.sqrt(scipy.sum(x_hat**2))
+            s = scipy.sqrt(scipy.sum(xin**2,axis=0))  # this needs to be modified s
             xin /= s
+
         super(Vecx,self).__init__(xin)
-        self.s = scipy.array(s)
+        self.s = scipy.atleast_1d(s)
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
         add, and possibly convert back"""
         if Vec.flag:
             Vec = Vec.c()
+
         return Vecx(self.x() + Vec.x())
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
+
         return Vecx(self.x() - Vec.x())
 
     def __mul__(self, Vec):
@@ -68,12 +72,12 @@ class Vecx(Hat):
         return self.s*self.unit[2]
     
     def x(self):
-        return [self.x0(),
-                self.x1(),
-                self.x2()]
+        return scipy.array([self.x0(),
+                            self.x1(),
+                            self.x2()])
 
     def point(self,ref,err=[]):
-        return Point(self.x(),ref,err=err)
+        return Point(self.x(), ref, err=err)
                    
 class Vecr(Hat):
     """ explicitly a cylindrical unit vector, but can be set as 
@@ -82,26 +86,36 @@ class Vecr(Hat):
     flag = True
 
     def __init__(self, x_hat, s=[]):
-        xin = scipy.array(x_hat)
+
+        xin = scipy.array(x_hat, dtype=float)
+
         if not len(s):
             s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
             xin[0] /= s
             xin[2] /= s
         super(Vecr,self).__init__(xin)
-        self.s = scipy.array(s)
+        self.s = scipy.atleast_1d(s)
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
         add, and possibly convert back"""
         if Vec.flag:
             Vec = Vec.c()
-        return Vecr(self.c().x() + Vec.x())
+        
+        add = self.c().x() + Vec.x() # computed in cartesian coordinates
+        add[1] = scipy.arctan2(add[1], add[0]) #convert to angle
+        add[0] = scipy.absolute(add[0]/scipy.cos(add[1])) # generate radius
+        return Vecr(add)
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
-        return Vecr(self.c().x() - Vec.x())
+
+        sub = self.c().x() - Vec.x()        
+        sub[1] = scipy.arctan2(sub[1], sub[0])
+        sub[0] = scipy.absolute(sub[0]/scipy.cos(sub[1]))
+        return Vecr(sub) 
         
     def __mul__(self, Vec):
         """ Dot product """
@@ -120,15 +134,15 @@ class Vecr(Hat):
         return self.s*self.unit[0]
     
     def x1(self):
-        return self.unit[1]
+        return scipy.ones(self.s.shape)*self.unit[1]
     
     def x2(self):
         return self.s*self.unit[2]
     
     def x(self):
-        return [self.x0(),
-                self.x1(),
-                self.x2()]
+        return scipy.array([self.x0(),
+                            self.x1(),
+                            self.x2()])
         
     def point(self,ref,err=[]):
         return Point(self.x(),ref,flag=True)
@@ -177,7 +191,11 @@ class Point(object):
         
         # use _lca to find common ancestor and return tree to common
         org,orgnew = self._lca(neworigin)
-        
+
+        # this will allows for the matrix math of the rotation to behave properly
+        shape = self._x.shape
+        self._x = self._x.reshape(3,self._x.size/3)
+
         # loop over the first 'path' of the current point
         temp = self.Vec()
         for idx in range(len(org)-1,-1,-1):
@@ -199,8 +217,8 @@ class Point(object):
 
         # convert vector to proper coordinate system matching new origin and save
         # arot forces the coordinate system to that of the new origin
-        self._x = temp.x()
-
+        self._x = temp.x().reshape(shape)
+        
     def x(self):
         """ heavily redundant, but will smooth out variational differences
         from the grid function"""
