@@ -55,6 +55,9 @@ class Vecx(Hat):
             Vec = Vec.c()
         return self.unit.T*Vec.unit
 
+    def __getitem__(self,idx):
+        return self.x()[idx]
+
     def c(self):
         """ convert to cylindrical coordinates """
         return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
@@ -122,6 +125,9 @@ class Vecr(Hat):
         if not Vec.flag:
             Vec = Vec.c()
         return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
+
+    def __getitem__(self,idx):
+        return self.x()[idx]
 
     def c(self):
         """ convert to cartesian coord """
@@ -300,7 +306,12 @@ class Grid(Point):
         raise ValueError
 
     def x(self):
-        return self._x
+
+        # access the mask, and determine if the variable is a function.
+
+        # it is a ssumed that the masked variables are functions of the
+        # other inputs. 
+        return self._x # its not this simple
 
 
 class Origin(Point):
