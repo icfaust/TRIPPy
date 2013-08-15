@@ -27,12 +27,13 @@ class Vecx(Hat):
     def __init__(self, x_hat, s=[]):
         #if r is specified, it is assumed that x_hat has unit length
         xin = scipy.array(x_hat,dtype=float)
+        s = scipy.atleast_1d(s)
         if not len(s):
             s = scipy.sqrt(scipy.sum(xin**2,axis=0))  # this needs to be modified s
             xin /= s
 
         super(Vecx,self).__init__(xin)
-        self.s = scipy.atleast_1d(s)
+        self.s = s
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
@@ -91,13 +92,13 @@ class Vecr(Hat):
     def __init__(self, x_hat, s=[]):
 
         xin = scipy.array(x_hat, dtype=float)
-
+        s = SP.atleast_1d(s)
         if not len(s):
             s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
             xin[0] /= s
             xin[2] /= s
         super(Vecr,self).__init__(xin)
-        self.s = scipy.atleast_1d(s)
+        self.s = s
 
     def __add__(self, Vec):
         """ Vector addition, convert to cartesian
@@ -175,21 +176,19 @@ class Point(object):
     such a way for easier calculation."""
     def __init__(self, x_hat, ref, err=[]):
         
-        self._x = scipy.array(x_hat)
+        if ref.flag:
+            self.vec = Vecr(x_hat)
+        else:
+            self.vec = Vecx(x_hat)
         if len(err):
             self.error = err
             
         self._origin = ref
         self._depth = ref._depth + 1 # basis origin is depth = 0
-         
-    def Vec(self, c=False):
-        """ c provides the ability to convert coordinate
-         systems"""
-        if c == self._origin.flag:
-            return Vecx(self._x)
-        else:
-            return Vecr(self._x)
 
+    def __getitem__(self,idx):
+        return self.vec[idx]
+         
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
         origin, for calculations with respect to a flux grid, etc. this
@@ -208,20 +207,20 @@ class Point(object):
         self._x = self._x.reshape(3,self._x.size/3)
 
         # loop over the first 'path' of the current point
-        temp = self.Vec()
+        temp = self.vec
         for idx in range(len(org)-1,-1,-1):
             # a origin's point is defined by its recursive coordinate system
             # thus the value addition is not occuring in current origin system
             # put in fact the coordinate system that defines the origin.
             # thus this requires using the rotation matrix of the current origin
             # system to define it in the 'parent' coordinate system
-            temp = org[idx].Vec() + org[idx].rot(temp)
+            temp = org[idx].vec + org[idx].rot(temp)
 
         for idx in range(len(orgnew)):
             # the arot allows for translating into the current coordinate system
-            temp = orgnew[idx].arot(temp - orgnew[idx].Vec())
+            temp = orgnew[idx].arot(temp - orgnew[idx].vec)
 
-        temp = neworigin.arot(temp - neworigin.Vec())
+        temp = neworigin.arot(temp - neworigin.vec)
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
         self._depth = neworigin._depth + 1
@@ -233,7 +232,7 @@ class Point(object):
     def x(self):
         """ heavily redundant, but will smooth out variational differences
         from the grid function"""
-        return self._x
+        return self.vec.x()
 
     def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis
@@ -348,8 +347,8 @@ class Origin(Point):
                 # generate point based off of previous origin
                 super(Origin,self).__init__(x_hat, ref, err=err)
                 self.norm = Vec[1]
-                self.saggital = Vec[0]
-                temp = cross(self.norm,self.saggital).unit.T
+                self.meri = Vec[0]
+                self.sagi = cross(self.norm,self.meri)
                 # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
         elif len(angle):
@@ -370,15 +369,17 @@ class Origin(Point):
             s3 = scipy.sin(g)
 
 
-            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1)
-            self.saggital =  Vecx((s2*s3, c3*s2, c2),s=1)
-            temp = (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2)
+            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1.)
+            self.meri =  Vecx((s2*s3, c3*s2, c2),s=1.)
+            self.sagi = Vecx((c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),s=1.)
         else:
-            raise ValueError
+            raise ValueError("rotation matrix cannot be specified without a normal"
+                             " and meridonial ray, please specify either two"
+                             " vectors or a set of euclidean rotation angles")
             #throw error here
-        self._rot = scipy.array((self.norm.unit.T,
-                                 temp,
-                                 self.saggital.unit.T))
+        self._rot = [self.norm.unit.T,
+                     self.sagi.unit.T,
+                     self.meri.unit.T]
         # set to coordinate system only if specified. otherwise inherit based on reference
         if flag:
             self.flag = flag
@@ -433,7 +434,6 @@ class Center(Origin):
     be dynamically set to becoming an origin given a specification
     of another origin."""
 
-
     def __init__(self, flag=True):
         self._x = scipy.array((0.,0.,0.))
         self._depth = 0
@@ -459,3 +459,17 @@ class Center(Origin):
             return Vecr(vec.unit,s=vec.s)
         else:
             return Vecx(vec.unit,s=vec.s)
+
+def pts2Vec(pt1,pt2):
+    """
+    pts2Vec creates a vector from pt1 pointing to pt2
+    """
+    if pt1._origin is pt2.origin:
+        
+        if pt1._origin.flag:
+            return Vecx(pt2.vec - pt1.vec)
+        else:
+            return Vecr(pt2.vec - pt1.vec)
+    else:
+        raise ValueError("points must exist in same coordinate system")
+
