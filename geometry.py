@@ -203,8 +203,10 @@ class Point(object):
     def _translate(self, lca):
         org = lca[0]
         orgnew = lca[1]
-        shape = self._x.shape
-        self._x = self._x.reshape(3,self._x.size/3)
+        shape = self.vec.unit.shape
+        sshape = self.vec.s.shape
+        self.s = self.s.flatten
+        self.vec.unit = self.vec.unit.reshape(3,self._x.size/3)
 
         # loop over the first 'path' of the current point
         temp = self.vec
@@ -227,8 +229,9 @@ class Point(object):
 
         # convert vector to proper coordinate system matching new origin and save
         # arot forces the coordinate system to that of the new origin
-        self._x = temp.x().reshape(shape)
-        
+        self.vec.unit = temp.vec.unit.reshape(shape)
+        self.vec.s = temp.vec.s.reshape(sshape)
+
     def x(self):
         """ heavily redundant, but will smooth out variational differences
         from the grid function"""
