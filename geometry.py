@@ -178,7 +178,7 @@ class Point(object):
         self._x = scipy.array(x_hat)
         if len(err):
             self.error = err
-
+            
         self._origin = ref
         self._depth = ref._depth + 1 # basis origin is depth = 0
          
@@ -196,9 +196,14 @@ class Point(object):
         should reduce caluclation substantially."""
         
         # use _lca to find common ancestor and return tree to common
-        org,orgnew = self._lca(neworigin)
-
+        lca = self._lca(neworigin)
+        
         # this will allows for the matrix math of the rotation to behave properly
+        self._translate(lca)
+
+    def _translate(self, lca):
+        org = lca[0]
+        orgnew = lca[1]
         shape = self._x.shape
         self._x = self._x.reshape(3,self._x.size/3)
 
@@ -342,11 +347,10 @@ class Origin(Point):
             if not Vec[0] * Vec[1]: 
                 # generate point based off of previous origin
                 super(Origin,self).__init__(x_hat, ref, err=err)
-
+                self.norm = Vec[1]
+                self.saggital = Vec[0]
+                temp = cross(self.norm,self.saggital).unit.T
                 # generate rotation matrix based off coordinate system matching (this could get very interesting)
-                self._rot = scipy.array((Vec[0].unit.T,
-                                         cross(Vec[0],Vec[1]).unit.T,
-                                         Vec[1].unit.T))
 
         elif len(angle):
             super(Origin,self).__init__(x_hat, ref, err=err)
@@ -365,18 +369,41 @@ class Origin(Point):
             s2 = scipy.sin(b)
             s3 = scipy.sin(g)
 
-            self._rot = scipy.array(((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),
-                                     (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),
-                                     (s2*s3, c3*s2, c2)))
+
+            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1)
+            self.saggital =  Vecx((s2*s3, c3*s2, c2),s=1)
+            temp = (c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2)
         else:
             raise ValueError
             #throw error here
-
+        self._rot = scipy.array((self.norm.unit.T,
+                                 temp,
+                                 self.saggital.unit.T))
         # set to coordinate system only if specified. otherwise inherit based on reference
         if flag:
             self.flag = flag
         else:
             self.flag = ref.flag
+
+
+    def redefine(self,neworigin):
+        """ rotation matrix also needs to be redefined """
+
+        lca = self._lca(neworigin)
+        super(Point,self)._translate(lca)
+        self._rotate(lca)
+
+    def _rotate(self,lca):
+        temp = self._rot
+        for idx in range(len(org)-1,-1,-1):
+            # change the _rot coordinates to accurately reflect all of the necessary variation.
+            temp = org[idx].rot(temp)
+
+        for idx in range(len(orgnew)):
+            # the arot allows for translating into the current coordinate system
+            temp = orgnew[idx].arot(temp)
+
+        self._rot = neworigin.arot(temp)
 
 
     def rot(self,vec):
