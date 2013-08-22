@@ -217,7 +217,7 @@ class Point(object):
         org = lca[0]
         orgnew = lca[1]
         shape = self.vec.unit.shape
-        if len(shape) != 2:    
+        if len(shape) > 2:    
             sshape = self.vec.s.shape
             self.vec.s = self.vec.s.flatten()
             self.vec.unit = self.vec.unit.reshape(3,self.vec.unit.size/3)
@@ -240,7 +240,6 @@ class Point(object):
             temp = orgnew[idx].arot(temp - orgnew[idx].vec)
         
 
-        temp = neworigin.arot(temp - neworigin.vec)
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
         self._depth = neworigin._depth + 1
@@ -248,7 +247,7 @@ class Point(object):
         # convert vector to proper coordinate system matching new origin and save
         # arot forces the coordinate system to that of the new origin
         
-        if len(shape) != 2:
+        if len(shape) > 2:
             self.vec.unit = temp.unit.reshape(shape)
             self.vec.s = temp.s.reshape(sshape)
         else:
@@ -283,7 +282,7 @@ class Point(object):
         idx = 0
         pt1 = self._genOriginsToParent()
         pt2 = point2._genOriginsToParent()
-
+        pt2.append(point2)
         # determine the shorter origins list
         if self._depth > point2._depth:
             lim = point2._depth
@@ -423,18 +422,25 @@ class Origin(Point):
         """ rotates the fundamental vectors of the space"""
         org = lca[0]
         orgnew = lca[1]
-        for i in (self.norm,self.sagi,self.meri):
-            temp = i
-            for idx in range(len(org)-1,-1,-1):
-                # change the _rot coordinates to accurately reflect all of the necessary variation.
-                temp = org[idx].rot(temp)
 
-            for idx in range(len(orgnew)):
-                # the arot allows for translating into the current coordinate system
-                temp = orgnew[idx].arot(temp)
+        temp1 = self.norm
+        temp2 = self.meri
+        stemp = self.sagi.s
 
-            i = neworigin.arot(temp)
+        for idx in range(len(org)-1,-1,-1):
+            # change the _rot coordinates to accurately reflect all of the necessary variation.
+            temp1 = org[idx].rot(temp1)
+            temp2 = org[idx].rot(temp2)
 
+        for idx in range(len(orgnew)):
+            # the arot allows for translating into the current coordinate system
+            temp1 = orgnew[idx].arot(temp1)
+            temp2 = orgnew[idx].arot(temp2)
+
+        self.norm = temp1
+        self.meri = temp2
+        self.sagi = cross(self.norm,self.meri)
+        self.sagi.s = stemp
 
     def rot(self,vec):
         if not self._origin.flag == vec.flag:
