@@ -51,15 +51,22 @@ class Vecx(Hat):
         add, and possibly convert back"""
         if Vec.flag:
             Vec = Vec.c()
-            
-        return Vecx(self.x() + Vec.x())
+        
+        # this is done to avoid some of the array shaping problems I was having
+        x0 = self.x0() + Vec.x0()
+        x1 = self.x1() + Vec.x1()
+        x2 = self.x2() + Vec.x2()
+        return Vecx((x0,x1,x2))
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
+        x0 = self.x0() - Vec.x0()
+        x1 = self.x1() - Vec.x1()
+        x2 = self.x2() - Vec.x2()
+        return Vecx((x0,x1,x2))
 
-        return Vecx(self.x() - Vec.x())
 
     def __mul__(self, Vec):
         """ Dot product """
@@ -119,20 +126,17 @@ class Vecr(Hat):
         if Vec.flag:
             Vec = Vec.c()
 
-        add = self.c().x() + Vec.x() # computed in cartesian coordinates
-        add[1] = scipy.arctan2(add[1], add[0]) #convert to angle
-        add[0] = scipy.absolute(add[0]/scipy.cos(add[1])) # generate radius
-        return Vecr(add)
+        # inherently these waste a lot of memory, as 3 copies are made
+        add = self.c() + Vec # computed in cartesian coordinates
+        return add.c()
 
     def __sub__(self, Vec):
         """ Vector subtraction """
         if Vec.flag:
             Vec = Vec.c()
 
-        sub = self.c().x() - Vec.x()        
-        sub[1] = scipy.arctan2(sub[1], sub[0])
-        sub[0] = scipy.absolute(sub[0]/scipy.cos(sub[1]))
-        return Vecr(sub) 
+        sub = self.c() - Vec
+        return sub.c() 
         
     def __mul__(self, Vec):
         """ Dot product """
@@ -510,12 +514,8 @@ def pts2Vec(pt1,pt2):
     """
     pts2Vec creates a vector from pt1 pointing to pt2
     """
-    if pt1._origin is pt2.origin:
-        
-        if pt1._origin.flag:
-            return Vecx(pt2.vec - pt1.vec)
-        else:
-            return Vecr(pt2.vec - pt1.vec)
+    if pt1._origin is pt2._origin:
+        return pt2.vec - pt1.vec
     else:
         raise ValueError("points must exist in same coordinate system")
 
