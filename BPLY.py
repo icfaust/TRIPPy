@@ -3,7 +3,7 @@ import surface
 import geometry
 import scipy
 
-def BPLY(temp, place=(1.87,0,.157277), angle=(scipy.pi/2,scipy.py/2,0)):
+def BPLY(temp, place=(1.87,0,.157277), angle=(scipy.pi/2,scipy.pi/2,0)):
 
 
     pos = geometry.Origin(place,temp,angle=angle)
@@ -15,4 +15,5 @@ def BPLY(temp, place=(1.87,0,.157277), angle=(scipy.pi/2,scipy.py/2,0)):
     for i in diodes:
         i.redefine(temp)
     diodes.append(aperature)
+    diodes[-1].redefine(temp)
     return diodes
