@@ -3,7 +3,7 @@ import surface
 import geometry
 import scipy
 
-def BPLY(temp, place=(1.87,0,.157277), angle=(scipy.pi/2,scipy.pi/2,0)):
+def BPLY(temp, place=(1.87,0,.157277), angle=(0,-.17453-scipy.pi/2,1.62385-scipy.pi/2)):
 
 
     pos = geometry.Origin(place,temp,angle=angle)

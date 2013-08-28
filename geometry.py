@@ -397,17 +397,20 @@ class Origin(Point):
             s3 = scipy.sin(g)
 
 
-            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1.)
-            self.meri =  Vecx((s2*s3, c3*s2, c2),s=1.)
-            self.sagi = Vecx((c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),s=1.)
+            self.meri = Vecx((c3*c2, s3*c1 - c3*s2*s1, c3*s2*c1 + s3*s1), s=one)
+            self.sagi = Vecx((-s3*c2, c3*c1 + s3*s2*s1, c3*s1 - s3*s2*c1), s=one)
+            self.norm = Vecx((-s2, -c2*s1, c2*c1), s=one)
+#            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1.)
+#            self.meri =  Vecx((s2*s3, c3*s2, c2),s=1.)
+#            self.sagi = Vecx((c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),s=1.)
         else:
             raise ValueError("rotation matrix cannot be specified without a normal"
                              " and meridonial ray, please specify either two"
                              " vectors or a set of euclidean rotation angles")
             #throw error here
-        self._rot = [self.meri.unit.T,
-                     self.sagi.unit.T,
-                     self.norm.unit.T]
+        self._rot = [self.meri.unit,
+                     self.sagi.unit,
+                     self.norm.unit]
         # set to coordinate system only if specified. otherwise inherit based on reference
         if flag:
             self.flag = flag
