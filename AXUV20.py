@@ -7,6 +7,15 @@ import scipy
 #
 
 
+def AXUV20(temp):
+    diodes = 20*[0]
+    area = [4e-3,7.5e-4]
+    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+    pos = scipy.linspace(-9.025e-4,9.025e-4,20)
+    for i in range(len(diodes)):
+        diodes[i] = surface.Rect((pos[i],0.,0.),temp,area,Vec=Vec)
+    return diodes
+
 def AXUV22(temp):
     """ temp """
     diodes = 22*[0]
