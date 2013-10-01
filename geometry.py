@@ -220,7 +220,7 @@ class Point(object):
         else:
             self.vec = Vecx(x_hat)
         if len(err):
-            self.error = err
+            self.err = err
             
         self._origin = ref
         self._depth = ref._depth + 1 # basis origin is depth = 0
@@ -284,6 +284,10 @@ class Point(object):
         """ heavily redundant, but will smooth out variational differences
         from the grid function"""
         return self.vec.x()
+    
+    def c(self):
+        return self.vec.c().x()
+
 
     def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis

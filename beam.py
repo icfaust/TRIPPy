@@ -27,7 +27,7 @@ class Ray(geometry.Point):
         if self.vec.flag:
             temp = self.x()
         else:
-            temp = self.c().x()
+            temp = self.c()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
         
@@ -61,6 +61,9 @@ class Ray(geometry.Point):
      
     def x(self):
         return (self.vec + self.norm).x()
+
+    def c(self):
+        return (self.vec + self.norm).c().x()
 
     def __getitem__(self,idx):
         return (self.vec + self.norm)[idx]
@@ -108,7 +111,7 @@ class Beam(geometry.Origin):
         if self.vec.flag:
             temp = self.x()
         else:
-            temp = self.c().x()
+            temp = self.c()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
         
@@ -142,6 +145,9 @@ class Beam(geometry.Origin):
 
     def x(self):
         return (self.vec + self.norm).x()
+
+    def c(self):
+        return (self.vec + self.norm).c().x()
 
     def __getitem__(self,idx):
         return (self.vec + self.norm)[idx]
