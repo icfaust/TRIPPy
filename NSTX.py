@@ -1,4 +1,4 @@
-import geometry,surface,AXUV20
+import geometry,surface,AXUV
 import scipy
 
 def diode1(temp,place=(2.0,0,2e-2), angle=(0,-scipy.pi/2,0)):
@@ -10,7 +10,7 @@ def diode1(temp,place=(2.0,0,2e-2), angle=(0,-scipy.pi/2,0)):
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
     Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
-    diodes = AXUV20.AXUV20(offset)
+    diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
     diodes.append(aperature)
@@ -26,7 +26,7 @@ def diode2(temp,place=(2.0,0,-2e-2), angle=(0,-scipy.pi/2,0)):
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
     Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
-    diodes = AXUV20.AXUV20(offset)
+    diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
     diodes.append(aperature)
@@ -42,7 +42,7 @@ def diode3(temp,place=(.8,0,1.8), angle=(0,-scipy.pi/2,0)):
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
     Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-1.25e-2),aperature,Vec=Vec)
-    diodes = AXUV20.AXUV20(offset)
+    diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
     diodes.append(aperature)
@@ -58,7 +58,7 @@ def diode4(temp,place=(1.5,0,-1.5), angle=(0,-scipy.pi/2,0)):
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
     Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.5e-2),aperature,Vec=Vec)
-    diodes = AXUV20.AXUV20(offset)
+    diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
     diodes.append(aperature)
@@ -90,7 +90,7 @@ def diode5(center,ap=(0,0,5e-2)):
 
     diodeorigin = geometry.Origin(pos.x(),center,Vec=Vec)
     rot = geometry.Origin((0,0,0),diodeorigin,angle=(0,0,0))#angle=(scipy.pi/2,0,scipy.pi/2))
-    diodes = AXUV20.AXUV20(rot)
+    diodes = AXUV.AXUV20(rot)
 
     area = [4e-3,3e-3]
     aperature = surface.Rect(ap,rot,area,angle=(0,0,0))
@@ -127,7 +127,7 @@ def diode6(center,ap=(0,0,5e-2)):
 
     diodeorigin = geometry.Origin(pos.x(),center,Vec=Vec)
     rot = geometry.Origin((0,0,0),diodeorigin,angle=(0,0,0))#(scipy.pi/2,0,scipy.pi/2))
-    diodes = AXUV20.AXUV20(rot)
+    diodes = AXUV.AXUV20(rot)
 
     area = [4e-3,3e-3]
     aperature = surface.Rect(ap,rot,area,angle=(0,0,0))
