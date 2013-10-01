@@ -3,8 +3,8 @@ import geometry,scipy,eqtools
 class Tokamak(geometry.Center):
 
     def __init__(self,equilib,flag=True):
-        self.eq = eqilib
-        super(Plasma,self).__init__(flag=flag)
+        self.eq = equilib
+        super(Tokamak,self).__init__(flag=flag)
 
     def genWireFrame(self,pts=250):
         theta = scipy.linspace(0,2*scipy.pi,pts)
@@ -16,7 +16,7 @@ class Tokamak(geometry.Center):
 
     def inVessel(self,ptin):
         Rlim,Zlim = self.eq.getMachineCrossSection()
-        return bool(self.eq.inPolygon(Rlim,Zlim,ptin[0],ptin[2]))
+        return bool(eqtools.inPolygon(Rlim,Zlim,ptin[0],ptin[2]))
             
     def getVessel(self,idx,pts=250):
         Rlim,Zlim = self.eq.getMachineCrossSection()

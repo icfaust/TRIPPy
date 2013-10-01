@@ -14,42 +14,51 @@ class Ray(geometry.Point):
         self._start = scipy.array(0)
         self._end = []
         super(Ray,self).__init__(pt1.x(), pt1._origin, err=err)
-        
+
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.getMachineCrossSection()[0].max()+self.vec.s[0]
-        sin = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
+        end = plasma.eq.getMachineCrossSection()[0].max()+self.vec.s
+        self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
+        sin = self.norm.s.size
+        self.redefine(plasma)
+
+        # set if in cylindrical coordinates
+        if self.vec.flag:
+            temp = self.x()
+        else:
+            temp = self.c().x()
         idx = 1
-        invesselflag = bool(plasma.inVessel(temp[0,0], temp[2,0]))
+        invesselflag = plasma.inVessel(temp[:,0])
         
         # if diode is not invessel, find when the view is in vessel
         if not invesselflag:
             flag = True
             while flag:
-                pntinves = bool(plasma.inVessel(temp[0,idx], temp[2,idx]))
+
+                pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
                 if pntinves or idx == sin:
                     flag = False
                 invesselflag = pntinves
-            self._start = sin[idx]
+            self._start = self.norm.s[idx]
 
         # find point at which the view escapes vessel
         if invesselflag:
             flag = True
             while flag:
             
-                pntinves = bool(plasma.inVessel(temp[0,idx], temp[2,idx]))
+                pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
                 if not pntinves or idx == sin:
                     flag = False
                     idx -= 1
                 invesselflag = pntinves
-            self._end = sin[idx]
+            self._end = self.norm.s[idx]
         self.norm.s = scipy.array([0, self._start, self._end])
-
+     
     def x(self):
         return (self.vec + self.norm).x()
 
@@ -90,45 +99,45 @@ class Beam(geometry.Origin):
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.getMachineCrossSection()[0].max()+self.vec.s[0]
+        end = plasma.eq.getMachineCrossSection()[0].max()+self.vec.s
         self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
         sin = self.norm.s.size
-        self._redefine(plasma)
+        self.redefine(plasma)
 
         # set if in cylindrical coordinates
-        if self.flag:
+        if self.vec.flag:
             temp = self.x()
         else:
             temp = self.c().x()
         idx = 1
-        invesselflag = plasma.inVessel(temp[0])
+        invesselflag = plasma.inVessel(temp[:,0])
         
         # if diode is not invessel, find when the view is in vessel
         if not invesselflag:
             flag = True
             while flag:
 
-                pntinves = plasma.inVessel(temp[idx])
+                pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
                 if pntinves or idx == sin:
                     flag = False
                 invesselflag = pntinves
-            self._start = sin[idx]
+            self._start = self.norm.s[idx]
 
         # find point at which the view escapes vessel
         if invesselflag:
             flag = True
             while flag:
             
-                pntinves = plasma.inVessel(temp[idx])
+                pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
                 if not pntinves or idx == sin:
                     flag = False
                     idx -= 1
                 invesselflag = pntinves
-            self._end = sin[idx]
+            self._end = self.norm.s[idx]
         self.norm.s = scipy.array([0, self._start, self._end])
 
     def x(self):
