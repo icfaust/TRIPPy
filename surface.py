@@ -1,19 +1,28 @@
 import geometry
 import scipy
 
-class Rect(geometry.Origin):
+class Surf(geometry.Origin):
 
     def __init__(self, x_hat, ref, area, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=[]):
 
-        super(Rect,self).__init__(x_hat, ref, Vec=Vec, err=err, angle=angle, flag=flag)
+        super(Surf,self).__init__(x_hat, ref, Vec=Vec, err=err, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])/2
         self.meri.s = scipy.atleast_1d(area[1])/2 
         # this utilizes an unused attribute of the geometry.Origin where the length
         # of the defining coordinate system unit vectors are used to define the
         # cross sectional area of the rectangle
 
-    def area(self):
-        return self.sagi.s*self.meri.s*4
+
+
+class Rect(Surf):
+
+    def area(self,sagi = [], meri = []):
+        if not sagi:
+            sagi = self.sagi.s
+        if not meri:
+            meri = self.meri.s
+
+        return sagi*meri*4
 
     def edge(self):
         """ return points at the edge of rectangle """        
@@ -36,11 +45,24 @@ class Rect(geometry.Origin):
         temp = self.edge()
         return scipy.array((temp[0][0].x(),temp[0][1].x(),temp[1][1].x(),temp[1][0].x(),temp[0][0].x())).T
 """
-class Parabola(Rect):
+class Parabola(Surf):
 
-class Cylinder(Rect):
+class Cylinder(Surf):
 
-class Sphere(rect):
-
-class Ellipse(Rect):
+class Sphere(Surf):
 """
+class Ellipse(Surf):
+
+    def area(self,sagi = [], meri = []):
+        if not sagi:
+            sagi = self.sagi.s
+        if not meri:
+            meri = self.meri.s
+
+        return scipy.pi*sagi*meri
+
+class Circle(Ellipse):
+
+    def area(radius):
+        super(Circle,self).area(radius,radius)
+

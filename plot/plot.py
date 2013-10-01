@@ -84,24 +84,34 @@ class Vessel(object):
         sgrid.point_data.scalars.name = 'scalars'
         mlab.pipeline.iso_surface(sgrid,**kwargs)               
 
-    def plot_sightlines(self,b,color=1,start=.001,end=4,points=100,**kwargs):
+    def plot_sightlines(self,b,color=1,start=.001,end=8,points=100,**kwargs):
         cent = len(b)*[0]
         s = scipy.linspace(start,end,points)
         
         
         for i in range(len(cent)):
+            flag=True
+            idx = 1
             cent[i] = geometry.pts2Vec(b[i],b[-1])
-            centerline = geometry.Vecx((-1,0,0))
-            cent[i].s = scipy.linspace(start,
-                                       scipy.clip(scipy.absolute(b[i][0]/(centerline * cent[i])),
-                                                  .001,
-                                                  4),
-                                       100)
-            print(b[i].vec,cent[i])
+            cent[i].s = scipy.linspace(start,end,points)
             cent[i] = b[i].vec + cent[i]
-            cent[i] = cent[i].c()
-            print(cent[i].s[-1])
-            mlab.plot3d(cent[i][0],cent[i][1],cent[i][2],scipy.ones(cent[i][0].shape),**kwargs)
+            if cent[i].flag:
+                cent[i] = cent[i].c()
+
+            Rlim,Zlim = self._eq.getMachineCrossSection()
+            temp = cent[i].c().x()
+            invesselflag = bool(eqtools.inPolygon(Rlim,Zlim,temp[0,0],temp[2,0]))
+
+            while flag:
+
+                pntinves = bool(eqtools.inPolygon(Rlim,Zlim,temp[0,idx],temp[2,idx]))
+                idx += 1
+
+                if (invesselflag and not pntinves) or idx == points:
+                    flag = False
+                invesselflag = pntinves
+                    
+            mlab.plot3d(cent[i][0][0:idx],cent[i][1][0:idx],cent[i][2][0:idx],scipy.ones((idx,)),**kwargs)
 
 
 

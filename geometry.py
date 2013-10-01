@@ -1,4 +1,4 @@
-import scipy
+import scipy,warnings
 
 one = scipy.array([1.0])
 
@@ -33,15 +33,16 @@ class Vecx(Hat):
     vector math defaults to first vector"""
     flag = False
     
-    def __init__(self, x_hat, s=[]):
+    def __init__(self, x_hat, s=None):
         #if r is specified, it is assumed that x_hat has unit length
         #xin is conditioned to ALWAYS be a float
         xin = scipy.array(x_hat,dtype=float)
 
-        if not scipy.any(s):
+        if s is None:
             s = scipy.sqrt(scipy.sum(xin**2,axis=0)) 
-            s = scipy.where(s == 0, 1., s)
-            xin /= s
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",category=RuntimeWarning)
+                xin = scipy.where(s == 0, xin, xin/s)
 
         super(Vecx,self).__init__(xin)
         self.s = scipy.squeeze(s)
@@ -67,12 +68,21 @@ class Vecx(Hat):
         x2 = self.x2() - Vec.x2()
         return Vecx((x0,x1,x2))
 
+    def __neg__(self):
+        """ uniary minus"""
+        self.unit = -self.unit
 
     def __mul__(self, Vec):
         """ Dot product """
-        if Vec.flag:
-            Vec = Vec.c()
-        return scipy.dot(self.unit.T,Vec.unit)
+        try:
+            if Vec.flag:
+                Vec = Vec.c()
+            return scipy.dot(self.unit.T,Vec.unit)
+        except AttributeError:
+            return Vecx(self.unit,s=Vec*self.s)
+
+    def __div__(self, val):
+        return Vecx(self.unit,s=self.s/val)
 
     def __getitem__(self,idx):
         return self.x()[idx]
@@ -113,9 +123,10 @@ class Vecr(Hat):
         
         if not scipy.any(s):
             s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-            s = scipy.where(s == 0, 1., s)
-            xin[0] /= s
-            xin[2] /= s
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore",category=RuntimeWarning)
+                xin[0] = scipy.where(s == 0, xin[0], xin[0]/s)
+                xin[2] = scipy.where(s == 0, xin[2], xin[2]/s)
 
         super(Vecr,self).__init__(xin)        
         self.s = scipy.squeeze(s)
@@ -137,12 +148,23 @@ class Vecr(Hat):
 
         sub = self.c() - Vec
         return sub.c() 
+
+    def __neg__(self):
+        """uniary minus"""
+        self.unit[1] = self.unit[1]%(2*scipy.pi) - scipy.pi #modulus to -pi to pi
+        self.unit[2] = -self.unit[2]
         
     def __mul__(self, Vec):
         """ Dot product """
-        if not Vec.flag:
-            Vec = Vec.c()
-        return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
+        try:
+            if not Vec.flag:
+                Vec = Vec.c()
+                return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
+        except AttributeError:
+            return Vecr(self.unit,s=Vec*self.s)
+
+    def __div__(self, val):
+        return Vecr(self.unit,s=self.s/val)
 
     def __getitem__(self,idx):
         return self.x()[idx]
@@ -371,13 +393,12 @@ class Origin(Point):
         # test Vec1 and Vec2 for ortho-normality
 
         if Vec:
-            if not Vec[0] * Vec[1]: 
-                # generate point based off of previous origin
-                super(Origin,self).__init__(x_hat, ref, err=err)
-                self.norm = Vec[1]
-                self.meri = Vec[0]
-                self.sagi = cross(self.norm,self.meri)
-                # generate rotation matrix based off coordinate system matching (this could get very interesting)
+            # generate point based off of previous origin
+            super(Origin,self).__init__(x_hat, ref, err=err)
+            self.norm = Vec[1]
+            self.meri = Vec[0]
+            self.sagi = cross(self.norm,self.meri)
+            # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
         elif len(angle):
             super(Origin,self).__init__(x_hat, ref, err=err)
