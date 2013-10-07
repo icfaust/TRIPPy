@@ -11,14 +11,14 @@ class Ray(geometry.Point):
         except AttributeError:
             self.norm = inp2
             
-        self._start = scipy.array(0)
-        self._end = []
+        self._start = None
+        self._end = None
         super(Ray,self).__init__(pt1.x(), pt1._origin, err=err)
 
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.eq.getMachineCrossSection()[0].max()+self.vec.s
+        end = plasma.eq.getMachineCrossSection()[0].max() + self.vec.s
         self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
         sin = self.norm.s.size
         self.redefine(plasma)
@@ -39,7 +39,7 @@ class Ray(geometry.Point):
                 pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
-                if pntinves or idx == sin:
+                if pntinves or idx + 1 == sin:
                     flag = False
                 invesselflag = pntinves
             self._start = self.norm.s[idx]
@@ -52,18 +52,22 @@ class Ray(geometry.Point):
                 pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
 
-                if not pntinves or idx == sin:
+                if not pntinves or idx + 1 == sin:
                     flag = False
-                    idx -= 1
                 invesselflag = pntinves
             self._end = self.norm.s[idx]
-        self.norm.s = scipy.array([0, self._start, self._end])
-     
+        
+        self.norm.s = scipy.array([0])
+        if self._start:
+            self.norm.s = scipy.append(self.norm.s, self._start)
+        if self._end:
+            self.norm.s = scipy.append(self.norm.s, self._end)
+
     def x(self):
         return (self.vec + self.norm).x()
 
     def c(self):
-        return (self.vec + self.norm).c().x()
+        return (self.vec + self.norm).c()
 
     def __getitem__(self,idx):
         return (self.vec + self.norm)[idx]
@@ -102,7 +106,8 @@ class Beam(geometry.Origin):
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.eq.getMachineCrossSection()[0].max()+self.vec.s
+        end = plasma.eq.getMachineCrossSection()[0].max() + self.vec.s
+        
         self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
         sin = self.norm.s.size
         self.redefine(plasma)
@@ -111,10 +116,10 @@ class Beam(geometry.Origin):
         if self.vec.flag:
             temp = self.x()
         else:
-            temp = self.c()
+            temp = self.c().x()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
-        
+
         # if diode is not invessel, find when the view is in vessel
         if not invesselflag:
             flag = True
@@ -122,10 +127,10 @@ class Beam(geometry.Origin):
 
                 pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
-
-                if pntinves or idx == sin:
+                if pntinves or idx + 1 == sin:
                     flag = False
                 invesselflag = pntinves
+
             self._start = self.norm.s[idx]
 
         # find point at which the view escapes vessel
@@ -135,19 +140,22 @@ class Beam(geometry.Origin):
             
                 pntinves = plasma.inVessel(temp[:,idx])
                 idx += 1
-
-                if not pntinves or idx == sin:
+                if not pntinves or idx + 1 == sin:
                     flag = False
-                    idx -= 1
                 invesselflag = pntinves
             self._end = self.norm.s[idx]
-        self.norm.s = scipy.array([0, self._start, self._end])
+        
+        self.norm.s = scipy.array([0])
+        if self._start:
+            self.norm.s = scipy.append(self.norm.s, self._start)
+        if self._end:
+            self.norm.s = scipy.append(self.norm.s, self._end)
 
     def x(self):
         return (self.vec + self.norm).x()
 
     def c(self):
-        return (self.vec + self.norm).c().x()
+        return (self.vec + self.norm).c()
 
     def __getitem__(self,idx):
         return (self.vec + self.norm)[idx]

@@ -70,7 +70,7 @@ class Vecx(Hat):
 
     def __neg__(self):
         """ uniary minus"""
-        self.unit = -self.unit
+        return Vecx(-self.unit,s=self.s)
 
     def __mul__(self, Vec):
         """ Dot product """
@@ -151,15 +151,17 @@ class Vecr(Hat):
 
     def __neg__(self):
         """uniary minus"""
-        self.unit[1] = self.unit[1]%(2*scipy.pi) - scipy.pi #modulus to -pi to pi
-        self.unit[2] = -self.unit[2]
+        u1 = self.unit[1]%(2*scipy.pi) - scipy.pi #modulus to -pi to pi
+        u2 = -self.unit[2]
+        return Vecr((self.unit[0],u1,u2),s=self.s)
+
         
     def __mul__(self, Vec):
         """ Dot product """
         try:
             if not Vec.flag:
                 Vec = Vec.c()
-                return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
+            return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
         except AttributeError:
             return Vecr(self.unit,s=Vec*self.s)
 
@@ -197,15 +199,14 @@ def angle(Vec1, Vec2):
     return scipy.arccos(Vec1 * Vec2) 
 
 def cross(Vec1, Vec2):
-    if Vec1.flag == Vec2.flag:
-        x_hat = scipy.dot(Vec1._cross(),Vec2.unit)      
-    else:
-        x_hat = scipy.dot(Vec1._cross(),Vec2.c().unit)
-            
+
+    if Vec2.flag:
+        Vec2 = Vec2.c()
+
     if Vec1.flag:
-        return Vecr(x_hat, s=Vec1.s*Vec2.s)
+        return Vecx(scipy.dot(Vec1.c()._cross(),Vec2.unit),s=Vec1.s*Vec2.s).c()
     else:
-        return Vecx(x_hat, s=Vec1.s*Vec2.s)
+        return Vecx(scipy.dot(Vec1._cross(),Vec2.unit),s=Vec1.s*Vec2.s)
 
 class Point(object):
     """ a point class can only be defined relative to an origin,
@@ -260,11 +261,10 @@ class Point(object):
             
             temp = org[idx].vec + org[idx].rot(temp)
             # vector addition is really tricky
-            
+
         for idx in range(len(orgnew)):
             # the arot allows for translating into the current coordinate system
             temp = orgnew[idx].arot(temp - orgnew[idx].vec)
-        
 
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
@@ -274,11 +274,12 @@ class Point(object):
         # arot forces the coordinate system to that of the new origin
         
         if len(shape) > 2:
-            self.vec.unit = temp.unit.reshape(shape)
-            self.vec.s = temp.s.reshape(sshape)
+            self.vec = temp
+            self.vec.unit = self.vec.unit.reshape(shape)
+            self.vec.s = self.vec.s.reshape(sshape)
         else:
-            self.vec.unit = temp.unit
-            self.vec.s = temp.s
+            self.vec = temp
+            
 
     def x(self):
         """ heavily redundant, but will smooth out variational differences
@@ -286,7 +287,7 @@ class Point(object):
         return self.vec.x()
     
     def c(self):
-        return self.vec.c().x()
+        return self.vec.c()
 
 
     def _genOriginsToParent(self):
@@ -374,7 +375,7 @@ class Grid(Point):
 
 class Origin(Point):
 
-    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=[]):
+    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=None):
         """ an Origin is defined by a point and two vectors.
         The two vectors being: 1st the normal to the surface,
         principal axis, z-vector or the (0,0,1) vector of the
@@ -399,8 +400,16 @@ class Origin(Point):
         if Vec:
             # generate point based off of previous origin
             super(Origin,self).__init__(x_hat, ref, err=err)
-            self.norm = Vec[1]
-            self.meri = Vec[0]
+            if Vec[1].flag:
+                self.norm = Vec[1].c()
+            else:
+                self.norm = Vec[1]
+
+            if Vec[0].flag:
+                self.meri = Vec[0].c()
+            else:
+                self.meri = Vec[0]
+
             self.sagi = cross(self.norm,self.meri)
             # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
@@ -437,20 +446,21 @@ class Origin(Point):
                      self.sagi.unit,
                      self.norm.unit]
         # set to coordinate system only if specified. otherwise inherit based on reference
-        if flag:
+        if not flag is None:
             self.flag = flag
         else:
             self.flag = ref.flag
 
 
-    def redefine(self,neworigin):
+    def redefine(self, neworigin):
         """ rotation matrix also needs to be redefined """
 
         lca = self._lca(neworigin)
-        super(Origin,self)._translate(lca,neworigin)
-        self._rotate(lca,neworigin)
+        super(Origin,self)._translate(lca, neworigin)
+        self._rotate(lca, neworigin)
 
-    def _rotate(self,lca,neworigin):
+
+    def _rotate(self, lca, neworigin):
         """ rotates the fundamental vectors of the space"""
         org = lca[0]
         orgnew = lca[1]
@@ -471,26 +481,30 @@ class Origin(Point):
 
         self.norm = temp1
         self.meri = temp2
-        self.sagi = cross(self.norm,self.meri)
+        self.sagi = cross(self.norm, self.meri)
         self.sagi.s = stemp
 
     def rot(self,vec):
-        if not self._origin.flag == vec.flag:
-            vec = vec.c()
-        
-        if self.flag:
-            return Vecr(scipy.dot(self._rot,vec.unit),s=vec.s)
-        else:
-            return Vecx(scipy.dot(self._rot,vec.unit),s=vec.s)
-                
-    def arot(self,vec):
-        if not self.flag == vec.flag:
+        if vec.flag:
             vec = vec.c()
 
+        temp = Vecx(scipy.dot(scipy.array(self._rot).T, vec.unit), s=vec.s)
+
         if self.flag:
-            return Vecr(scipy.dot(scipy.array(self._rot).T,vec.unit),s=vec.s)
+            return temp.c()
+        else:        
+            return temp                
+    
+    def arot(self,vec):
+        if vec.flag:
+            vec = vec.c()
+
+        temp = Vecx(scipy.dot(self._rot, vec.unit), s=vec.s)
+        
+        if self.flag:
+            return temp.c()
         else:
-            return Vecx(scipy.dot(scipy.array(self._rot).T,vec.unit),s=vec.s)
+            return temp
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
@@ -503,40 +517,26 @@ class Center(Origin):
 
     _depth = 0
     _origin = []
-    norm = Vecx((1.,0.,0.),s=1.)
-    sagi = Vecx((0.,1.,0.),s=1.)
-    meri = Vecx((0.,0.,1.),s=1.)
-    _rot = [norm.unit.T,
-            sagi.unit.T,
-            meri.unit.T]
+    meri = Vecx((1.,0.,0.), s=one)
+    sagi = Vecx((0.,1.,0.), s=one)
+    norm = Vecx((0.,0.,1.), s=one)
+    _rot = [meri.unit,
+            sagi.unit,
+            norm.unit]
 
     def __init__(self, flag=True):
                
         if flag:
-            self.vec = Vecr((0.,0.,0.),s=1.)
+            self.vec = Vecr((0.,0.,0.), s=one)
 
         else:
-            self.vec = Vecx((0.,0.,0.),s=1.)
+            self.vec = Vecx((0.,0.,0.), s=one)
  
         self.flag = flag
         # could not use super due to the problem in defining the value of 
         # the depth.  This is simple, though slightly redundant.
         # large number of empty values provide knowledge that there are no
         # lower references or rotations to this, the main coordinate system
-
-    def rot(self,vec):
-
-        if self.flag:
-            return Vecr(vec.unit,s=vec.s)
-        else:
-            return Vecx(vec.unit,s=vec.s)
-
-    def arot(self,vec):
-
-        if self.flag:
-            return Vecr(vec.unit,s=vec.s)
-        else:
-            return Vecx(vec.unit,s=vec.s)
 
 def pts2Vec(pt1,pt2):
     """

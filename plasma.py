@@ -20,9 +20,10 @@ class Tokamak(geometry.Center):
             
     def getVessel(self,idx,pts=250):
         Rlim,Zlim = self.eq.getMachineCrossSection()
-        theta = scipy.linspace(0,2*scipy.pi,pts)
-        return geometry.Point((Rlim[idx]*scipy.ones(theta.size),
-                               theta,
-                               Zlim[idx]*scipy.ones(theta,size)),self)
+        if idx < Rlim.size:
+            theta = scipy.linspace(0,2*scipy.pi,pts)
+            return geometry.Point((Rlim[idx]*scipy.ones(theta.size),
+                                   theta,
+                                   Zlim[idx]*scipy.ones(theta.size)),self)
 
     # to be added, inversion functions etc! I'm glad I spent the day on this.

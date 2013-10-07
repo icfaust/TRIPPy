@@ -1,6 +1,11 @@
 import geometry
 import scipy
 
+edges = scipy.array(([-1,-1],
+                     [-1, 1],
+                     [ 1, 1],
+                     [ 1,-1]))
+
 class Surf(geometry.Origin):
 
     def __init__(self, x_hat, ref, area, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=[]):
@@ -25,13 +30,19 @@ class Rect(Surf):
         return sagi*meri*4
 
     def edge(self):
-        """ return points at the edge of rectangle """        
-        p00 = geometry.Point((self.vec - self.meri - self.sagi).x(),self._origin)
-        p01 = geometry.Point((self.vec - self.meri + self.sagi).x(),self._origin)
-        p10 = geometry.Point((self.vec + self.meri - self.sagi).x(),self._origin)
-        p11 = geometry.Point((self.vec + self.meri + self.sagi).x(),self._origin)
+        """ return points at the edge of rectangle """
+        if self.sagi.flag:
+            temp1 = self.sagi.c().x()
+        else:
+            temp1 = self.sagi.x()
 
-        return ((p00,p01),(p10,p11))
+        if self.meri.flag:
+            temp2 = self.meri.c().x()
+        else:
+            temp2 = self.meri.x()
+
+        return geometry.Point((self.vec + geometry.Vecx(scipy.dot(edges,[temp1,temp2]).T)).x().reshape(3,2,2),self._origin)
+
 
     def grid(self):
         """ utilizes geometry.grid to change the rectangle into a generalized surface,
@@ -39,11 +50,6 @@ class Rect(Surf):
         normal, and sagittal planes."""
         print('test')
 
-    def plot(self):
-        """ return coordinates of the edge values such that the rectangle can be plotted
-        """
-        temp = self.edge()
-        return scipy.array((temp[0][0].x(),temp[0][1].x(),temp[1][1].x(),temp[1][0].x(),temp[0][0].x())).T
 """
 class Parabola(Surf):
 

@@ -1,153 +1,117 @@
 import mayavi.mlab as mlab,scipy,eqtools
 import tvtk.api
+from tvtk.util.ctf import PiecewiseFunction
 import sys
 sys.path.append('/home/ian/python/TRIPPy')
 import geometry
 
-class Vessel(object):
-    
-    
-    def __init__(self,plasma):
-        self._eq = plasma
-        
-        
-    def genWireFrame(self,pts=250):
-        theta = scipy.linspace(0,2*scipy.pi,pts)
-        theta = scipy.append(theta,0)
-        x = scipy.cos(theta)
-        y = scipy.sin(theta)
-        z = scipy.ones(theta.shape)
-        return x,y,z
+
+def plotLine(vector,pts=100,close = False, **kwargs):
+    try:
+        if vector.flag:
+            temp = vector.c().x()
+        else:
+            temp = vector.x()
+    except AttributeError:
+        if vector._origin.flag:
+            temp = vector.c().x()
+        else:
+            temp = vector.x()
+
+    temp = temp.reshape(3,temp.size/3)
+    if close:
+        temp = scipy.concatenate((temp,
+                                  scipy.atleast_2d(temp[:,0]).T),
+                                 axis = 1)
+
+    mlab.plot3d(temp[0],temp[1],temp[2],scipy.ones((temp.size/3,)),**kwargs)
       
-    def plot(self,pts=250,**kwargs):
-        c,s,zee = self.genWireFrame(pts=pts)
-        r,z = self._eq.getMachineCrossSection()
-        for idx in range(r.size):
-            mlab.plot3d(r[idx]*c,r[idx]*s,z[idx]*zee,zee,**kwargs)
 
-    def plotVol(self,pts=15,**kwargs):
-        fluxGrid = scipy.squeeze(self._eq.getFluxGrid()).T
+def plotVol(volume,pts=15,**kwargs):
+    fluxGrid = scipy.squeeze(volume.getFluxGrid()).T
 
-        datain = scipy.zeros((fluxGrid.shape[0],
-                              pts,
-                              fluxGrid.shape[1]))
+    datain = scipy.zeros((fluxGrid.shape[0],
+                          pts,
+                          fluxGrid.shape[1]))
 
-        for idx in range(pts):
-            datain[:,idx,:] = fluxGrid
+    for idx in range(pts):
+        datain[:,idx,:] = fluxGrid
 
+    temp = genCylGrid(plasma.eq.getRGrid(),
+                      scipy.linspace(0,2*scipy.pi,pts),
+                      plasma.eq.getZGrid())
+    verticies = genVertsFromPixel(temp)
 
+    hex_type = tvtk.api.tvtk.Hexahedron().cell_type
+    temp = temp.reshape((temp.size/3,3))
+    verticies = verticies.reshape((verticies.size/8,8))
 
-        temp = genCylGrid(self._eq.getRGrid(),
-                          scipy.linspace(0,2*scipy.pi,pts),
-                          self._eq.getZGrid())
-        verticies = genVertsFromPixel(temp)
-
-        hex_type = tvtk.api.tvtk.Hexahedron().cell_type
-        temp = temp.reshape((temp.size/3,3))
-        verticies = verticies.reshape((verticies.size/8,8))
-
-        sg = tvtk.api.tvtk.UnstructuredGrid(points=temp)
+    sg = tvtk.api.tvtk.UnstructuredGrid(points=temp)
     
-        sg.set_cells(hex_type,verticies)
-        sg.point_data.scalars = datain.flatten()
-        sg.point_data.scalars.name = 'temp'
+    sg.set_cells(hex_type,verticies)
+    sg.point_data.scalars = datain.flatten()
+    sg.point_data.scalars.name = 'temp'
     
-        psi_0 = self._eq.getFluxAxis()
-        psi_LCFS = self._eq.getFluxLCFS()
-        psi_min = fluxGrid.min()
-        psi_max = fluxGrid.max()
-        v1 = (psi_0 - psi_min)/(psi_max - psi_min)
-        v2 = (psi_LCFS - psi_min)/(psi_max - psi_min)
-        mlab.pipeline.volume(sg)
-
-    def plotIso(self,pts=15,**kwargs):
-        fluxGrid = scipy.squeeze(self._eq.getFluxGrid()).T
-
-        datain = scipy.zeros((fluxGrid.shape[1],
-                              pts,
-                              fluxGrid.shape[0]))
-
-        for idx in range(pts):
-            datain[:,idx,:] = fluxGrid
-            
-        temp = genCylGrid(self._eq.getRGrid(),
-                          scipy.linspace(0,2*scipy.pi,pts),
-                          self._eq.getZGrid())
-        temp = temp.reshape((temp.size/3,3))
-        
-        sgrid = tvtk.api.tvtk.StructuredGrid(dimensions=(self._eq.getRGrid().size,
-                                                         pts,
-                                                         self._eq.getZGrid().size))
-        
-        sgrid.points = temp
-        sgrid.point_data.scalars = datain.ravel()
-        sgrid.point_data.scalars.name = 'scalars'
-        mlab.pipeline.iso_surface(sgrid,**kwargs)               
-
-    def plot_sightlines(self,b,color=1,start=.001,end=8,points=100,**kwargs):
-        cent = len(b)*[0]
-        s = scipy.linspace(start,end,points)
-        
-        
-        for i in range(len(cent)):
-            flag=True
-            idx = 1
-            cent[i] = geometry.pts2Vec(b[i],b[-1])
-            cent[i].s = scipy.linspace(start,end,points)
-            cent[i] = b[i].vec + cent[i]
-            if cent[i].flag:
-                cent[i] = cent[i].c()
-
-            Rlim,Zlim = self._eq.getMachineCrossSection()
-            temp = cent[i].c().x()
-            invesselflag = bool(eqtools.inPolygon(Rlim,Zlim,temp[0,0],temp[2,0]))
-
-            while flag:
-
-                pntinves = bool(eqtools.inPolygon(Rlim,Zlim,temp[0,idx],temp[2,idx]))
-                idx += 1
-
-                if (invesselflag and not pntinves) or idx == points:
-                    flag = False
-                invesselflag = pntinves
-                    
-            mlab.plot3d(cent[i][0][0:idx],cent[i][1][0:idx],cent[i][2][0:idx],scipy.ones((idx,)),**kwargs)
+    psi_0 = plasma.eq.getFluxAxis()
+    psi_LCFS = plasma.eq.getFluxLCFS()
+    psi_min = fluxGrid.min()
+    psi_max = fluxGrid.max()
+    v1 = (psi_0 - psi_min)/(psi_max - psi_min)
+    v2 = (psi_LCFS - psi_min)/(psi_max - psi_min)
+    mlab.pipeline.volume(sg)
 
 
-
-
-
-
-def generate_annulus(r, theta, z):
-    """ Generate points for structured grid for a cylindrical annular
-    volume.  This method is useful for generating a unstructured
-    cylindrical mesh for VTK.
-    """
-    # Find the x values and y values for each plane.
-    x_plane = (scipy.cos(theta)*r[:,None]).ravel()
-    y_plane = (scipy.sin(theta)*r[:,None]).ravel()
+def plotSymIso(plasma,pts=15,**kwargs):
+    fluxGrid = scipy.squeeze(plasma.eq.getFluxGrid()).T
     
-    # Allocate an array for all the points.  We'll have len(x_plane)
-    # points on each plane, and we have a plane for each z value, so
-    # we need len(x_plane)*len(z) points.
-    points = scipy.empty([len(x_plane)*len(z),3])
+    datain = scipy.zeros((fluxGrid.shape[1],
+                          pts,
+                          fluxGrid.shape[0]))
     
-    # Loop through the points for each plane and fill them with the
-    # correct x,y,z values.
-    start = 0
-    for z_plane in z:
-        end = start+len(x_plane)
-        # slice out a plane of the output points and fill it
-        # with the x,y, and z values for this plane.  The x,y
-        # values are the same for every plane.  The z value
-        # is set to the current z
-        plane_points = points[start:end]
-        plane_points[:,0] = x_plane
-        plane_points[:,1] = y_plane
-        plane_points[:,2] = z_plane
-        start = end
+    for idx in range(pts):
+        datain[:,idx,:] = fluxGrid
         
-    return points
+    temp = genCylGrid(plasma.eq.getRGrid(),
+                      scipy.linspace(0,2*scipy.pi,pts),
+                      plasma.eq.getZGrid())
+    temp = temp.reshape((temp.size/3,3))
+        
+    sgrid = tvtk.api.tvtk.StructuredGrid(dimensions=(plasma.eq.getRGrid().size,
+                                                     pts,
+                                                     plasma.eq.getZGrid().size))
+        
+    sgrid.points = temp
+    sgrid.point_data.scalars = datain.ravel()
+    sgrid.point_data.scalars.name = 'scalars'
+    mlab.pipeline.iso_surface(sgrid,**kwargs)   
+
+
+def plotVol2(plasma,pts=None,lim=False,**kwargs):
+
+    if pts is None:
+        pts = plasma.eq.getRGrid().size
+
+    zmin = plasma.eq.getMachineCrossSection()[1].min()
+    zmax = plasma.eq.getMachineCrossSection()[1].max()
+    rmax = plasma.eq.getMachineCrossSection()[0].max()
+    x,y,z = scipy.mgrid[-rmax:rmax:(2*rmax)/pts,-rmax:rmax:(2*rmax)/pts,zmin:zmax:(zmax-zmin)/pts]
+    r = (x**2 + y**2)**.5
+    psi = plasma.eq.rz2psi(r,z)
+    if lim:
+        vmin = plasma.eq.getFluxAxis()*-1
+        vmax = plasma.eq.getFluxLCFS()
+        mmax = plasma.eq.getFluxGrid().max()
+        vmin = 0
+        vmax = (vmax - vmin)/(mmax-vmin)
+        print(vmax)
+        vol = mlab.pipeline.volume(mlab.pipeline.scalar_field(x,y,z,psi),vmin=0,vmax=vmax,**kwargs)
+#        otf = PiecewiseFunction()
+#        otf.add_point(-vmin, .8)
+#        vol._otf = otf
+#        vol._volume_property.set_scalar_opacity(otf)
+    else:
+        mlab.pipeline.volume(mlab.pipeline.scalar_field(x,y,z,psi),**kwargs)
+
         
 def genCartGrid(x0, x1, x2, edges = False):
     if edges:
@@ -162,6 +126,7 @@ def genCartGrid(x0, x1, x2, edges = False):
     pnts[:,:,:,1] = x1in
     pnts[:,:,:,2] = x2in
     return pnts
+
 
 def genCylGrid(x0,x1,x2,edges=False):
 
@@ -180,6 +145,7 @@ def genCylGrid(x0,x1,x2,edges=False):
         pnts[:,:,i,1] = yin
         pnts[:,:,i,2] = x2[i]*zee
     return pnts
+
 
 def genVertsFromPixel(grid):
     """reduces the lengths of the dimensions by 1"""
