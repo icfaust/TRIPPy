@@ -164,3 +164,8 @@ def genVertsFromPixel(grid):
     output[...,6] = idx + 1 + shape[0]*(jdx + 1 + shape[1]*(kdx + 1))
     output[...,7] = idx + shape[0]*(jdx + 1 + shape[1]*(kdx + 1))
     return output
+
+def plotTangency(plasma,beam):
+    """ nonlinear minimization of r^2 between the plasma center (in R,Z) versus defined beam s
+    vector """
+    print('not implemented yet')

@@ -151,6 +151,15 @@ class Beam(geometry.Origin):
         if self._end:
             self.norm.s = scipy.append(self.norm.s, self._end)
 
+
+    def tangent(self,point=None):
+        """ returns the point of closest approach of the beam as
+        defined by its position and normal vector """
+        if point is None:
+            point = self._origin
+
+        
+
     def x(self):
         return (self.vec + self.norm).x()
 
