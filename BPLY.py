@@ -35,13 +35,15 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
     beam.norm.s = scipy.linspace(lim[-2],lim[-1],points)
     psi = plasma.eq.rz2rmid(beam.x()[0],beam.x()[2],t)
     minpos = psi.argmin()
-    lim = scipy.insert(lim,-2,beam.norm.s[minpos])  # add minimum flux s for bound testing
+    lim = scipy.insert(lim,(-2,-2),(beam.norm.s[minpos],beam.norm.s[minpos]))  # add minimum flux s for bound testing
     outspline = scipy.interpolate.interp1d(psi[0:minpos],
                                            beam.norm.s[0:minpos],
-                                           kind = 'cubic')
+                                           kind = 'cubic',
+                                           bounds_error = False)
     inspline = scipy.interpolate.interp1d(psi[minpos:],
                                           beam.norm.s[minpos:],
-                                          kind = 'cubic')
+                                          kind = 'cubic',
+                                          bounds_error = False)
     beam.norm.s = lim
     return (outspline,inspline)
 
@@ -49,12 +51,39 @@ def calcArea(lower,upper):
     """ it is assumed that the inner (rmid < lcfs) point can not be calculated.
     thus, initially the value is set to the split (inner vs outer SOL position)
     this will increase the size of the polygon while not increasing the area"""
-    return None
-
-def effectiveHeight(beam,ray1,ray2,plasma,t):
-
-    outermid,innermid = getBeamFluxSpline(beam,plasma,t)
-    outertop,innertop = getBeamFluxSpline(ray1,plasma,t)
-    outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t)
-    return (calcArea(outerbot,outertop) + calcArea(innerbot,innertop))/(inlen.s+outlen.s)
     
+
+def Area(points):
+    val = 0 
+    for i in scipy.arange(len(points))-1:
+        val += points[i].x0()*points[i+1].x2() - points[i].x2()*points[i+1].x0()
+    return val/2
+
+def effectiveHeight(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
+
+    beam = beam.Beam(surf1,surf2)
+    ray1 = beam.Ray(surf1.edge().split(plasma)[0][0],surf1.edge().split(plasma)[1][1])
+    ray2 = beam.Ray(surf1.edge().split(plasma)[1][0],surf1.edge().split(plasma)[0][1])
+    beam.trace(plasma)
+    ray1.trace(plasma)
+    ray2.trace(plasma)
+
+    output = scipy.zeros(t.shape)
+
+    for i in xrange(t.size):
+        outermid,innermid = getBeamFluxSpline(beam,plasma,t[i])
+        outertop,innertop = getBeamFluxSpline(ray1,plasma,t[i])
+        outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t[i])
+        segments = 2*[0]
+        #beam and ray masking values are already written to their norm.s values
+        
+        # calculate positions s based off of rmid values.  only replace if not nan
+
+
+        #
+
+        inlen = geometry.pts2vec(
+        outlen = geometry.pts2vec(
+        output[i] = ((calcArea(segments[0]) + calcArea(segments[1])/(inlen.s+outlen.s)
+    
+    return output
