@@ -1,5 +1,6 @@
 import AXUV
-import surface, geometry, scipy, beam
+import surface, geometry, scipy
+import beam as beamin
 import scipy.interpolate
 
 def BPLY(temp, place=(1.87,0,.157277), angle=(0,.17453+scipy.pi/2,-1.62385+scipy.pi/2)):
@@ -44,7 +45,7 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
                                           beam.norm.s[minpos:],
                                           kind = 'cubic',
                                           bounds_error = False)
-    beam.norm.s = lim
+    beam.norm.s = lim.remove(0)
     return (outspline,inspline)
 
 def calcArea(lower,upper):
@@ -59,31 +60,53 @@ def Area(points):
         val += points[i].x0()*points[i+1].x2() - points[i].x2()*points[i+1].x0()
     return val/2
 
-def effectiveHeight(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
+def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
 
-    beam = beam.Beam(surf1,surf2)
-    ray1 = beam.Ray(surf1.edge().split(plasma)[0][0],surf1.edge().split(plasma)[1][1])
-    ray2 = beam.Ray(surf1.edge().split(plasma)[1][0],surf1.edge().split(plasma)[0][1])
+    beam = beamin.Beam(surf1,surf2)
+    ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf1.edge().split(plasma)[1][1])
+    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][0],surf1.edge().split(plasma)[0][1])
     beam.trace(plasma)
     ray1.trace(plasma)
     ray2.trace(plasma)
+    blim = beam.norm.s
+    r1lim = ray1.norm.s
+    r2lim = ray2.norm.s
 
-    output = scipy.zeros(t.shape)
+    output = t.size * [0]
 
     for i in xrange(t.size):
+        
+        beam.norm.s = blim
+        ray1.norm.s = r1lim
+        ray2.norm.s = r2lim
+
         outermid,innermid = getBeamFluxSpline(beam,plasma,t[i])
         outertop,innertop = getBeamFluxSpline(ray1,plasma,t[i])
         outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t[i])
-        segments = 2*[0]
+        segments = 3*[0]
         #beam and ray masking values are already written to their norm.s values
+        segment[0] = scipy.array([outertop((lim2,lim1)),innertop((lim1,lim2))]).flatten()
+        segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
+        segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
         
-        # calculate positions s based off of rmid values.  only replace if not nan
+        # compare and mask/replace
+        segment[0] = scipy.replace(segment[0],segment[0] == scipy.nan, ray1.norm.s[1:])
+        segment[1] = scipy.replace(segment[1],segment[1] == scipy.nan, beam.norm.s[1:])
+        segment[2] = scipy.replace(segment[2],segment[2] == scipy.nan, ray2.norm.s[1:])
+        
+        #turn into points
+        ray1.norm.s = segment[0]
+        beam.norm.s = segment[1]
+        ray2.norm.s = segment[2]
+
+        
+
+        output[i] = [ray1.split(plasma,obj=geometry.Point),beam.split(plasma,obj=geometry.Point),ray2.split(plasma,obj=geometry.Point)]
 
 
-        #
+    return output
 
-        inlen = geometry.pts2vec(
-        outlen = geometry.pts2vec(
-        output[i] = ((calcArea(segments[0]) + calcArea(segments[1])/(inlen.s+outlen.s)
-    
+
+def effectiveHeight(surf1, surf2, plasma, t, lim1=.88, lim2=.92):
+    output = (calcArea(segments[0]) + calcArea(segments[1]))/(inlen.s+outlen.s)               
     return output

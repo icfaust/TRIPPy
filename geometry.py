@@ -296,11 +296,7 @@ class Point(object):
         temp = self.x()
         if temp.size > 3:
             # initialize
-            output = 0
-            for i in temp.shape[1:]:
-                output = i*[output]
-            fill(output,obj,temp[0],temp[1],temp[2], *args, **kwargs)
-            return output
+            return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
 
     def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis
@@ -567,10 +563,11 @@ def pts2Vec(pt1,pt2):
     else:
         raise ValueError("points must exist in same coordinate system")
 
-def fill(outmat,funtype,x0,x1,x2,*args,**kwargs):
-    if not x0.shape[0] == x0.size:
+def fill(funtype,x0,x1,x2,*args,**kwargs):
+    try:
+        temp = []
         for i in xrange(x0.shape[0]):
-            fill(outmat[i],funtype,x0[i],x1[i],x2[i],*args,**kwargs)
-    else:
-        for i in xrange(x0.size):
-            outmat[i] = funtype((x0[i],x1[i],x2[i]),*args,**kwargs)
+            temp+= [fill(funtype,x0[i],x1[i],x2[i],*args,**kwargs)]
+        return temp
+    except IndexError:
+        return funtype((x0,x1,x2),*args,**kwargs)
