@@ -289,6 +289,18 @@ class Point(object):
     def c(self):
         return self.vec.c()
 
+    def split(self, *args, **kwargs):
+        obj = kwargs.pop('obj', None)
+        if obj is None:
+            obj = type(self)
+        temp = self.x()
+        if temp.size > 3:
+            # initialize
+            output = 0
+            for i in temp.shape[1:]:
+                output = i*[output]
+            fill(output,obj,temp[0],temp[1],temp[2], *args, **kwargs)
+            return output
 
     def _genOriginsToParent(self):
         """ generate a list of points which leads to the overall basis
@@ -506,6 +518,14 @@ class Origin(Point):
         else:
             return temp
 
+    def split(self,*args,**kwargs):
+        obj = kwargs.pop('obj',None)
+        if obj is None or obj == type(self):
+            obj = type(self)
+            super(Origin,self).split(self,self._origin, obj=obj, Vec=[self.meri,self.norm], flag=self.flag)
+        else:
+            super(Origin,self).split(self,*args,**kwargs)
+
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
     It is located at (0,0,0) and is inherently a cylindrical coordinate
@@ -547,3 +567,10 @@ def pts2Vec(pt1,pt2):
     else:
         raise ValueError("points must exist in same coordinate system")
 
+def fill(outmat,funtype,x0,x1,x2,*args,**kwargs):
+    if not x0.shape[0] == x0.size:
+        for i in xrange(x0.shape[0]):
+            fill(outmat[i],funtype,x0[i],x1[i],x2[i],*args,**kwargs)
+    else:
+        for i in xrange(x0.size):
+            outmat[i] = funtype((x0[i],x1[i],x2[i]),*args,**kwargs)

@@ -46,10 +46,10 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
     return (outspline,inspline)
 
 def calcArea(lower,upper):
-""" it is assumed that the inner (rmid < lcfs) point can not be calculated.
-thus, initially the value is set to the split (inner vs outer SOL position)
-this will increase the size of the polygon while not increasing the area"""
-    
+    """ it is assumed that the inner (rmid < lcfs) point can not be calculated.
+    thus, initially the value is set to the split (inner vs outer SOL position)
+    this will increase the size of the polygon while not increasing the area"""
+    return None
 
 def effectiveHeight(beam,ray1,ray2,plasma,t):
 
