@@ -2,6 +2,7 @@ import AXUV
 import surface, geometry, scipy
 import beam as beamin
 import scipy.interpolate
+import matplotlib.pyplot as plt
 
 def BPLY(temp, place=(1.87,0,.157277), angle=(0,.17453+scipy.pi/2,-1.62385+scipy.pi/2)):
 
@@ -33,28 +34,31 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
     that the change in flux is MONOTONIC"""
 
     lim = beam.norm.s
-    beam.norm.s = scipy.linspace(lim[-2],lim[-1],points)
+
+    beam.norm.s = scipy.linspace(0,lim[-1],points)
+    
     psi = plasma.eq.rz2rmid(beam.x()[0],beam.x()[2],t)
-    minpos = psi.argmin()
-    lim = scipy.insert(lim,(-2,-2),(beam.norm.s[minpos],beam.norm.s[minpos]))  # add minimum flux s for bound testing
-    outspline = scipy.interpolate.interp1d(psi[0:minpos],
-                                           beam.norm.s[0:minpos],
+
+    mask = scipy.isfinite(psi)
+    minpos = scipy.argmin(psi[mask])
+
+    lim = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
+    outspline = scipy.interpolate.interp1d(psi[mask][minpos::-1],
+                                           beam.norm.s[mask][minpos::-1],
                                            kind = 'cubic',
                                            bounds_error = False)
-    inspline = scipy.interpolate.interp1d(psi[minpos:],
-                                          beam.norm.s[minpos:],
+    inspline = scipy.interpolate.interp1d(psi[mask][minpos:],
+                                          beam.norm.s[mask][minpos:],
                                           kind = 'cubic',
                                           bounds_error = False)
-    beam.norm.s = lim.remove(0)
+
+    if lim[0] == 0:
+        lim = lim[1:]
+    
+    beam.norm.s = lim
     return (outspline,inspline)
 
-def calcArea(lower,upper):
-    """ it is assumed that the inner (rmid < lcfs) point can not be calculated.
-    thus, initially the value is set to the split (inner vs outer SOL position)
-    this will increase the size of the polygon while not increasing the area"""
-    
-
-def Area(points):
+def calcArea(points):
     val = 0 
     for i in scipy.arange(len(points))-1:
         val += points[i].x0()*points[i+1].x2() - points[i].x2()*points[i+1].x0()
@@ -63,8 +67,8 @@ def Area(points):
 def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
 
     beam = beamin.Beam(surf1,surf2)
-    ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf1.edge().split(plasma)[1][1])
-    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][0],surf1.edge().split(plasma)[0][1])
+    ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf2.edge().split(plasma)[1][1])
+    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][0],surf2.edge().split(plasma)[0][1])
     beam.trace(plasma)
     ray1.trace(plasma)
     ray2.trace(plasma)
@@ -83,23 +87,31 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
         outermid,innermid = getBeamFluxSpline(beam,plasma,t[i])
         outertop,innertop = getBeamFluxSpline(ray1,plasma,t[i])
         outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t[i])
-        segments = 3*[0]
+        segment = 3*[0]
         #beam and ray masking values are already written to their norm.s values
+
         segment[0] = scipy.array([outertop((lim2,lim1)),innertop((lim1,lim2))]).flatten()
         segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
         segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
-        
+
+        print(ray1.norm.s)
+        print(segment[0])
+        print('here')
+        print(scipy.place(segment[0],~scipy.isfinite(segment[0]), ray1.norm.s[::-1]))
+        print(segment[0])
         # compare and mask/replace
-        segment[0] = scipy.replace(segment[0],segment[0] == scipy.nan, ray1.norm.s[1:])
-        segment[1] = scipy.replace(segment[1],segment[1] == scipy.nan, beam.norm.s[1:])
-        segment[2] = scipy.replace(segment[2],segment[2] == scipy.nan, ray2.norm.s[1:])
-        
+        scipy.place(segment[0],~scipy.isfinite(segment[0]), ray1.norm.s[::-1])
+        scipy.place(segment[1],~scipy.isfinite(segment[1]), beam.norm.s[::-1])
+        scipy.place(segment[2],~scipy.isfinite(segment[2]), ray2.norm.s[::-1])
+        print(segment)
+
         #turn into points
         ray1.norm.s = segment[0]
         beam.norm.s = segment[1]
         ray2.norm.s = segment[2]
 
-        
+        print(ray1.split(plasma,obj=geometry.Point))
+        print(beam.split(obj=geometry.Point))
 
         output[i] = [ray1.split(plasma,obj=geometry.Point),beam.split(plasma,obj=geometry.Point),ray2.split(plasma,obj=geometry.Point)]
 

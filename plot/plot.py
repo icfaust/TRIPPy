@@ -6,7 +6,7 @@ sys.path.append('/home/ian/python/TRIPPy')
 import geometry
 
 
-def plotLine(vector,pts=100,close = False, **kwargs):
+def plotLine(vector,close = False, **kwargs):
     try:
         if vector.flag:
             temp = vector.c().x()
@@ -25,7 +25,35 @@ def plotLine(vector,pts=100,close = False, **kwargs):
                                  axis = 1)
 
     mlab.plot3d(temp[0],temp[1],temp[2],scipy.ones((temp.size/3,)),**kwargs)
+    
+def plotView(rays,pts=None, **kwargs):
       
+
+           
+    if not pts is None:
+        x = scipy.zeros((len(rays)+1,pts))
+        y = scipy.zeros(x.shape)
+        z = scipy.zeros(x.shape)
+        for i in rays:
+            i.norm.s = scipy.linspace(i.norm.s[0],i.norm.s[-1],pts)
+    else:
+        x = scipy.zeros((len(rays)+1,len(rays[0].norm.s)))
+        y = scipy.zeros(x.shape)
+        z = scipy.zeros(x.shape)
+    
+
+    for i in xrange(len(rays)):
+        if rays[i]._origin.flag:
+            rays[i] = rays[i].c()
+        x[i] = rays[i].x()[0]
+        y[i] = rays[i].x()[1]
+        z[i] = rays[i].x()[2]
+
+    x[-1] = rays[0].x()[0]
+    y[-1] = rays[0].x()[1]
+    z[-1] = rays[0].x()[2]
+
+    mlab.mesh(x,y,z,**kwargs)
 
 def plotVol(volume,pts=15,**kwargs):
     fluxGrid = scipy.squeeze(volume.getFluxGrid()).T
@@ -37,7 +65,7 @@ def plotVol(volume,pts=15,**kwargs):
     for idx in range(pts):
         datain[:,idx,:] = fluxGrid
 
-    temp = genCylGrid(plasma.eq.getRGrid(),
+        temp = genCylGrid(plasma.eq.getRGrid(),
                       scipy.linspace(0,2*scipy.pi,pts),
                       plasma.eq.getZGrid())
     verticies = genVertsFromPixel(temp)

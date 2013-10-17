@@ -291,9 +291,11 @@ class Point(object):
 
     def split(self, *args, **kwargs):
         obj = kwargs.pop('obj', None)
+        print('point init')
         if obj is None:
             obj = type(self)
         temp = self.x()
+        print(temp.size)
         if temp.size > 3:
             # initialize
             return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
@@ -514,13 +516,13 @@ class Origin(Point):
         else:
             return temp
 
-    def split(self,*args,**kwargs):
-        obj = kwargs.pop('obj',None)
-        if obj is None or obj == type(self):
-            obj = type(self)
-            super(Origin,self).split(self,self._origin, obj=obj, Vec=[self.meri,self.norm], flag=self.flag)
-        else:
-            super(Origin,self).split(self,*args,**kwargs)
+    def split(self, *args, **kwargs):
+        print(kwargs['obj'])
+        try:
+            obj = kwargs['obj']
+            return super(Origin,self).split(*args,**kwargs)
+        except TypeError:
+            return super(Origin,self).split(self,self._origin, obj=type(self), Vec=[self.meri,self.norm], flag=self.flag)
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.

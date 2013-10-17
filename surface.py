@@ -3,8 +3,8 @@ import scipy
 
 edges = scipy.array(([-1,-1],
                      [-1, 1],
-                     [ 1, 1],
-                     [ 1,-1]))
+                     [ 1,-1],
+                     [ 1, 1]))
 
 class Surf(geometry.Origin):
 
