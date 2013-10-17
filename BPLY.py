@@ -41,7 +41,9 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
 
     mask = scipy.isfinite(psi)
     minpos = scipy.argmin(psi[mask])
-
+    print(beam.x()[0][mask][minpos])
+    #plt.plot(beam.x()[0][mask][0:minpos],psi[mask][0:minpos],beam.x()[0][mask][minpos:],psi[mask][minpos:])
+    #plt.show()
     lim = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
     outspline = scipy.interpolate.interp1d(psi[mask][minpos::-1],
                                            beam.norm.s[mask][minpos::-1],
@@ -64,14 +66,14 @@ def calcArea(points):
         val += points[i].x0()*points[i+1].x2() - points[i].x2()*points[i+1].x0()
     return val/2
 
-def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
+def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
 
     beam = beamin.Beam(surf1,surf2)
     ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf2.edge().split(plasma)[1][1])
-    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][0],surf2.edge().split(plasma)[0][1])
-    beam.trace(plasma)
-    ray1.trace(plasma)
-    ray2.trace(plasma)
+    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][1],surf2.edge().split(plasma)[0][0])
+    beam.trace(plasma,step=1e-3)
+    ray1.trace(plasma,step=1e-3)
+    ray2.trace(plasma,step=1e-3)
     blim = beam.norm.s
     r1lim = ray1.norm.s
     r2lim = ray2.norm.s
@@ -94,20 +96,40 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
         segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
         segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
 
+        print(segment)
+        print(r1lim,blim,r2lim)
+        print(ray1.norm.s,beam.norm.s,ray2.norm.s)
         # compare and mask/replace
-        scipy.place(segment[0],~scipy.isfinite(segment[0]), ray1.norm.s[::-1])
-        scipy.place(segment[1],~scipy.isfinite(segment[1]), beam.norm.s[::-1])
-        scipy.place(segment[2],~scipy.isfinite(segment[2]), ray2.norm.s[::-1])
-        
+        scipy.copyto(segment[0],ray1.norm.s,where=~scipy.isfinite(segment[0]))
+        scipy.copyto(segment[1],beam.norm.s,where=~scipy.isfinite(segment[1]))
+        scipy.copyto(segment[2],ray2.norm.s,where=~scipy.isfinite(segment[2]))
+        print(segment)
         #turn into points
         ray1.norm.s = segment[0]
         beam.norm.s = segment[1]
         ray2.norm.s = segment[2]
 
-        output[i] = [ray1.split(plasma,obj=geometry.Point),beam.split(plasma,obj=geometry.Point),ray2.split(plasma,obj=geometry.Point)]
 
-
+        temp1 = ray1.split(plasma,obj=geometry.Point)
+        temp2 = beam.split(plasma,obj=geometry.Point)
+        temp3 = ray2.split(plasma,obj=geometry.Point)
+        
+        if fillorder:
+            output[i] = []
+            for j in ((0,1,1,1,0,0),(2,3,3,3,2,2)):
+                output[i] += [scipy.array([temp1[j[0]].x(),
+                                           temp1[j[1]].x(),
+                                           temp2[j[2]].x(),
+                                           temp3[j[3]].x(),
+                                           temp3[j[4]].x(),
+                                           temp2[j[5]].x()]).T]
+        else:
+            output[i] = [temp1,temp2,temp3]
     return output
+    
+
+
+
 
 
 def effectiveHeight(surf1, surf2, plasma, t, lim1=.88, lim2=.92):
