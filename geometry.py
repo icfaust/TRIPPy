@@ -291,11 +291,9 @@ class Point(object):
 
     def split(self, *args, **kwargs):
         obj = kwargs.pop('obj', None)
-        print('point init')
         if obj is None:
             obj = type(self)
         temp = self.x()
-        print(temp.size)
         if temp.size > 3:
             # initialize
             return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)

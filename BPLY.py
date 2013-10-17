@@ -94,24 +94,15 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92):
         segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
         segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
 
-        print(ray1.norm.s)
-        print(segment[0])
-        print('here')
-        print(scipy.place(segment[0],~scipy.isfinite(segment[0]), ray1.norm.s[::-1]))
-        print(segment[0])
         # compare and mask/replace
         scipy.place(segment[0],~scipy.isfinite(segment[0]), ray1.norm.s[::-1])
         scipy.place(segment[1],~scipy.isfinite(segment[1]), beam.norm.s[::-1])
         scipy.place(segment[2],~scipy.isfinite(segment[2]), ray2.norm.s[::-1])
-        print(segment)
-
+        
         #turn into points
         ray1.norm.s = segment[0]
         beam.norm.s = segment[1]
         ray2.norm.s = segment[2]
-
-        print(ray1.split(plasma,obj=geometry.Point))
-        print(beam.split(obj=geometry.Point))
 
         output[i] = [ray1.split(plasma,obj=geometry.Point),beam.split(plasma,obj=geometry.Point),ray2.split(plasma,obj=geometry.Point)]
 
