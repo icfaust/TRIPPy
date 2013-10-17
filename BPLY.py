@@ -41,7 +41,6 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
 
     mask = scipy.isfinite(psi)
     minpos = scipy.argmin(psi[mask])
-    print(beam.x()[0][mask][minpos])
     #plt.plot(beam.x()[0][mask][0:minpos],psi[mask][0:minpos],beam.x()[0][mask][minpos:],psi[mask][minpos:])
     #plt.show()
     lim = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
@@ -96,14 +95,11 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
         segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
         segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
 
-        print(segment)
-        print(r1lim,blim,r2lim)
-        print(ray1.norm.s,beam.norm.s,ray2.norm.s)
         # compare and mask/replace
         scipy.copyto(segment[0],ray1.norm.s,where=~scipy.isfinite(segment[0]))
         scipy.copyto(segment[1],beam.norm.s,where=~scipy.isfinite(segment[1]))
         scipy.copyto(segment[2],ray2.norm.s,where=~scipy.isfinite(segment[2]))
-        print(segment)
+ 
         #turn into points
         ray1.norm.s = segment[0]
         beam.norm.s = segment[1]

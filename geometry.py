@@ -515,7 +515,7 @@ class Origin(Point):
             return temp
 
     def split(self, *args, **kwargs):
-        print(kwargs['obj'])
+        
         try:
             obj = kwargs['obj']
             return super(Origin,self).split(*args,**kwargs)
