@@ -3,6 +3,7 @@ import surface, geometry, scipy
 import beam as beamin
 import scipy.interpolate
 import matplotlib.pyplot as plt
+import time
 
 def BPLY(temp, place=(1.87,0,.157277), angle=(0,.17453+scipy.pi/2,-1.62385+scipy.pi/2)):
 
@@ -29,7 +30,7 @@ def BPLYbeam(alcator):
         output[i].trace(alcator)
     return output
 
-def getBeamFluxSpline(beam,plasma,t,points = 250):
+def getBeamFluxSpline(beam,plasma,t,points = 1000):
     """ generates a spline off of the beampath.  Assumes
     that the change in flux is MONOTONIC"""
 
@@ -44,14 +45,12 @@ def getBeamFluxSpline(beam,plasma,t,points = 250):
     #plt.plot(beam.x()[0][mask][0:minpos],psi[mask][0:minpos],beam.x()[0][mask][minpos:],psi[mask][minpos:])
     #plt.show()
     lim = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
-    outspline = scipy.interpolate.interp1d(psi[mask][minpos::-1],
-                                           beam.norm.s[mask][minpos::-1],
-                                           kind = 'cubic',
-                                           bounds_error = False)
-    inspline = scipy.interpolate.interp1d(psi[mask][minpos:],
-                                          beam.norm.s[mask][minpos:],
-                                          kind = 'cubic',
-                                          bounds_error = False)
+    #outspline = scipy.interpolate.interp1d(psi[mask][minpos::-1],
+    #                                       beam.norm.s[mask][minpos::-1],
+    #                                       bounds_error = False)
+    #inspline = scipy.interpolate.interp1d(psi[mask][minpos:],
+    #                                      beam.norm.s[mask][minpos:],
+    #                                      bounds_error = False)
 
     if lim[0] == 0:
         lim = lim[1:]
@@ -66,10 +65,12 @@ def calcArea(points):
     return val/2
 
 def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
-
+    h=time.time()
     beam = beamin.Beam(surf1,surf2)
     ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf2.edge().split(plasma)[1][1])
     ray2 = beamin.Ray(surf1.edge().split(plasma)[1][1],surf2.edge().split(plasma)[0][0])
+    print(time.time()-h,'zero')
+    h= time.time()
     beam.trace(plasma,step=1e-3)
     ray1.trace(plasma,step=1e-3)
     ray2.trace(plasma,step=1e-3)
@@ -79,8 +80,11 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
 
     output = t.size * [0]
 
+
+
     for i in xrange(t.size):
-        
+        print(time.time()-h,'one')
+        h= time.time()
         beam.norm.s = blim
         ray1.norm.s = r1lim
         ray2.norm.s = r2lim
@@ -88,13 +92,18 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
         outermid,innermid = getBeamFluxSpline(beam,plasma,t[i])
         outertop,innertop = getBeamFluxSpline(ray1,plasma,t[i])
         outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t[i])
+
+
+        print(time.time()-h,'two')
+        h= time.time()
         segment = 3*[0]
         #beam and ray masking values are already written to their norm.s values
 
         segment[0] = scipy.array([outertop((lim2,lim1)),innertop((lim1,lim2))]).flatten()
         segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
         segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
-
+        print(time.time()-h,'three')
+        h= time.time()
         # compare and mask/replace
         scipy.copyto(segment[0],ray1.norm.s,where=~scipy.isfinite(segment[0]))
         scipy.copyto(segment[1],beam.norm.s,where=~scipy.isfinite(segment[1]))
@@ -104,11 +113,15 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
         ray1.norm.s = segment[0]
         beam.norm.s = segment[1]
         ray2.norm.s = segment[2]
-
+        print(time.time()-h,'four')
+        h= time.time()
 
         temp1 = ray1.split(plasma,obj=geometry.Point)
         temp2 = beam.split(plasma,obj=geometry.Point)
         temp3 = ray2.split(plasma,obj=geometry.Point)
+
+        print(time.time()-h,'five')
+        h= time.time()
         
         if fillorder:
             output[i] = []
