@@ -30,7 +30,7 @@ def BPLYbeam(alcator):
         output[i].trace(alcator)
     return output
 
-def getBeamFluxSpline(beam,plasma,t,points = 1000):
+def getBeamFluxSpline(beam,plasma,t,lim1,lim2,points = 1000):
     """ generates a spline off of the beampath.  Assumes
     that the change in flux is MONOTONIC"""
 
@@ -38,24 +38,27 @@ def getBeamFluxSpline(beam,plasma,t,points = 1000):
 
     beam.norm.s = scipy.linspace(0,lim[-1],points)
     
-    psi = plasma.eq.rz2rmid(beam.x()[0],beam.x()[2],t)
-
-    mask = scipy.isfinite(psi)
-    minpos = scipy.argmin(psi[mask])
+    psi = plasma.eq.rz2rmid(beam.x()[0],beam.x()[2],t) #evaluates all psi's at once
+    outspline = len(t)*[0]
+    inspline = len(t)*[0]
+    for i in xrange(t.size):
+        mask = scipy.isfinite(psi[i])
+        minpos = scipy.argmin(psi[i][mask])
+        sizer = psi[i][mask].size
     #plt.plot(beam.x()[0][mask][0:minpos],psi[mask][0:minpos],beam.x()[0][mask][minpos:],psi[mask][minpos:])
     #plt.show()
-    lim = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
-    #outspline = scipy.interpolate.interp1d(psi[mask][minpos::-1],
+        #limout = scipy.insert(lim,(2,2),(beam.norm.s[mask][minpos],beam.norm.s[mask][minpos]))  # add minimum flux s for bound testing
+        outspline[i] = beam.norm.s[mask][minpos::-1][scipy.clip(scipy.digitize((lim1,lim2),psi[i][mask][minpos::-1]),0,minpos)]
+        inspline[i] = beam.norm.s[mask][minpos:][scipy.clip(scipy.digitize((lim1,lim2),psi[i][mask][minpos:]),0,sizer-minpos-1)]
+    #outspline = scipy.interpolate.interp1d(psi[i][mask][minpos::-1],
     #                                       beam.norm.s[mask][minpos::-1],
-    #                                       bounds_error = False)
-    #inspline = scipy.interpolate.interp1d(psi[mask][minpos:],
+    #                                       bounds_error = False)((lim1,lim2))
+    #inspline = scipy.interpolate.interp1d(psi[i][mask][minpos:],
     #                                      beam.norm.s[mask][minpos:],
-    #                                      bounds_error = False)
+    #                                      bounds_error = False)((lim1,lim2))
 
-    if lim[0] == 0:
-        lim = lim[1:]
-    
-    beam.norm.s = lim
+
+
     return (outspline,inspline)
 
 def calcArea(points):
@@ -72,42 +75,34 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
     print(time.time()-h,'zero')
     h= time.time()
     beam.trace(plasma,step=1e-3)
-    ray1.trace(plasma,step=1e-3)
+    ray1.trace(plasma,step=1e-3) #there has to be a way to improve this /only calculate this once
     ray2.trace(plasma,step=1e-3)
     blim = beam.norm.s
     r1lim = ray1.norm.s
     r2lim = ray2.norm.s
 
+    
     output = t.size * [0]
+    outermid,innermid = getBeamFluxSpline(beam,plasma,t,lim1,lim2)
+    outertop,innertop = getBeamFluxSpline(ray1,plasma,t,lim1,lim2)
+    outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t,lim1,lim2)
 
-
-
+    #condition inputs for area calculations
     for i in xrange(t.size):
-        print(time.time()-h,'one')
-        h= time.time()
-        beam.norm.s = blim
-        ray1.norm.s = r1lim
-        ray2.norm.s = r2lim
-
-        outermid,innermid = getBeamFluxSpline(beam,plasma,t[i])
-        outertop,innertop = getBeamFluxSpline(ray1,plasma,t[i])
-        outerbot,innerbot = getBeamFluxSpline(ray2,plasma,t[i])
-
-
         print(time.time()-h,'two')
         h= time.time()
         segment = 3*[0]
         #beam and ray masking values are already written to their norm.s values
 
-        segment[0] = scipy.array([outertop((lim2,lim1)),innertop((lim1,lim2))]).flatten()
-        segment[1] = scipy.array([outermid((lim2,lim1)),innermid((lim1,lim2))]).flatten()
-        segment[2] = scipy.array([outerbot((lim2,lim1)),innerbot((lim1,lim2))]).flatten()
+        segment[0] = scipy.array([outertop[i][1],outertop[i][0],innertop[i][0],innertop[i][1]])
+        segment[1] = scipy.array([outermid[i][1],outermid[i][0],innermid[i][0],innermid[i][1]])
+        segment[2] = scipy.array([outerbot[i][1],outerbot[i][0],innerbot[i][0],innerbot[i][1]])
         print(time.time()-h,'three')
         h= time.time()
         # compare and mask/replace
-        scipy.copyto(segment[0],ray1.norm.s,where=~scipy.isfinite(segment[0]))
-        scipy.copyto(segment[1],beam.norm.s,where=~scipy.isfinite(segment[1]))
-        scipy.copyto(segment[2],ray2.norm.s,where=~scipy.isfinite(segment[2]))
+        #scipy.copyto(segment[0],ray1.norm.s,where=~scipy.isfinite(segment[0]))
+        #scipy.copyto(segment[1],beam.norm.s,where=~scipy.isfinite(segment[1]))
+       # scipy.copyto(segment[2],ray2.norm.s,where=~scipy.isfinite(segment[2]))
  
         #turn into points
         ray1.norm.s = segment[0]
