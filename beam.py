@@ -158,7 +158,25 @@ class Beam(geometry.Origin):
         if point is None:
             point = self._origin
 
-        
+
+    def intercept(self,surface):
+        if self._origin is surface._origin:
+            try:
+                params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
+                                                          surface.meri.unit,
+                                                          surface.sagi.unit])),
+                                   (self.vec-surface.vec).x())
+
+                if params[1] < surface.meri.s and params[2] < surface.sagi.s and surface.edgetest(params[1],params[2]):
+                    return params[0]
+                else:
+                    return []
+
+            except ValueError:
+                print('no?')
+                return []
+        else:
+            return []
 
     def x(self):
         return (self.vec + self.norm).x()
