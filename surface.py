@@ -65,10 +65,10 @@ class Sphere(Surf):
 """
 class Ellipse(Surf):
 
-    def area(self,sagi = [], meri = []):
-        if not sagi:
+    def area(self,sagi = None, meri = None):
+        if not sagi is None:
             sagi = self.sagi.s
-        if not meri:
+        if not meri is None:
             meri = self.meri.s
 
         return scipy.pi*sagi*meri
@@ -82,8 +82,13 @@ class Ellipse(Surf):
 
 class Circle(Ellipse):
 
-    def area(radius):
+    def area(self,radius = None):
+        if not radius is None:
+            radius = self.sagi
+
         super(Circle,self).area(radius,radius)
 
-    def edgetest(self,radius):
+    def edgetest(self,radius = None):
+        if not radius is None:
+            radius = self.sagi
         super(Circle,self).edgetest(radius,0)

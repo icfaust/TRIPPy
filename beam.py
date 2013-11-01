@@ -69,6 +69,26 @@ class Ray(geometry.Point):
     def c(self):
         return (self.vec + self.norm).c()
 
+    def intercept(self,surface):
+        if self._origin is surface._origin:
+            try:
+                params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
+                                                          surface.meri.unit,
+                                                          surface.sagi.unit])),
+                                   (self.vec-surface.vec).x())
+
+                if surface.edgetest(params[1],params[2]):
+                    return params[0]
+                else:
+                    return []
+
+            except ValueError:
+                print('no?')
+                return []
+        else:
+            return []
+
+
     def __getitem__(self,idx):
         return (self.vec + self.norm)[idx]
 
