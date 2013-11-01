@@ -86,4 +86,4 @@ class Circle(Ellipse):
         super(Circle,self).area(radius,radius)
 
     def edgetest(self,radius):
-        super(Circle,self).edgetest(radius,radius)
+        super(Circle,self).edgetest(radius,0)
