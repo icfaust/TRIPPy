@@ -167,7 +167,7 @@ class Beam(geometry.Origin):
                                                           surface.sagi.unit])),
                                    (self.vec-surface.vec).x())
 
-                if params[1] < surface.meri.s and params[2] < surface.sagi.s and surface.edgetest(params[1],params[2]):
+                if surface.edgetest(params[1],params[2]):
                     return params[0]
                 else:
                     return []
