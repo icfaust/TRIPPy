@@ -43,6 +43,12 @@ class Rect(Surf):
 
         return geometry.Point((self.vec + geometry.Vecx(scipy.dot(edges,[temp1,temp2]).T)).x().reshape(3,2,2),self._origin)
 
+    def edgetest(self,meri,sagi):
+
+        if abs(meri) =< self.meri and abs(sagi) =< self.sagi:
+            return True
+        else:
+            return False
 
     def grid(self):
         """ utilizes geometry.grid to change the rectangle into a generalized surface,
@@ -59,16 +65,30 @@ class Sphere(Surf):
 """
 class Ellipse(Surf):
 
-    def area(self,sagi = [], meri = []):
-        if not sagi:
+    def area(self,sagi = None, meri = None):
+        if not sagi is None:
             sagi = self.sagi.s
-        if not meri:
+        if not meri is None:
             meri = self.meri.s
 
         return scipy.pi*sagi*meri
 
+    def edgetest(self,meri,sagi):
+        if (meri/self.meri)**2+(sagi/self.sagi)**2 <= 1:
+            return True
+        else:
+            return False
+
+
 class Circle(Ellipse):
 
-    def area(radius):
+    def area(self,radius = None):
+        if not radius is None:
+            radius = self.sagi
+
         super(Circle,self).area(radius,radius)
 
+    def edgetest(self,radius = None):
+        if not radius is None:
+            radius = self.sagi
+        super(Circle,self).edgetest(radius,0)
