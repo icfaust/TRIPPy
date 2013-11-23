@@ -24,10 +24,7 @@ class Ray(geometry.Point):
         self.redefine(plasma)
 
         # set if in cylindrical coordinates
-        if self.vec.flag:
-            temp = self.x()
-        else:
-            temp = self.c()
+        temp = self.r()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
         
@@ -64,10 +61,16 @@ class Ray(geometry.Point):
             self.norm.s = scipy.append(self.norm.s, self._end)
 
     def x(self):
-        return (self.vec + self.norm).x()
+        return (self + self.norm).x()
 
     def c(self):
-        return (self.vec + self.norm).c()
+        return (self + self.norm).c()
+
+    def r(self):
+        return (self + self.norm).r()
+
+    def __getitem__(self,idx):
+        return (self + self.norm)[idx]
 
     def intercept(self,surface):
         if self._origin is surface._origin:
@@ -87,10 +90,6 @@ class Ray(geometry.Point):
                 return []
         else:
             return []
-
-
-    def __getitem__(self,idx):
-        return (self.vec + self.norm)[idx]
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
@@ -133,10 +132,7 @@ class Beam(geometry.Origin):
         self.redefine(plasma)
 
         # set if in cylindrical coordinates
-        if self.vec.flag:
-            temp = self.x()
-        else:
-            temp = self.c().x()
+        temp = self.r()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
 
@@ -185,7 +181,7 @@ class Beam(geometry.Origin):
                 params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
                                                           surface.meri.unit,
                                                           surface.sagi.unit])),
-                                   (self.vec-surface.vec).x())
+                                   (self-surface.vec).x())
 
                 if surface.edgetest(params[1],params[2]):
                     return params[0]
@@ -199,10 +195,13 @@ class Beam(geometry.Origin):
             return []
 
     def x(self):
-        return (self.vec + self.norm).x()
+        return (self + self.norm).x()
 
     def c(self):
-        return (self.vec + self.norm).c()
+        return (self + self.norm).c()
 
+    def r(self):
+        return (self + self.norm).r()
+    
     def __getitem__(self,idx):
-        return (self.vec + self.norm)[idx]
+        return (self + self.norm)[idx]
