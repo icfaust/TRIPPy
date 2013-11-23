@@ -116,7 +116,7 @@ class Vec(object):
                             self.s*self.unit[2]])
 
     def point(self,ref,err=[]):
-        return Point(self.x(), ref, err=err)
+        return Point(self, ref, err=err)
                    
 
 def angle(Vec1, Vec2):
@@ -138,7 +138,9 @@ class Point(Vec):
     def __init__(self, x_hat, ref, err=[]):        
         
 
-        if ref.flag:
+        if type(x_hat) is Vec:
+            temp = x_hat
+        elif ref.flag:
             temp = Vecr(x_hat)
         else:
             temp = Vecx(x_hat)
@@ -316,10 +318,10 @@ class Origin(Point):
         axis.  This might change based on what is most
         physically intuitive."""
         # test Vec1 and Vec2 for ortho-normality
-
+        super(Origin,self).__init__(x_hat, ref, err=err)
         if Vec:
             # generate point based off of previous origin
-            super(Origin,self).__init__(x_hat, ref, err=err)
+
             self.norm = Vec[1]
             self.meri = Vec[0]
 
@@ -327,7 +329,7 @@ class Origin(Point):
             # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
         elif len(angle):
-            super(Origin,self).__init__(x_hat, ref, err=err)
+
             a = scipy.array(angle[0])
             b = scipy.array(angle[1])
             g = scipy.array(angle[2])
