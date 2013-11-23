@@ -321,9 +321,9 @@ class Origin(Point):
             # generate point based off of previous origin
             super(Origin,self).__init__(x_hat, ref, err=err)
             self.norm = Vec[1]
-            self.sagi = Vec[0]
+            self.meri = Vec[0]
 
-            self.meri = cross(self.norm,self.meri)
+            self.sagi = cross(self.meri,self.norm)
             # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
         elif len(angle):

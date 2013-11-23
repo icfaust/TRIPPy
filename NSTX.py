@@ -8,7 +8,7 @@ def diode1(temp,place=(2.0,0,2e-2), angle=(0,scipy.pi/2,0)):
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+    Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
@@ -24,7 +24,7 @@ def diode2(temp,place=(2.0,0,-2e-2), angle=(0,scipy.pi/2,0)):
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+    Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
@@ -40,7 +40,7 @@ def diode3(temp,place=(.8,0,1.8), angle=(0,scipy.pi/2,0)):
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+    Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-1.25e-2),aperature,Vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
@@ -56,7 +56,7 @@ def diode4(temp,place=(1.5,0,-1.5), angle=(0,scipy.pi/2,0)):
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
     aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+    Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
     offset = geometry.Origin((0,0.,-2.5e-2),aperature,Vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
