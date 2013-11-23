@@ -2,24 +2,99 @@ import scipy,warnings
 
 one = scipy.array([1.0])
 
-class Hat(object):
+def unit(x_hat):
     """ explicitly just unit vector without error
     which is then defined for the various coordinate
     systems based on classes based on this, a Hat class
     never interacts with another Hat class, only one 
     with a defined coordinate system"""
-    def __init__(self, x_hat):
+    temp = scipy.squeeze(x_hat)
+    print(temp.shape)
+    if len(temp) != 3 or temp.max() > 1 or temp.min() < -1:
+        raise ValueError
+    return temp
 
-        self.unit = scipy.squeeze(x_hat)
-        if self.unit.shape[0] != 3:
-            raise ValueError
-            #self.unit = self.unit.reshape(3,self.unit.size/3)
-            # the atleast_2d and the shape test allows for some
-            # of the errors associated of the matrix math as
-            # 1d arrays are (1,3), when they NEED to be 3,1
-            # I chose not to use 'matrix' so that higher dimensional
-            # shapes can be properly stored in an intuitive manner
+
+def Vecx(x_hat, s=None):
+    """ explicitly a cartesian unit vector, but can be set as 
+    a cylindrical unit vector by setting the flag to true, all
+    vector math defaults to first vector"""
+    flag = False
+    xin = scipy.array(x_hat, dtype=float)
+
+    if s is None:
+        s = scipy.sqrt(scipy.sum(xin**2, axis=0)) 
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            xin = scipy.where(s == 0, xin, xin/s)
+
+    return Vec(xin, s, flag=flag)
+
+
+def Vecr(x_hat, s=None):
+    """ explicitly a cylindrical unit vector, but can be set as 
+    a cartesian unit vector by using the c call, all
+    vector math defaults to first vector"""
+
+    flag = True    
+    xin = scipy.array(x_hat, dtype=float)
+        
+    if s is None:
+        s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",category=RuntimeWarning)
+            xin[0] = scipy.where(s == 0, xin[0], xin[0]/s)
+            xin[2] = scipy.where(s == 0, xin[2], xin[2]/s)
             
+    return Vec((xin[0]*scipy.cos(xin[1]),
+                xin[0]*scipy.sin(xin[1]),
+                xin[2])
+               ,s, flag=flag)       
+
+
+class Vec(object):
+    
+    def __init__(self, x_hat, s, flag=False):
+        """ inherently a cartesian set of coordinates given by unit,
+        and a length set by s. The flag tells if it is a cartesian
+        or cylindrial vector"""
+
+        self.unit = unit(x_hat)
+        self.s = scipy.squeeze(s)
+        self.flag = flag
+
+    def __add__(self, Vec):
+        """ Vector addition, if to vectors go a walkin'
+        the first does the talking (and sets coordinate system"""
+        new = Vecx(self.x() + Vec.x())
+        new.flag = self.flag
+        return new
+
+    def __sub__(self, Vec):
+        """ Vector subtraction """
+        new = Vecx(self.x() + Vec.x())
+        new.flag = self.flag
+        return new
+
+    def __neg__(self):
+        """ uniary minus"""
+        return Vec(-self.unit,self.s)
+
+    def __mul__(self, Vec):
+        """ Dot product """
+        try:
+            return scipy.dot(self.unit.T,Vec.unit)
+        except AttributeError:
+            return Vec(self.unit,Vec*self.s)
+
+    def __div__(self, val):
+        return Vec(self.unit,self.s/val)
+
+    def __getitem__(self,idx):
+        if flag:
+            return self.r()[idx]
+        else:
+            return self.x()[idx]
 
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
@@ -27,207 +102,53 @@ class Hat(object):
                              (self.unit[2],0,-self.unit[0]),
                              (-self.unit[1],self.unit[0],0)))
 
-class Vecx(Hat):
-    """ explicitly a cartesian unit vector, but can be set as 
-    a cylindrical unit vector by setting the flag to true, all
-    vector math defaults to first vector"""
-    flag = False
+    def c():
+        return Vec(self.unit,self.s, flag = (not self.flag))
+
+    def x():
+        """ cartesian full vector"""
+        return self.s*self.unit
     
-    def __init__(self, x_hat, s=None):
-        #if r is specified, it is assumed that x_hat has unit length
-        #xin is conditioned to ALWAYS be a float
-        xin = scipy.array(x_hat,dtype=float)
-
-        if s is None:
-            s = scipy.sqrt(scipy.sum(xin**2,axis=0)) 
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore",category=RuntimeWarning)
-                xin = scipy.where(s == 0, xin, xin/s)
-
-        super(Vecx,self).__init__(xin)
-        self.s = scipy.squeeze(s)
-
-    def __add__(self, Vec):
-        """ Vector addition, convert to cartesian
-        add, and possibly convert back"""
-        if Vec.flag:
-            Vec = Vec.c()
-        
-        # this is done to avoid some of the array shaping problems I was having
-        x0 = self.x0() + Vec.x0()
-        x1 = self.x1() + Vec.x1()
-        x2 = self.x2() + Vec.x2()
-        return Vecx((x0,x1,x2))
-
-    def __sub__(self, Vec):
-        """ Vector subtraction """
-        if Vec.flag:
-            Vec = Vec.c()
-        x0 = self.x0() - Vec.x0()
-        x1 = self.x1() - Vec.x1()
-        x2 = self.x2() - Vec.x2()
-        return Vecx((x0,x1,x2))
-
-    def __neg__(self):
-        """ uniary minus"""
-        return Vecx(-self.unit,s=self.s)
-
-    def __mul__(self, Vec):
-        """ Dot product """
-        try:
-            if Vec.flag:
-                Vec = Vec.c()
-            return scipy.dot(self.unit.T,Vec.unit)
-        except AttributeError:
-            return Vecx(self.unit,s=Vec*self.s)
-
-    def __div__(self, val):
-        return Vecx(self.unit,s=self.s/val)
-
-    def __getitem__(self,idx):
-        return self.x()[idx]
-
-    def c(self):
-        """ convert to cylindrical coordinates """
-        return Vecr((scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
-                     scipy.arctan2(self.unit[1],self.unit[0]),
-                     self.unit[2]),
-                    s=self.s)
-    
-    def x0(self):
-        return self.s*self.unit[0]
-    
-    def x1(self):
-        return self.s*self.unit[1]
-    
-    def x2(self):
-        return self.s*self.unit[2]
-    
-    def x(self):
-        return scipy.squeeze([self.x0(),
-                              self.x1(),
-                              self.x2()])
+    def r():
+        """ cylindrical full vector"""
+        return scipy.array([self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
+                            scipy.arctan2(self.unit[1],self.unit[0]),
+                            self.s*self.unit[2]])
 
     def point(self,ref,err=[]):
         return Point(self.x(), ref, err=err)
                    
-class Vecr(Hat):
-    """ explicitly a cylindrical unit vector, but can be set as 
-    a cartesian unit vector by using the c call, all
-    vector math defaults to first vector"""
-    flag = True
-
-    def __init__(self, x_hat, s=[]):
-
-        xin = scipy.array(x_hat, dtype=float)
-        
-        if not scipy.any(s):
-            s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore",category=RuntimeWarning)
-                xin[0] = scipy.where(s == 0, xin[0], xin[0]/s)
-                xin[2] = scipy.where(s == 0, xin[2], xin[2]/s)
-
-        super(Vecr,self).__init__(xin)        
-        self.s = scipy.squeeze(s)
-
-    def __add__(self, Vec):
-        """ Vector addition, convert to cartesian
-        add, and possibly convert back"""
-        if Vec.flag:
-            Vec = Vec.c()
-
-        # inherently these waste a lot of memory, as 3 copies are made
-        add = self.c() + Vec # computed in cartesian coordinates
-        return add.c()
-
-    def __sub__(self, Vec):
-        """ Vector subtraction """
-        if Vec.flag:
-            Vec = Vec.c()
-
-        sub = self.c() - Vec
-        return sub.c() 
-
-    def __neg__(self):
-        """uniary minus"""
-        u1 = self.unit[1]%(2*scipy.pi) - scipy.pi #modulus to -pi to pi
-        u2 = -self.unit[2]
-        return Vecr((self.unit[0],u1,u2),s=self.s)
-
-        
-    def __mul__(self, Vec):
-        """ Dot product """
-        try:
-            if not Vec.flag:
-                Vec = Vec.c()
-            return self.unit[0]*Vec.unit[0]*scipy.cos(self.unit[1]-Vec.unit[1]) + self.unit[2]*Vec.unit[2]
-        except AttributeError:
-            return Vecr(self.unit,s=Vec*self.s)
-
-    def __div__(self, val):
-        return Vecr(self.unit,s=self.s/val)
-
-    def __getitem__(self,idx):
-        return self.x()[idx]
-
-    def c(self):
-        """ convert to cartesian coord """
-        return Vecx((self.unit[0]*scipy.cos(self.unit[1]),
-                     self.unit[0]*scipy.sin(self.unit[1]),
-                     self.unit[2]),
-                    s=self.s)
-    
-    def x0(self):
-        return self.s*self.unit[0]
-    
-    def x1(self):
-        return scipy.ones(self.s.shape)*self.unit[1]
-    
-    def x2(self):
-        return self.s*self.unit[2]
-    
-    def x(self):
-        return scipy.array([self.x0(),
-                            self.x1(),
-                            self.x2()])
-        
-    def point(self,ref,err=[]):
-        return Point(self.x(),ref,flag=True)
 
 def angle(Vec1, Vec2):
+    """angle between two vectors"""
     return scipy.arccos(Vec1 * Vec2) 
 
 def cross(Vec1, Vec2):
+    """cross product"""
+    new = Vec(scipy.dot(Vec1._cross(),Vec2.unit),Vec1.s*Vec2.s)
+    new.flag = Vec1.flag
+    return new
 
-    if Vec2.flag:
-        Vec2 = Vec2.c()
-
-    if Vec1.flag:
-        return Vecx(scipy.dot(Vec1.c()._cross(),Vec2.unit),s=Vec1.s*Vec2.s).c()
-    else:
-        return Vecx(scipy.dot(Vec1._cross(),Vec2.unit),s=Vec1.s*Vec2.s)
-
-class Point(object):
+class Point(Vec):
     """ a point class can only be defined relative to an origin,
     there will be an additional point class which will be known
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
     such a way for easier calculation."""
-    def __init__(self, x_hat, ref, err=[]):
+    def __init__(self, x_hat, ref, err=[]):        
         
+
         if ref.flag:
-            self.vec = Vecr(x_hat)
+            temp = Vecr(x_hat)
         else:
-            self.vec = Vecx(x_hat)
+            temp = Vecx(x_hat)
+
         if len(err):
             self.err = err
             
         self._origin = ref
         self._depth = ref._depth + 1 # basis origin is depth = 0
-
-    def __getitem__(self,idx):
-        return self.vec[idx]
+        super(Point,self).__init__(temp.unit, temp.s, flag=ref.flag)
          
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
@@ -245,12 +166,12 @@ class Point(object):
         orgnew = lca[1]
         shape = self.vec.unit.shape
         if len(shape) > 2:    
-            sshape = self.vec.s.shape
-            self.vec.s = self.vec.s.flatten()
-            self.vec.unit = self.vec.unit.reshape(3,self.vec.unit.size/3)
+            sshape = self.s.shape
+            self.vec.s = self.s.flatten()
+            self.unit = self.unit.reshape(3,self.unit.size/3)
 
         # loop over the first 'path' of the current point
-        temp = self.vec
+        temp = Vec(self.unit,self.s,flag=self.flag)
 
         for idx in range(len(org)-1,-1,-1):
             # a origin's point is defined by its recursive coordinate system
@@ -259,12 +180,12 @@ class Point(object):
             # thus this requires using the rotation matrix of the current origin
             # system to define it in the 'parent' coordinate system
             
-            temp = org[idx].vec + org[idx].rot(temp)
+            temp = org[idx] + org[idx].rot(temp)
             # vector addition is really tricky
 
         for idx in range(len(orgnew)):
             # the arot allows for translating into the current coordinate system
-            temp = orgnew[idx].arot(temp - orgnew[idx].vec)
+            temp = orgnew[idx].arot(temp - orgnew[idx])
 
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
@@ -274,20 +195,11 @@ class Point(object):
         # arot forces the coordinate system to that of the new origin
         
         if len(shape) > 2:
-            self.vec = temp
-            self.vec.unit = self.vec.unit.reshape(shape)
-            self.vec.s = self.vec.s.reshape(sshape)
+            self.unit = temp.unit.reshape(shape)
+            self.s = temp.s.reshape(sshape)
         else:
-            self.vec = temp
-            
-
-    def x(self):
-        """ heavily redundant, but will smooth out variational differences
-        from the grid function"""
-        return self.vec.x()
-    
-    def c(self):
-        return self.vec.c()
+            self.unit = temp.unit
+            self.s = temp.s
 
     def split(self, *args, **kwargs):
         obj = kwargs.pop('obj', None)
@@ -408,17 +320,10 @@ class Origin(Point):
         if Vec:
             # generate point based off of previous origin
             super(Origin,self).__init__(x_hat, ref, err=err)
-            if Vec[1].flag:
-                self.norm = Vec[1].c()
-            else:
-                self.norm = Vec[1]
+            self.norm = Vec[1]
+            self.sagi = Vec[0]
 
-            if Vec[0].flag:
-                self.meri = Vec[0].c()
-            else:
-                self.meri = Vec[0]
-
-            self.sagi = cross(self.norm,self.meri)
+            self.meri = cross(self.norm,self.meri)
             # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
         elif len(angle):
@@ -438,20 +343,17 @@ class Origin(Point):
             s2 = scipy.sin(b)
             s3 = scipy.sin(g)
 
+            self.sagi = Vec((c3*c2, s3*c1 - c3*s2*s1, c3*s2*c1 + s3*s1), one)
+            self.meri = Vec((-s3*c2, c3*c1 + s3*s2*s1, c3*s1 - s3*s2*c1), one)
+            self.norm = Vec((-s2, -c2*s1, c2*c1), one)
 
-            self.meri = Vecx((c3*c2, s3*c1 - c3*s2*s1, c3*s2*c1 + s3*s1), s=one)
-            self.sagi = Vecx((-s3*c2, c3*c1 + s3*s2*s1, c3*s1 - s3*s2*c1), s=one)
-            self.norm = Vecx((-s2, -c2*s1, c2*c1), s=one)
-#            self.norm = Vecx((c1*c3 - c2*s1*s3, -c1*s3 - c2*c3*s1, s1*s2),s=1.)
-#            self.meri =  Vecx((s2*s3, c3*s2, c2),s=1.)
-#            self.sagi = Vecx((c3*s1 + c1*c2*s3, c1*c2*c3 - s1*s3, -c1*s2),s=1.)
         else:
             raise ValueError("rotation matrix cannot be specified without a normal"
                              " and meridonial ray, please specify either two"
                              " vectors or a set of euclidean rotation angles")
             #throw error here
-        self._rot = [self.meri.unit,
-                     self.sagi.unit,
+        self._rot = [self.sagi.unit,
+                     self.meri.unit,
                      self.norm.unit]
         # set to coordinate system only if specified. otherwise inherit based on reference
         if not flag is None:
@@ -474,8 +376,8 @@ class Origin(Point):
         orgnew = lca[1]
 
         temp1 = self.norm
-        temp2 = self.meri
-        stemp = self.sagi.s
+        temp2 = self.sagi
+        mtemp = self.meri.s
 
         for idx in range(len(org)-1,-1,-1):
             # change the _rot coordinates to accurately reflect all of the necessary variation.
@@ -488,31 +390,21 @@ class Origin(Point):
             temp2 = orgnew[idx].arot(temp2)
 
         self.norm = temp1
-        self.meri = temp2
-        self.sagi = cross(self.norm, self.meri)
-        self.sagi.s = stemp
+        self.sagi = temp2
+        self.meri = cross(self.norm, self.sagi)
+        self.meri.s = mtemp
 
     def rot(self,vec):
-        if vec.flag:
-            vec = vec.c()
 
-        temp = Vecx(scipy.dot(scipy.array(self._rot).T, vec.unit), s=vec.s)
-
-        if self.flag:
-            return temp.c()
-        else:        
-            return temp                
+        temp = Vec(scipy.dot(scipy.array(self._rot).T, vec.unit),vec.s)
+        temp.flag = vec.flag
+        return temp                
     
     def arot(self,vec):
-        if vec.flag:
-            vec = vec.c()
 
-        temp = Vecx(scipy.dot(self._rot, vec.unit), s=vec.s)
-        
-        if self.flag:
-            return temp.c()
-        else:
-            return temp
+        temp = Vec(scipy.dot(self._rot, vec.unit), vec.s)      
+        temp.flag = vec.flag
+        return temp
 
     def split(self, *args, **kwargs):
         
@@ -533,22 +425,23 @@ class Center(Origin):
 
     _depth = 0
     _origin = []
-    meri = Vecx((1.,0.,0.), s=one)
-    sagi = Vecx((0.,1.,0.), s=one)
-    norm = Vecx((0.,0.,1.), s=one)
-    _rot = [meri.unit,
-            sagi.unit,
+    sagi = Vec((1.,0.,0.),one)
+    meri = Vec((0.,1.,0.),one)
+    norm = Vec((0.,0.,1.),one)
+    _rot = [sagi.unit,
+            meri.unit,
             norm.unit]
 
     def __init__(self, flag=True):
-               
-        if flag:
-            self.vec = Vecr((0.,0.,0.), s=one)
-
-        else:
-            self.vec = Vecx((0.,0.,0.), s=one)
- 
+        
+        temp = Vec((0.,0.,0.), one, flag=flag)
+        self.unit = temp.unit
+        self.s = temp.s
         self.flag = flag
+        self.sagi.flag = self.flag
+        self.meri.flag = self.flag
+        self.norm.flag = self.flag
+
         # could not use super due to the problem in defining the value of 
         # the depth.  This is simple, though slightly redundant.
         # large number of empty values provide knowledge that there are no
@@ -559,7 +452,7 @@ def pts2Vec(pt1,pt2):
     pts2Vec creates a vector from pt1 pointing to pt2
     """
     if pt1._origin is pt2._origin:
-        return pt2.vec - pt1.vec
+        return pt2 - pt1
     else:
         raise ValueError("points must exist in same coordinate system")
 

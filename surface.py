@@ -45,7 +45,7 @@ class Rect(Surf):
 
     def edgetest(self,meri,sagi):
 
-        if abs(meri) =< self.meri and abs(sagi) =< self.sagi:
+        if abs(meri) <= self.meri and abs(sagi) <= self.sagi:
             return True
         else:
             return False
