@@ -18,8 +18,8 @@ class Ray(geometry.Point):
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.eq.getMachineCrossSection()[0].max() + self.vec.s
-        self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
+        end = plasma.eq.getMachineCrossSection()[0].max() + self.s
+        self.norm.s = scipy.mgrid[0:end:step] #start from diode, and trace through to find when it hits the vessel
         sin = self.norm.s.size
         self.redefine(plasma)
 
@@ -27,7 +27,7 @@ class Ray(geometry.Point):
         temp = self.r()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
-        
+
         # if diode is not invessel, find when the view is in vessel
         if not invesselflag:
             flag = True
@@ -63,9 +63,6 @@ class Ray(geometry.Point):
     def x(self):
         return (self + self.norm).x()
 
-    def c(self):
-        return (self + self.norm).c()
-
     def r(self):
         return (self + self.norm).r()
 
@@ -78,7 +75,7 @@ class Ray(geometry.Point):
                 params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
                                                           surface.meri.unit,
                                                           surface.sagi.unit])),
-                                   (self.vec-surface.vec).x())
+                                   (self-surface).x())
 
                 if surface.edgetest(params[1],params[2]):
                     return params[0]
@@ -90,6 +87,10 @@ class Ray(geometry.Point):
                 return []
         else:
             return []
+
+    def point(self,err=[]):
+        return Point((self+self.norm), self.ref, err=err)
+
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):

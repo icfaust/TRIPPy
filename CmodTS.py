@@ -1,10 +1,10 @@
 import beam,geometry,scipy
 
-def Chords():
-    output = 16*[]
+def Chords(plasma):
+    output = []
     r1 = scipy.array(16*[.69])
-    r2 = scipy.array(16*[.8565])
-    z1 = scipy.array([.166,.044,-.027,-.197,-.082,-.139,.108,-.254,.196,.138,0.,.082,-.054,-.112,.-.168,-.227])
+    r2 = scipy.array(16*[.69+.8565])
+    z1 = scipy.array([.166,.044,-.027,-.197,-.082,-.139,.108,-.254,.196,.138,0.,.082,-.054,-.112,-.168,-.227])
     z2 = 1e-3*scipy.array([12.5197,
                            3.3228,
                            -2.0386,
@@ -22,7 +22,7 @@ def Chords():
                            -12.6703,
                            -17.1035])
     for i in xrange(16):
-        output[i] = beam.Ray(geometry.Point((r1[i],0.,z1[i])),
-                             geometry.Point((r2[i],0.,z2[i])))
+        output += [beam.Ray(geometry.Point((r2[i],0.,z2[i]),plasma),
+                           geometry.Point((r1[i],0.,z1[i]),plasma))]
     return output
     

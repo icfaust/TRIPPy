@@ -9,7 +9,7 @@ def unit(x_hat):
     never interacts with another Hat class, only one 
     with a defined coordinate system"""
     temp = scipy.squeeze(x_hat)
-    print(temp.shape)
+ 
     if len(temp) != 3 or temp.max() > 1 or temp.min() < -1:
         raise ValueError
     return temp
@@ -65,14 +65,22 @@ class Vec(object):
 
     def __add__(self, Vec):
         """ Vector addition, if to vectors go a walkin'
-        the first does the talking (and sets coordinate system"""
-        new = Vecx(self.x() + Vec.x())
+        the first does the talking and sets coordinate system"""
+        x0 = self.x0() + Vec.x0()
+        x1 = self.x1() + Vec.x1()
+        x2 = self.x2() + Vec.x2()
+        
+        new = Vecx((x0,x1,x2))
         new.flag = self.flag
         return new
 
     def __sub__(self, Vec):
         """ Vector subtraction """
-        new = Vecx(self.x() + Vec.x())
+        x0 = self.x0() - Vec.x0()
+        x1 = self.x1() - Vec.x1()
+        x2 = self.x2() - Vec.x2()
+        
+        new = Vecx((x0,x1,x2))    
         new.flag = self.flag
         return new
 
@@ -102,18 +110,30 @@ class Vec(object):
                              (self.unit[2],0,-self.unit[0]),
                              (-self.unit[1],self.unit[0],0)))
 
-    def c():
+    def x0(self):
+        """x0,x1,x2 is taking care of an array multiplication problem"""
+        return self.s*self.unit[0]
+
+    def x1(self):
+        return self.s*self.unit[1]
+    
+    def x2(self):
+        return self.s*self.unit[2]
+
+    def c(self):
         return Vec(self.unit,self.s, flag = (not self.flag))
 
-    def x():
+    def x(self):
         """ cartesian full vector"""
-        return self.s*self.unit
+        return scipy.squeeze([self.x0(),
+                              self.x1(),
+                              self.x2()])
     
-    def r():
+    def r(self):
         """ cylindrical full vector"""
-        return scipy.array([self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
-                            scipy.arctan2(self.unit[1],self.unit[0]),
-                            self.s*self.unit[2]])
+        return scipy.squeeze([self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
+                              scipy.arctan2(self.unit[1],self.unit[0]),
+                              self.s*self.unit[2]])
 
     def point(self,ref,err=[]):
         return Point(self, ref, err=err)
@@ -166,10 +186,10 @@ class Point(Vec):
     def _translate(self, lca, neworigin):
         org = lca[0]
         orgnew = lca[1]
-        shape = self.vec.unit.shape
+        shape = self.unit.shape
         if len(shape) > 2:    
             sshape = self.s.shape
-            self.vec.s = self.s.flatten()
+            self.s = self.s.flatten()
             self.unit = self.unit.reshape(3,self.unit.size/3)
 
         # loop over the first 'path' of the current point
@@ -257,6 +277,9 @@ class Point(Vec):
 
         
         return (pt1[idx:],pt2[idx:])
+    
+    def c(self):
+        raise NotImplementedError('point locked by reference coordinate system')
 
 
 class Grid(Point):
