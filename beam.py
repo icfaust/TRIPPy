@@ -88,6 +88,22 @@ class Ray(geometry.Point):
         else:
             return []
 
+    def tangency(self,point):
+        """ returns a vector which points from the point to the closest
+        approach of the ray"""
+
+
+        # test in same coordinate system
+        if not self._origin is point._origin:
+            raise ValueError('not in same coordinate system, use redefine')
+
+        # define vector r1, from point to ray origin
+        r1 = self - point
+
+        # define alpha value
+        r2 = r1 - geometry.Vecx(((r1*self)/(self.s**2))*self)
+
+
     def point(self,err=[]):
         return Point((self+self.norm), self.ref, err=err)
 

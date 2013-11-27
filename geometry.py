@@ -91,7 +91,7 @@ class Vec(object):
     def __mul__(self, Vec):
         """ Dot product """
         try:
-            return scipy.dot(self.unit.T,Vec.unit)
+            return (self.s*Vec.s)*scipy.dot(self.unit.T,Vec.unit)
         except AttributeError:
             return Vec(self.unit,Vec*self.s)
 
