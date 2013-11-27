@@ -15,13 +15,38 @@ class Ray(geometry.Point):
         self._end = None
         super(Ray,self).__init__(pt1.x(), pt1._origin, err=err)
 
+    def x(self):
+        return (self + self.norm).x()
+
+    def r(self):
+        return (self + self.norm).r()
+
+    def __getitem__(self,idx):
+        return (self + self.norm)[idx]
+
+    def __call__(self,inp):
+        """ call is used to minimize the changes to the norm vector.
+        it returns a vector"""
+        #temporarily store the norm.s
+        temp = self.norm.s
+
+        self.norm.s = inp
+        out = self + self.norm
+        self.norm.s = temp
+
+        return out
+
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
+        #NEED TO MODIFIY REDEFINE SO THAT IT MODIFIES NORM 
+        if not self._origin is plasma:
+            self.redefine(plasma)
+
+
         end = plasma.eq.getMachineCrossSection()[0].max() + self.s
-        self.norm.s = scipy.mgrid[0:end:step] #start from diode, and trace through to find when it hits the vessel
-        sin = self.norm.s.size
-        self.redefine(plasma)
+        temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
+        sin = temp.size
 
         # set if in cylindrical coordinates
         temp = self.r()
@@ -39,7 +64,7 @@ class Ray(geometry.Point):
                 if pntinves or idx + 1 == sin:
                     flag = False
                 invesselflag = pntinves
-            self._start = self.norm.s[idx]
+            self._start = idx*step
 
         # find point at which the view escapes vessel
         if invesselflag:
@@ -52,7 +77,7 @@ class Ray(geometry.Point):
                 if not pntinves or idx + 1 == sin:
                     flag = False
                 invesselflag = pntinves
-            self._end = self.norm.s[idx]
+            self._end = idx*step
         
         self.norm.s = scipy.array([0])
         if self._start:
@@ -60,14 +85,18 @@ class Ray(geometry.Point):
         if self._end:
             self.norm.s = scipy.append(self.norm.s, self._end)
 
-    def x(self):
-        return (self + self.norm).x()
+    def trace2(self,plasma,s1=0,s2=None):
 
-    def r(self):
-        return (self + self.norm).r()
+        if not self._origin is plasma:
+            self.redefine(plasma)
 
-    def __getitem__(self,idx):
-        return (self + self.norm)[idx]
+        if s2 is None:
+            s2 = self.tangency(plasma,alpha=True)
+
+        if logical_xor(plasma.inVessel(self(s2).r()),plasma.inVessel(self(s1).r())):
+            
+            
+            else:
 
     def intercept(self,surface):
         if self._origin is surface._origin:
@@ -88,7 +117,7 @@ class Ray(geometry.Point):
         else:
             return []
 
-    def tangency(self,point):
+    def tangency(self, point, sigma=False):
         """ returns a vector which points from the point to the closest
         approach of the ray"""
 
@@ -100,9 +129,12 @@ class Ray(geometry.Point):
         # define vector r1, from point to ray origin
         r1 = self - point
 
-        # define alpha value
-        r2 = r1 - geometry.Vecx(((r1*self)/(self.s**2))*self)
-
+        # define tangency sigma (or length along rtan to tangency point
+        sigma = -(r1*self)/(self.s**2)
+        if sigma:
+            return sigma
+        else:
+            return r1 + geometry.Vecx(sigma*self)
 
     def point(self,err=[]):
         return Point((self+self.norm), self.ref, err=err)

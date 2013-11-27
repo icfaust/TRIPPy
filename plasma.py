@@ -45,3 +45,6 @@ class Tokamak(geometry.Center):
         rho = self.eq.rz2rho(method,point[0],point[2],t)
         theta = (scipy.arctan2(point[2]-z,point[0]-r) + (n*point[1]) + scipy.pi)% (2*scipy.pi) - scipy.pi
         return rho,theta
+
+    def _intersect2d(self,ray,s1,s2):
+        print('temp')
