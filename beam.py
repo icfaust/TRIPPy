@@ -1,6 +1,7 @@
 import geometry
 import surface
 import scipy
+import scipy.linalg
 
 class Ray(geometry.Point):
 
@@ -85,25 +86,12 @@ class Ray(geometry.Point):
         if self._end:
             self.norm.s = scipy.append(self.norm.s, self._end)
 
-    def trace2(self,plasma,s1=0,s2=None):
-
-        if not self._origin is plasma:
-            self.redefine(plasma)
-
-        if s2 is None:
-            s2 = self.tangency(plasma,alpha=True)
-
-        if logical_xor(plasma.inVessel(self(s2).r()),plasma.inVessel(self(s1).r())):
-            
-            
-            else:
-
     def intercept(self,surface):
         if self._origin is surface._origin:
             try:
-                params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
-                                                          surface.meri.unit,
-                                                          surface.sagi.unit])),
+                params = scipy.dot(scipy.linalg.inv(scipy.array([self.norm.unit,
+                                                                 surface.meri.unit,
+                                                                 surface.sagi.unit])),
                                    (self-surface).x())
 
                 if surface.edgetest(params[1],params[2]):
@@ -123,18 +111,19 @@ class Ray(geometry.Point):
 
 
         # test in same coordinate system
-        if not self._origin is point._origin:
+        if not ((self._origin is point._origin) or(self._origin is point)) :
             raise ValueError('not in same coordinate system, use redefine')
 
         # define vector r1, from point to ray origin
-        r1 = self - point
+        temp = self(0)
+        r1 = temp - point
 
         # define tangency sigma (or length along rtan to tangency point
-        sigma = -(r1*self)/(self.s**2)
+        sigma = -(r1*self.norm)/(temp.s**2)
         if sigma:
             return sigma
         else:
-            return r1 + geometry.Vecx(sigma*self)
+            return r1 + geometry.Vecx(sigma*self.norm.unit)
 
     def point(self,err=[]):
         return Point((self+self.norm), self.ref, err=err)
@@ -155,6 +144,7 @@ class Beam(geometry.Origin):
 
         normal = geometry.pts2Vec(surf1, surf2)
         #orthogonal coordinates based off of connecting normal
+
         snew = surf1.sagi - normal*((surf1.sagi * normal)*(surf1.sagi.s/normal.s))
         mnew = surf1.meri - normal*((surf1.meri * normal)*(surf1.meri.s/normal.s))
         super(Beam, self).__init__(surf1.x(), surf1._origin, Vec = [mnew,normal], err=err)
@@ -174,7 +164,7 @@ class Beam(geometry.Origin):
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
 
-        end = plasma.eq.getMachineCrossSection()[0].max() + self.vec.s
+        end = plasma.eq.getMachineCrossSection()[0].max() + self.s
         
         self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
         sin = self.norm.s.size

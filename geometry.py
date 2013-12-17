@@ -63,22 +63,22 @@ class Vec(object):
         self.s = scipy.squeeze(s)
         self.flag = flag
 
-    def __add__(self, Vec):
+    def __add__(self, vec):
         """ Vector addition, if to vectors go a walkin'
         the first does the talking and sets coordinate system"""
-        x0 = self.x0() + Vec.x0()
-        x1 = self.x1() + Vec.x1()
-        x2 = self.x2() + Vec.x2()
+        x0 = self.x0() + vec.x0()
+        x1 = self.x1() + vec.x1()
+        x2 = self.x2() + vec.x2()
         
         new = Vecx((x0,x1,x2))
         new.flag = self.flag
         return new
 
-    def __sub__(self, Vec):
+    def __sub__(self, vec):
         """ Vector subtraction """
-        x0 = self.x0() - Vec.x0()
-        x1 = self.x1() - Vec.x1()
-        x2 = self.x2() - Vec.x2()
+        x0 = self.x0() - vec.x0()
+        x1 = self.x1() - vec.x1()
+        x2 = self.x2() - vec.x2()
         
         new = Vecx((x0,x1,x2))    
         new.flag = self.flag
@@ -88,12 +88,12 @@ class Vec(object):
         """ uniary minus"""
         return Vec(-self.unit,self.s)
 
-    def __mul__(self, Vec):
+    def __mul__(self, vec):
         """ Dot product """
         try:
-            return (self.s*Vec.s)*scipy.dot(self.unit.T,Vec.unit)
+            return (self.s*vec.s)*scipy.dot(self.unit.T,vec.unit)
         except AttributeError:
-            return Vec(self.unit,Vec*self.s)
+            return Vec(self.unit,vec*self.s)
 
     def __div__(self, val):
         return Vec(self.unit,self.s/val)
@@ -368,9 +368,9 @@ class Origin(Point):
             s2 = scipy.sin(b)
             s3 = scipy.sin(g)
 
-            self.sagi = Vec((c3*c2, s3*c1 - c3*s2*s1, c3*s2*c1 + s3*s1), one)
-            self.meri = Vec((-s3*c2, c3*c1 + s3*s2*s1, c3*s1 - s3*s2*c1), one)
-            self.norm = Vec((-s2, -c2*s1, c2*c1), one)
+            self.sagi = Vecx([c3*c2, s3*c1 - c3*s2*s1, c3*s2*c1 + s3*s1], one)
+            self.meri = Vecx([-s3*c2, c3*c1 + s3*s2*s1, c3*s1 - s3*s2*c1], one)
+            self.norm = Vecx([-s2, -c2*s1, c2*c1], one)
 
         else:
             raise ValueError("rotation matrix cannot be specified without a normal"
