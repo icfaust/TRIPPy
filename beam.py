@@ -14,7 +14,7 @@ class Ray(geometry.Point):
             
         self._start = None
         self._end = None
-        super(Ray,self).__init__(pt1.x(), pt1._origin, err=err)
+        super(Ray,self).__init__(pt1, err=err)
 
     def x(self):
         return (self + self.norm).x()
@@ -147,7 +147,7 @@ class Beam(geometry.Origin):
 
         snew = surf1.sagi - normal*((surf1.sagi * normal)*(surf1.sagi.s/normal.s))
         mnew = surf1.meri - normal*((surf1.meri * normal)*(surf1.meri.s/normal.s))
-        super(Beam, self).__init__(surf1.x(), surf1._origin, Vec = [mnew,normal], err=err)
+        super(Beam, self).__init__(surf1, surf1._origin, Vec = [mnew,normal], err=err)
         #calculate area at diode.
         self.sagi.s = snew.s
         a1 = surf1.area(snew.s,mnew.s)
@@ -244,3 +244,15 @@ class Beam(geometry.Origin):
     
     def __getitem__(self,idx):
         return (self + self.norm)[idx]
+
+    def __call__(self,inp):
+        """ call is used to minimize the changes to the norm vector.
+        it returns a vector"""
+        #temporarily store the norm.s
+        temp = self.norm.s
+
+        self.norm.s = inp
+        out = self + self.norm
+        self.norm.s = temp
+
+        return out

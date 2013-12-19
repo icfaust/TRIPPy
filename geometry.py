@@ -155,22 +155,46 @@ class Point(Vec):
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
     such a way for easier calculation."""
-    def __init__(self, x_hat, ref, err=[]):        
-        
+    def __init__(self, x_hat, ref=None, err=None):        
 
-        if type(x_hat) is Vec:
-            temp = x_hat
-        elif ref.flag:
-            temp = Vecr(x_hat)
+
+        try:
+            super(Point,self).__init__(x_hat.unit, x_hat.s, flag=x_hat.flag)
+
+        except AttributeError:
+            try:
+                if ref.flag:
+                    x_hat = Vecr(x_hat)
+                else:
+                    x_hat = Vecx(x_hat)
+                    
+                super(Point,self).__init__(x_hat.unit, x_hat.s, flag=x_hat.flag)
+                    
+            except AttributeError:
+                raise ValueError('reference not specified')
+            
+        if ref is None: 
+            self._origin = x_hat._origin
+            self._depth = x_hat._depth
         else:
-            temp = Vecx(x_hat)
+            self._origin = ref
+            self._depth = ref._depth + 1
+                
+            
 
-        if len(err):
+        #if type(x_hat) is Vec:
+        #    temp = x_hat
+        #elif ref.flag:
+        #    temp = Vecr(x_hat)
+        #else:
+        #    temp = Vecx(x_hat)
+
+        if not err is None:
             self.err = err
             
-        self._origin = ref
-        self._depth = ref._depth + 1 # basis origin is depth = 0
-        super(Point,self).__init__(temp.unit, temp.s, flag=ref.flag)
+        #self._origin = ref
+        #self._depth = ref._depth + 1 # basis origin is depth = 0
+        #super(Point,self).__init__(temp.unit, temp.s, flag=ref.flag)
          
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
@@ -341,7 +365,7 @@ class Origin(Point):
         axis.  This might change based on what is most
         physically intuitive."""
         # test Vec1 and Vec2 for ortho-normality
-        super(Origin,self).__init__(x_hat, ref, err=err)
+        super(Origin,self).__init__(x_hat, ref=ref, err=err)
         if Vec:
             # generate point based off of previous origin
 

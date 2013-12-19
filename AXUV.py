@@ -16,7 +16,8 @@ def AXUV20(temp):
     #pos = scipy.linspace(-9.025e-3,9.025e-3,20)
     
     for i in range(len(diodes)):
-        diodes[i] = surface.Rect((pos[i],0.,0.),temp,area,Vec=Vec)
+        vecin = geometry.Vecx((0.,pos[i],0.))       
+        diodes[i] = surface.Rect(vecin,temp,area,Vec=Vec)
     return diodes
 
 def AXUV22(temp):
@@ -28,5 +29,6 @@ def AXUV22(temp):
     pos = scipy.mgrid[-10.5:10.5:22j]*spacing 
     #pos = scipy.linspace(-2.1e-2,2.1e-2,22)
     for i in xrange(len(diodes)):
-        diodes[i] = surface.Rect((pos[i],0.,0.),temp,area,Vec=Vec)
+        vecin = geometry.Vecx((0.,pos[i],0.))
+        diodes[i] = surface.Rect(vecin,temp,area,Vec=Vec)
     return diodes

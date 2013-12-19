@@ -7,10 +7,11 @@ def XTOMOchip(temp):
     area = [4e-3,.94e-3]
     Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
     spacing = 1e-3 
-    pos = scipy.mgrid[-16.5:16.5:1]*spacing
+    pos = scipy.mgrid[-16.5:16.5:38j]*spacing
     #pos = scipy.linspace(e-3,e-3,38)
     for i in range(len(diodes)):
-        diodes[i] = surface.Rect((pos[i],0.,0.),temp,area,Vec=Vec)
+        vecin = geometry.Vecx((0.,pos[i],0.))
+        diodes[i] = surface.Rect(vecin,temp,area,Vec=Vec)
     return diodes
 
 def XTOMO1(temp, place=(,0,),angle =(,,)):

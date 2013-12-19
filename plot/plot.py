@@ -7,18 +7,9 @@ import geometry
 
 
 def plotLine(vector,close = False, **kwargs):
-    try:
-        if vector.flag:
-            temp = vector.c().x()
-        else:
-            temp = vector.x()
-    except AttributeError:
-        if vector._origin.flag:
-            temp = vector.c().x()
-        else:
-            temp = vector.x()
-
+    temp = vector.x()
     temp = temp.reshape(3,temp.size/3)
+    print(temp)
     if close:
         temp = scipy.concatenate((temp,
                                   scipy.atleast_2d(temp[:,0]).T),

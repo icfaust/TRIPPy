@@ -33,7 +33,7 @@ class Rect(Surf):
         """ return points at the edge of rectangle """
         temp1 = self.sagi.x()
         temp2 = self.meri.x()
-        return geometry.Point((self + geometry.Vecx(scipy.dot(edges,[temp1,temp2]).T)).x().reshape(3,2,2),self._origin)
+        return geometry.Point((self + geometry.Vecx(scipy.dot(edges,[temp1,temp2]).T)),self._origin)
 
     def edgetest(self,meri,sagi):
 
