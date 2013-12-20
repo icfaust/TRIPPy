@@ -33,7 +33,7 @@ def BPLYbeam(alcator):
     temp = BPLY(alcator)
     output = 22*[0]
     for i in xrange(len(output)):
-        output[i] = beam.Beam(temp[i],temp[-1])
+        output[i] = beamin.Beam(temp[i],temp[-1])
         output[i].trace(alcator)
     return output
 

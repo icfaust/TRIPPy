@@ -37,20 +37,45 @@ class Ray(geometry.Point):
 
         return out
 
+    def redefine(self, neworigin):
+        lca = self._lca(neworigin)
+        self._rotate(lca, neworigin)
+        super(Ray,self)._translate(lca, neworigin)
+
+    def _rotate(self, lca, neworigin):
+        """ rotates the fundamental vectors of the space"""
+        org = lca[0]
+        orgnew = lca[1]
+
+        temp1 = self.norm
+
+        for idx in range(len(org)-1,-1,-1):
+            # change the _rot coordinates to accurately reflect all of the necessary variation.
+            temp1 = org[idx].rot(temp1)
+
+        for idx in range(len(orgnew)):
+            # the arot allows for translating into the current coordinate system
+            temp1 = orgnew[idx].arot(temp1)
+
+        self.norm = temp1
+
     def trace(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
-
-        #NEED TO MODIFIY REDEFINE SO THAT IT MODIFIES NORM 
+        
+        # norm vector is modfied following the convention set in geometry.Origin
         if not self._origin is plasma:
             self.redefine(plasma)
 
 
+        
         end = plasma.eq.getMachineCrossSection()[0].max() + self.s
+        #step = end/1e2
+
+
         temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
         sin = temp.size
 
         # set if in cylindrical coordinates
-        temp = self.r()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
 
@@ -85,6 +110,26 @@ class Ray(geometry.Point):
             self.norm.s = scipy.append(self.norm.s, self._start)
         if self._end:
             self.norm.s = scipy.append(self.norm.s, self._end)
+
+
+    def trace2(self,plasma,eps=1e-4):
+        """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
+        pt1 = self(0).r() # pull r,z of diode (pt1)
+        pntinves = plasma.inVessel(pt1) # test if invessel
+
+        s = self.norm.s
+        dels = 1e2
+        norm = self(s).r() # pull r,z of 'aperature' (pt2)
+        
+        while abs(dels) > eps:
+
+            # find at least 2 intercepts
+            s = s + dels
+
+        print('not implemented yet')
+
+    def _intercept(self,pt1,plasma):
+        print('not implemented yet')
 
     def intercept(self,surface):
         if self._origin is surface._origin:
@@ -166,15 +211,15 @@ class Beam(geometry.Origin):
 
         end = plasma.eq.getMachineCrossSection()[0].max() + self.s
         
-        self.norm.s = scipy.arange(0, end, step) #start from diode, and trace through to find when it hits the vessel
-        sin = self.norm.s.size
+
         self.redefine(plasma)
 
+        temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
+        sin = temp.size
+
         # set if in cylindrical coordinates
-        temp = self.r()
         idx = 1
         invesselflag = plasma.inVessel(temp[:,0])
-
         # if diode is not invessel, find when the view is in vessel
         if not invesselflag:
             flag = True
