@@ -2,6 +2,7 @@ import geometry
 import surface
 import scipy
 import scipy.linalg
+import _beam
 #import matplotlib.pyplot as plt
 
 class Ray(geometry.Point):
@@ -112,7 +113,6 @@ class Ray(geometry.Point):
         if self._end:
             self.norm.s = scipy.append(self.norm.s, self._end)
 
-
     def trace(self,plasma,eps=1e-4):
         """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
         pt1 = self(0).r() # pull r,z of diode (pt1)
@@ -126,24 +126,18 @@ class Ray(geometry.Point):
         while trig:
 
             pt2 = self(s).r() # pull vec of 'aperature' (pt2)
-
-            dels *= (self._intercept(pt1,pt2,vessel)-1)
+            dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
 
             # find at least 2 intercepts
             s += dels
-            #plt.plot(vessel[0],vessel[1],'b')
-            #plt.plot([pt1[0],pt2[0]],[pt1[2],pt2[2]],'r')
-            #plt.show()
-
             pt1 = pt2
-
             
             if abs(dels) < eps:
                 trig = False
 
         if not pntinves:
 
-            s1 = s
+            s1 = s.copy()
             s += eps
             dels = eps
 
@@ -151,22 +145,16 @@ class Ray(geometry.Point):
             trig = True
 
             while trig:
-                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)
-                
-                dels *= (self._intercept(pt1,pt2,vessel)-1)
+
+                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)                
+                dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
                 
                 # find at least 2 intercepts
                 s += dels
-                #plt.plot(vessel[0],vessel[1],'b')
-                #plt.plot([pt1[0],pt2[0]],[pt1[2],pt2[2]],'r')
-                #plt.show()
-
                 pt1 = pt2
             
                 if abs(dels) < eps:
                     trig = False
-
-
 
             self.norm.s = scipy.array([0,s1,s])
         else:
@@ -180,11 +168,20 @@ class Ray(geometry.Point):
         params = scipy.zeros((2,len(r)))
 
         for i in xrange(len(r)-1):
-            mat = scipy.array([[delr, r[i+1]-r[i]],
-                               [delz, z[i+1]-z[i]]])
+            #mat = scipy.array([[delr, r[i+1]-r[i]],
+            #                   [delz, z[i+1]-z[i]]])
 
-            params[:,i] = scipy.dot(scipy.linalg.inv(mat),
-                                  scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
+
+            a = delr
+            b = r[i+1]-r[i]
+            c = delz
+            d = z[i+1]-z[i]
+
+            invmat = scipy.array([[d, -b], [-c, a]])/(a*d - b*c)
+            params[:,i] = scipy.dot(invmat,scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
+
+            #params[:,i] = scipy.dot(scipy.linalg.inv(mat),
+            #                      scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
 
             #probably need a try catch for bad inverses.
         goods = params[0][scipy.logical_and(params[1] > 0,params[1] < 1)]  #index where there are actual intercepts  
@@ -279,24 +276,19 @@ class Beam(geometry.Origin):
         while trig:
 
             pt2 = self(s).r() # pull vec of 'aperature' (pt2)
-
-            dels *= (self._intercept(pt1,pt2,vessel)-1)
+            dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
 
             # find at least 2 intercepts
             s += dels
-            #plt.plot(vessel[0],vessel[1],'b')
-            #plt.plot([pt1[0],pt2[0]],[pt1[2],pt2[2]],'r')
-            #plt.show()
 
             pt1 = pt2
-
             
             if abs(dels) < eps:
                 trig = False
 
         if not pntinves:
 
-            s1 = s
+            s1 = s.copy()
             s += eps
             dels = eps
 
@@ -304,28 +296,23 @@ class Beam(geometry.Origin):
             trig = True
 
             while trig:
-                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)
-                
-                dels *= (self._intercept(pt1,pt2,vessel)-1)
+
+                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)                
+                dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
                 
                 # find at least 2 intercepts
                 s += dels
-                #plt.plot(vessel[0],vessel[1],'b')
-                #plt.plot([pt1[0],pt2[0]],[pt1[2],pt2[2]],'r')
-                #plt.show()
 
                 pt1 = pt2
             
                 if abs(dels) < eps:
                     trig = False
 
-
-
             self.norm.s = scipy.array([0,s1,s])
         else:
             self.norm.s = scipy.array([0,s])
-            
-    def _intercept(self,pt1,pt2,outline,flag=False):
+    
+    def _intercept(self,pt1,pt2,outline):
         r = outline[0]
         z = outline[1]
         delr = pt1[0] - pt2[0]
@@ -333,11 +320,25 @@ class Beam(geometry.Origin):
         params = scipy.zeros((2,len(r)))
 
         for i in xrange(len(r)-1):
-            mat = scipy.array([[delr, r[i+1]-r[i]],
-                               [delz, z[i+1]-z[i]]])
+            #mat = scipy.array([[delr, r[i+1]-r[i]],
+            #                   [delz, z[i+1]-z[i]]])
 
-            params[:,i] = scipy.dot(scipy.linalg.inv(mat),
-                                  scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
+            a = delr
+            b = r[i+1]-r[i]
+            c = delz
+            d = z[i+1]-z[i]
+
+            #e = pt1[0]-r[i]
+            #f = pt1[2]-z[i]
+
+
+            #params[:,i] = scipy.array([d*e - b*f,a*f - c*e])/(a*d - b*c)
+            invmat = scipy.array([[d, -b], [-c, a]])/(a*d - b*c)
+            params[:,i] = scipy.dot(invmat,scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
+
+
+            #params[:,i] = scipy.dot(scipy.linalg.inv(mat),
+            #                      scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
 
             #probably need a try catch for bad inverses.
         goods = params[0][scipy.logical_and(params[1] > 0,params[1] < 1)]  #index where there are actual intercepts  
