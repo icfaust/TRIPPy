@@ -35,19 +35,29 @@ class Rect(Surf):
         temp2 = self.meri.x()
         return geometry.Point((self + geometry.Vecx(scipy.dot(edges,[temp1,temp2]).T)),self._origin)
 
-    def edgetest(self,meri,sagi):
+    def edgetest(self,sagi,meri):
 
         if abs(meri) <= self.meri and abs(sagi) <= self.sagi:
             return True
         else:
             return False
 
-    def grid(self):
+    def split(self,sagi,meri):
         """ utilizes geometry.grid to change the rectangle into a generalized surface,
         it is specified with a single set of basis vectors to describe the meridonial,
         normal, and sagittal planes."""
-        print('test')
+        ins = float((sagi-1))/sagi
+        inm = float((meri-1))/meri
+        stemp = self.sagi.s/sagi
+        mtemp = self.meri.s/meri
 
+        self.sagi.s,self.meri.s = scipy.meshgrid(scipy.linspace(-self.sagi.s*ins,self.sagi.s*ins,sagi),
+                                                 scipy.linspace(-self.meri.s*inm,self.meri.s*inm,meri))
+
+        x_hat = self + self.sagi + self.meri #creates a vector which includes all the centers of the subsurface
+        self.sagi.s = stemp
+        self.meri.s = mtemp
+        return super(Rect,self).split(x_hat,self._origin,[self.sagi.s,self.meri.s],Vec = [self.meri,self.norm])
 """
 class Parabola(Surf):
 
