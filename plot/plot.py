@@ -6,21 +6,22 @@ sys.path.append('/home/ian/python/TRIPPy')
 import geometry
 
 
-def plotLine(vector,close = False, **kwargs):
-    temp = vector.x()
+def plotLine(vector,val=1.0, close=False, **kwargs):
+    try:
+        temp = vector.x()
+    except ValueError:
+        for i in len(vector):
+            plotLine(i, close=close, **kwargs)
     temp = temp.reshape(3,temp.size/3)
-    print(temp)
     if close:
         temp = scipy.concatenate((temp,
                                   scipy.atleast_2d(temp[:,0]).T),
                                  axis = 1)
 
-    mlab.plot3d(temp[0],temp[1],temp[2],scipy.ones((temp.size/3,)),**kwargs)
+    mlab.plot3d(temp[0],temp[1],temp[2],val*scipy.ones((temp.size/3,)),**kwargs)
     
 def plotView(rays,pts=None, **kwargs):
       
-
-           
     if not pts is None:
         x = scipy.zeros((len(rays)+1,pts))
         y = scipy.zeros(x.shape)

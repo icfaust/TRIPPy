@@ -58,11 +58,13 @@ class Rect(Surf):
                                                  scipy.linspace(-self.meri.s*inm,self.meri.s*inm,meri))
 
         x_hat = self + self.sagi + self.meri #creates a vector which includes all the centers of the subsurface
-        self.unit = x_hat.unit
-        self.s = x_hat.s
-        self.sagi.s = stemp
-        self.meri.s = mtemp
-        return super(Rect,self).split(self,self._origin,[self.sagi.s,self.meri.s],Vec = [self.meri,self.norm], flag=self.flag)
+        self.sagi.s = stemp*sagi
+        self.meri.s = mtemp*meri
+
+        temp = Rect(x_hat, self._origin, [2*stemp,2*mtemp], Vec=[self.meri.copy(),self.norm.copy()], flag=self.flag)
+        #return temp
+
+        return super(Rect, temp).split(temp._origin, [2*stemp,2*mtemp], Vec=[temp.meri,temp.norm], flag=temp.flag, obj=type(temp))
 """
 class Parabola(Surf):
 

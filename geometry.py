@@ -1,5 +1,4 @@
-import scipy,warnings
-
+import scipy,warnings,copy
 one = scipy.array([1.0])
 
 def unit(x_hat):
@@ -103,6 +102,9 @@ class Vec(object):
             return self.r()[idx]
         else:
             return self.x()[idx]
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def _cross(self):
         " matrix necessary for a cross-product calculation"""
@@ -462,7 +464,7 @@ class Origin(Point):
             obj = kwargs['obj']
             return super(Origin,self).split(*args,**kwargs)
         except KeyError:
-            return super(Origin,self).split(self,self._origin, obj=type(self), Vec=[self.meri,self.norm], flag=self.flag)
+            return super(Origin,self).split(self._origin, obj=type(self), Vec=[self.meri,self.norm], flag=self.flag)
 
 
 class Center(Origin):
@@ -514,5 +516,4 @@ def fill(funtype,x0,x1,x2,*args,**kwargs):
             temp+= [fill(funtype,x0[i],x1[i],x2[i],*args,**kwargs)]
         return temp
     except IndexError:
-        print('executed')
         return funtype(Vecx((x0,x1,x2)),*args,**kwargs)
