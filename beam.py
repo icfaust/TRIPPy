@@ -14,8 +14,6 @@ class Ray(geometry.Point):
         except AttributeError:
             self.norm = inp2
             
-        self._start = None
-        self._end = None
         super(Ray,self).__init__(pt1, err=err)
 
     def x(self):
@@ -260,10 +258,8 @@ class Beam(geometry.Origin):
 
         #generate etendue
         self.etendue = a1*a2/(normal.s ** 2)
-        self._start = scipy.array(0)
-        self._end = []
 
-    def trace(self,plasma,eps=1e-4):
+    def trace(self, plasma, eps=1e-4):
         """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
         pt1 = self(0).r() # pull r,z of diode (pt1)
         pntinves = plasma.inVessel(pt1) # test if invessel
@@ -280,7 +276,6 @@ class Beam(geometry.Origin):
 
             # find at least 2 intercepts
             s += dels
-
             pt1 = pt2
             
             if abs(dels) < eps:
