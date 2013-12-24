@@ -99,7 +99,7 @@ class Vec(object):
         return Vec(self.unit,self.s/val)
 
     def __getitem__(self,idx):
-        if flag:
+        if self.flag:
             return self.r()[idx]
         else:
             return self.x()[idx]
@@ -252,6 +252,7 @@ class Point(Vec):
         if obj is None:
             obj = type(self)
         temp = self.x()
+
         if temp.size > 3:
             # initialize
             return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
@@ -268,7 +269,7 @@ class Point(Vec):
             temp = temp._origin
 
         return pnts
-
+    
     def _lca(self, point2):
         """ recursively solve for the common point of reference
         between two points as given by a depth number starting
@@ -460,8 +461,9 @@ class Origin(Point):
         try:
             obj = kwargs['obj']
             return super(Origin,self).split(*args,**kwargs)
-        except TypeError:
+        except KeyError:
             return super(Origin,self).split(self,self._origin, obj=type(self), Vec=[self.meri,self.norm], flag=self.flag)
+
 
 class Center(Origin):
     """ this is the class which underlies all positional calculation.
@@ -512,4 +514,5 @@ def fill(funtype,x0,x1,x2,*args,**kwargs):
             temp+= [fill(funtype,x0[i],x1[i],x2[i],*args,**kwargs)]
         return temp
     except IndexError:
-        return funtype((x0,x1,x2),*args,**kwargs)
+        print('executed')
+        return funtype(Vecx((x0,x1,x2)),*args,**kwargs)

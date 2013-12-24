@@ -8,7 +8,10 @@ edges = scipy.array(([-1,-1],
 
 class Surf(geometry.Origin):
 
-    def __init__(self, x_hat, ref, area, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=[]):
+    def __init__(self, x_hat, ref, area, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=None):
+        
+        if flag is None:
+            flag = ref.flag
 
         super(Surf,self).__init__(x_hat, ref, Vec=Vec, err=err, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])/2
@@ -55,9 +58,11 @@ class Rect(Surf):
                                                  scipy.linspace(-self.meri.s*inm,self.meri.s*inm,meri))
 
         x_hat = self + self.sagi + self.meri #creates a vector which includes all the centers of the subsurface
+        self.unit = x_hat.unit
+        self.s = x_hat.s
         self.sagi.s = stemp
         self.meri.s = mtemp
-        return super(Rect,self).split(x_hat,self._origin,[self.sagi.s,self.meri.s],Vec = [self.meri,self.norm])
+        return super(Rect,self).split(self,self._origin,[self.sagi.s,self.meri.s],Vec = [self.meri,self.norm], flag=self.flag)
 """
 class Parabola(Surf):
 
