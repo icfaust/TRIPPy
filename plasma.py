@@ -47,62 +47,16 @@ class Tokamak(geometry.Center):
         theta = (scipy.arctan2(point[2]-z,point[0]-r) + (n*point[1]) + scipy.pi)% (2*scipy.pi) - scipy.pi
         return rho,theta
 
-    def _intersect2d(self,ray,s1,s2):
-        Rlim,Zlim = self.eq.getMachineCrossSection()
-
-        l1 = ray(s1)
-        l = ray(s2) - ray(s1)
-        lin = l.r()
-
-        s = []
-        for i in scipy.arange(len(Rlim)-1):
-            mat = scipy.array([[lin[0],Rlim[i+1]-Rlim[i]],
-                               [lin[2],Zlim[i+1]-Zlim[i]]])
-
-            l2 = l1.r()
-
-            temp = scipy.dot(scipy.linalg.inv(mat),scipy.array([[l2[0]-Rlim[i]],
-                                                                [l2[2]-Zlim[i]]]))
-            print(temp)
-
-            if temp[1] < 1 and temp[1] > 0:
-                s += [temp[0]]
-
-                    
-        print(s),
-        print('here!!!')
-        return scipy.array(s).min()
-                                             
-
-
-
-    def trace(self,ray,thresh=1e-3,s1=0,s2=None):
+    def gridWeight(self, beams, rgrid=None, zgrid=None, spacing=1e-3):
+        """ this method finds the weighting of the view on a poloidal plane
+        it takes a beam and traces it through the plasma"""
         
-        if not ray._origin is self:
-            ray.redefine(self)
-
-        if s2 is None:
-            s2 = ray.tangency(self,sigma=True)
-
-        #if logical_xor(self.inVessel(ray(s2).r()),self.inVessel(ray(s1).r())):
-        test = True
-        sin = [0,s1,s2]
-        op = 1
-
-        while test:
-            s = self._intersect2d(ray,sin[1],sin[2])
- 
-            if s > 1:
-                sin[2] = sin[1]+(sin[2]-sin[1])*s
-            elif s < 0:
-                sin[1] = sin[1]+(sin[2]-sin[1])*s
-            else:
-                sin[op] = sin[1]+(sin[2]-sin[1])*s
-                op = -op
-
-            if abs(sin[2]-sin[0]) < thresh:
-                test = False
-
-        return sin[1]
+        if rgrid is None:
+            rgrid = self.eq.getRGrid()
+    
+        if zgrid is None:
+            zgrid = self.eq.getZGrid()
 
         
+
+        print('not implemented')
