@@ -1,12 +1,42 @@
-import scipy,warnings,copy
+import scipy
+import warnings
+import copy
 one = scipy.array([1.0])
 
 def unit(x_hat):
-    """ explicitly just unit vector without error
-    which is then defined for the various coordinate
-    systems based on classes based on this, a Hat class
-    never interacts with another Hat class, only one 
-    with a defined coordinate system"""
+    r"""Checks vector input to be of correct array dimensionality.
+    
+    Numpy array dimensionality can often create unexpected array sizes
+    in multiplications. Unit also forces the input to follow unit 
+    vector conventions. It checks the expected cartesian unit 
+    vector to be 3xN, and that all elements of x_hat are within the
+    range [-1,1]
+        
+    Args:
+        x_hat: Array-like, 3 or 3xN.
+            3 dimensional cartesian vector input, which is stores the 
+            direction and magnitude as seperate values.  
+   
+    Returns:
+        Vec: Vector object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Check [1.,0.,0.]::
+            
+                xdir = unit([1.,0.,0.])
+
+        Check [[1.,2.],[0.,0.],[0.,0]]::
+           
+                xdir = unit([[1.,2.],[0.,0.],[0.,0]])
+               
+    Raises:
+        ValueError: If any of the dimensions of x_hat are not 3xN or not
+            of unit length.
+    """
+
     temp = scipy.squeeze(x_hat)
  
     if len(temp) != 3 or temp.max() > 1 or temp.min() < -1:
@@ -14,15 +44,58 @@ def unit(x_hat):
     return temp
 
 
-def Vecx(x_hat, s=None):
-    """ explicitly a cartesian unit vector, but can be set as 
-    a cylindrical unit vector by setting the flag to true, all
-    vector math defaults to first vector"""
+def Vecx(x_hat, s=None):        
+    r"""Generates a cartesian vector object
+        
+    Uses the definition:
+        
+    .. math::
+    
+        \vec{x}= \texttt{x_hat}[0]\hat{x} + \texttt{x_hat}[1]\hat{y} + \texttt{x_hat}[2]\hat{z}
+    
+    Capable of storing multiple directions and lengths as a single
+    vector, but highly discouraged (from POLS).
+        
+    Args:
+        x_hat: Array-like, 3 or 3xN.
+            3 dimensional cartesian vector input, which is stores the 
+            direction and magnitude as seperate values.  
+ 
+    Kwargs:
+        s: Array like or scalar float.
+            Vector magnitude in meters. When specified, it is assumed that 
+            x_hat is representative of direction only and is of unit
+            length. Saves in computation as length calculation avoided.
+            
+    Returns:
+        Vec: Vector object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an x direction unit vector (xdir)::
+            
+                xdir = Vecx((1.,0.,0.))
+
+        Generate a cartesian vector (vec1) into direction (1,3,-4)::
+            
+                vec1 = Vecx(scipy.array(1.,3.,-4.))
+
+        Generate a cartesian vector (vec2) into direction (2,2,2)::
+            
+                vec2 = Vecx(scipy.array(1.,1.,1.)/3.0,s=scipy.array(2.0))
+
+        Generate a cartesian vector (vec3) into direction (3,3,3)::
+            
+                vec3 = Vecx(vec2.unit,s=scipy.array(3.0))
+    """
     flag = False
     xin = scipy.array(x_hat, dtype=float)
 
     if s is None:
         s = scipy.sqrt(scipy.sum(xin**2, axis=0)) 
+        #in the case that s is 0, avoid /0 problems
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             xin = scipy.where(s == 0, xin, xin/s)
@@ -31,15 +104,59 @@ def Vecx(x_hat, s=None):
 
 
 def Vecr(x_hat, s=None):
-    """ explicitly a cylindrical unit vector, but can be set as 
-    a cartesian unit vector by using the c call, all
-    vector math defaults to first vector"""
+    r"""Generates a cylindrical vector object
+        
+    Uses the definition:
+        
+    .. math::
+    
+        \vec{x}= \texttt{x_hat}[0]\hat{r} + \texttt{x_hat}[1]\hat{\theta} + \texttt{x_hat}[2]\hat{z}
+    
+    Capable of storing multiple directions and lengths as a single
+    vector, but highly discouraged (from POLS).
+        
+    Args:
+        x_hat: Array-like, 3 or 3xN.
+            3 dimensional cylindrical vector input, which is stores the 
+            direction and magnitude as seperate values.  All values of 
+            theta will be aliased to -pi to pi
+ 
+    Kwargs:
+        s: Array like or scalar float.
+            Vector magnitude in meters. When specified, it is assumed that 
+            x_hat is representative of direction only and is of unit
+            length. Saves in computation as length calculation avoided.
+            
+    Returns:
+        Vec: Vector object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an y direction unit vector in cylindrical coords (ydir)::
+            
+                ydir = Vecr((1.,scipy.pi/2,0.))
+
+        Generate a cartesian vector (vec1) into direction (1,pi/3,-4)::
+            
+                vec1 = Vecr(scipy.array(1.,scipy.pi/3,-4.))
+
+        Generate a cartesian vector (vec2) into direction (6,0,8)::
+            
+                vec2 = Vecr(scipy.array(3.,0.,4.)/5.0,s=scipy.array(10.0))
+
+        Generate a cartesian vector (vec3) into direction (.3,0,.4)::
+            
+                vec3 = Vecr(vec2.unit,s=scipy.array(.1))
+    """
 
     flag = True    
     xin = scipy.array(x_hat, dtype=float)
         
     if s is None:
         s = scipy.sqrt(x_hat[0]**2 + x_hat[2]**2)
+        #in the case that s is 0, avoid /0 problems
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore",category=RuntimeWarning)
             xin[0] = scipy.where(s == 0, xin[0], xin[0]/s)
@@ -52,7 +169,49 @@ def Vecr(x_hat, s=None):
 
 
 class Vec(object):
+     """Vector object with inherent cartesian backend mathematics.
+     
+     Creates a new Vec instance which can be set to a default 
+     coordinate system of cartesian or cylindrical coordinates.
+     All vector mathematics are accomplished in cartesian to 
+     simplify computation effort. Cylindrical vectors are
+     converted at last step for return.
     
+     It is highly recommendws to utilize the Vecx and Vecr 
+     functions to allow for proper data checks in generating
+     vectors.
+
+    Args:
+        x_hat: Array like of size 3 or 3xN in cartesian.
+            for all i, x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
+            is equal to 1.
+
+        s: Array-like of size 1 or shape N.
+            Values of the positions of the 2nd
+            dimension of f. Must be monotonic without duplicates.
+
+    Kwargs:
+        flag: Boolean.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an x direction unit vector (xdir)::
+            
+                xdir = Vec((1.,0.,0.),1.0)
+
+        Generate a cartesian vector (vec1) into direction (2,2,2)::
+            
+                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+
+        Generate a cartesian vector (vec2) into direction (4,4,4)::
+            
+                vec2 = Vec(vec1.unit,vec1.s*2)
+    """
+
     def __init__(self, x_hat, s, flag=False):
         """ inherently a cartesian set of coordinates given by unit,
         and a length set by s. The flag tells if it is a cartesian
@@ -152,7 +311,51 @@ def cross(Vec1, Vec2):
     return new
 
 class Point(Vec):
-    """ a point class can only be defined relative to an origin,
+    """Point object with inherent cartesian backend mathematics.
+     
+     Creates a new Point instance which can be set to a default 
+     coordinate system of cartesian or cylindrical coordinates.
+     All vector mathematics are accomplished in cartesian to 
+     simplify computation effort. Cylindrical vectors are
+     converted at last step for return.
+    
+     It is highly recommendws to utilize the Vecx and Vecr 
+     functions to allow for proper data checks in generating
+     vectors.
+
+    Args:
+        x_hat: Array like of size 3 or 3xN in cartesian or Vector object.
+            if array, then for all i, 
+            x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
+            is equal to 1.
+
+        s: Array-like of size 1 or shape N.
+            Values of the positions of the 2nd
+            dimension of f. Must be monotonic without duplicates.
+
+    Kwargs:
+        ref: Origin object.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an x direction unit vector (xdir)::
+            
+                xdir = Vec((1.,0.,0.),1.0)
+
+        Generate a cartesian vector (vec1) into direction (2,2,2)::
+            
+                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+
+        Generate a cartesian vector (vec2) into direction (4,4,4)::
+            
+                vec2 = Vec(vec1.unit,vec1.s*2)
+    """
+
+""" a point class can only be defined relative to an origin,
     there will be an additional point class which will be known
     as grid which reduces the redundant reference to origin
     and depth for memory savings, and will order points in 
@@ -346,6 +549,49 @@ class Grid(Point):
         return self._x # its not this simple
 
 class Origin(Point):
+    """Point object with inherent cartesian backend mathematics.
+     
+     Creates a new Point instance which can be set to a default 
+     coordinate system of cartesian or cylindrical coordinates.
+     All vector mathematics are accomplished in cartesian to 
+     simplify computation effort. Cylindrical vectors are
+     converted at last step for return.
+    
+     It is highly recommendws to utilize the Vecx and Vecr 
+     functions to allow for proper data checks in generating
+     vectors.
+
+    Args:
+        x_hat: Array like of size 3 or 3xN in cartesian or Vector object.
+            if array, then for all i, 
+            x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
+            is equal to 1.
+
+        s: Array-like of size 1 or shape N.
+            Values of the positions of the 2nd
+            dimension of f. Must be monotonic without duplicates.
+
+    Kwargs:
+        ref: Origin object.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an x direction unit vector (xdir)::
+            
+                xdir = Vec((1.,0.,0.),1.0)
+
+        Generate a cartesian vector (vec1) into direction (2,2,2)::
+            
+                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+
+        Generate a cartesian vector (vec2) into direction (4,4,4)::
+            
+                vec2 = Vec(vec1.unit,vec1.s*2)
+    """
 
     def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=None):
         """ an Origin is defined by a point and two vectors.

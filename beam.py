@@ -66,11 +66,8 @@ class Ray(geometry.Point):
         if not self._origin is plasma:
             self.redefine(plasma)
 
-
-        
         end = plasma.eq.getMachineCrossSection()[0].max() + self.s
         #step = end/1e2
-
 
         temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
         sin = temp.size
@@ -434,3 +431,14 @@ class Beam(geometry.Origin):
         self.norm.s = temp
 
         return out
+
+
+def multiBeam(surf1,surf2,x=10,y=10):
+    """ This function provides the capability of generating multiple beams
+    from two surfaces using the split functionality.  The total number of
+    beams goes as (x*y)^2, thus at very small numbers of x,y the code slows
+    abruptly"""
+
+    temp1 = surf1.split(x,y)
+    temp2 = surf2.split(x,y)
+    for 
