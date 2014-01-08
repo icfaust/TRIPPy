@@ -45,7 +45,7 @@ def unit(x_hat):
 
 
 def Vecx(x_hat, s=None):        
-    r"""Generates a cartesian vector object
+    r"""Generates a cartesian coordinate vector object
         
     Uses the definition:
         
@@ -104,7 +104,7 @@ def Vecx(x_hat, s=None):
 
 
 def Vecr(x_hat, s=None):
-    r"""Generates a cylindrical vector object
+    r"""Generates a cylindrical coordinate vector object
         
     Uses the definition:
         
@@ -119,7 +119,7 @@ def Vecr(x_hat, s=None):
         x_hat: Array-like, 3 or 3xN.
             3 dimensional cylindrical vector input, which is stores the 
             direction and magnitude as seperate values.  All values of 
-            theta will be aliased to -pi to pi
+            theta will be aliased to (-pi,pi]
  
     Kwargs:
         s: Array like or scalar float.
@@ -177,8 +177,8 @@ class Vec(object):
      simplify computation effort. Cylindrical vectors are
      converted at last step for return.
     
-     It is highly recommendws to utilize the Vecx and Vecr 
-     functions to allow for proper data checks in generating
+     It is highly recommended to utilize the Vecx and Vecr 
+     functions which allow for proper data checks in generating
      vectors.
 
     Args:
@@ -549,15 +549,15 @@ class Grid(Point):
         return self._x # its not this simple
 
 class Origin(Point):
-    """Point object with inherent cartesian backend mathematics.
+    """Origin object with inherent cartesian backend mathematics.
      
-     Creates a new Point instance which can be set to a default 
+     Creates a new Origin instance which can be set to a default 
      coordinate system of cartesian or cylindrical coordinates.
      All vector mathematics are accomplished in cartesian to 
      simplify computation effort. Cylindrical vectors are
      converted at last step for return.
     
-     It is highly recommendws to utilize the Vecx and Vecr 
+     It is highly recommended to utilize the Vecx and Vecr 
      functions to allow for proper data checks in generating
      vectors.
 
