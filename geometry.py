@@ -65,7 +65,7 @@ def Vecx(x_hat, s=None):
         s: Array like or scalar float.
             Vector magnitude in meters. When specified, it is assumed that 
             x_hat is representative of direction only and is of unit
-            length. Saves in computation as length calculation avoided.
+            length. Saves in computation as length calculation is avoided.
             
     Returns:
         Vec: Vector object.
@@ -148,7 +148,7 @@ def Vecr(x_hat, s=None):
 
         Generate a cartesian vector (vec3) into direction (.3,0,.4)::
             
-                vec3 = Vecr(vec2.unit,s=scipy.array(.1))
+                vec3 = Vecr(vec2.r()/vec2.s,s=scipy.array(.1))
     """
 
     flag = True    
@@ -169,17 +169,17 @@ def Vecr(x_hat, s=None):
 
 
 class Vec(object):
-     """Vector object with inherent cartesian backend mathematics.
-     
-     Creates a new Vec instance which can be set to a default 
-     coordinate system of cartesian or cylindrical coordinates.
-     All vector mathematics are accomplished in cartesian to 
-     simplify computation effort. Cylindrical vectors are
-     converted at last step for return.
+    """Vector object with inherent cartesian backend mathematics.
     
-     It is highly recommended to utilize the Vecx and Vecr 
-     functions which allow for proper data checks in generating
-     vectors.
+    Creates a new Vec instance which can be set to a default 
+    coordinate system of cartesian or cylindrical coordinates.
+    All vector mathematics are accomplished in cartesian to 
+    simplify computation effort. Cylindrical vectors are
+    converted at last step for return.
+    
+    It is highly recommended to utilize the Vecx and Vecr 
+    functions which allow for proper data checks in generating
+    vectors.
 
     Args:
         x_hat: Array like of size 3 or 3xN in cartesian.
@@ -213,17 +213,24 @@ class Vec(object):
     """
 
     def __init__(self, x_hat, s, flag=False):
-        """ inherently a cartesian set of coordinates given by unit,
-        and a length set by s. The flag tells if it is a cartesian
-        or cylindrial vector"""
+        """ 
+        """
 
         self.unit = unit(x_hat)
         self.s = scipy.squeeze(s)
         self.flag = flag
 
     def __add__(self, vec):
-        """ Vector addition, if to vectors go a walkin'
-        the first does the talking and sets coordinate system"""
+        """vector addition, x.__add__(y) <==> x+y
+
+        Args:
+            vec: Vector object
+
+        Returns:
+            Vector object with coordinate system of first argument
+
+        """
+        # corrects for some matrix math oddities of numpy
         x0 = self.x0() + vec.x0()
         x1 = self.x1() + vec.x1()
         x2 = self.x2() + vec.x2()
@@ -233,7 +240,16 @@ class Vec(object):
         return new
 
     def __sub__(self, vec):
-        """ Vector subtraction """
+        """vector addition, x.__sub__(y) <==> x-y
+
+        Args:
+            vec: Vector object
+
+        Returns:
+            Vector object with coordinate system of first argument
+
+        """
+        # corrects for some matrix math oddities of numpy
         x0 = self.x0() - vec.x0()
         x1 = self.x1() - vec.x1()
         x2 = self.x2() - vec.x2()
@@ -243,69 +259,190 @@ class Vec(object):
         return new
 
     def __neg__(self):
-        """ uniary minus"""
-        return Vec(-self.unit,self.s)
+        """vector negation, x.__neg__() <==> -x
+
+        Returns:
+            Vector object with coordinate system of object
+
+        """
+        return Vec(-self.unit, self.s, flag=self.flag)
 
     def __mul__(self, vec):
-        """ Dot product """
+        """vector dot product, x.__mul__(y) <==> x*y or x.s = x.s*y
+
+        Args:
+            val: Vector object or float or numpy array
+
+        Returns:
+            Vector object with coordinate system of first argument,
+            If the second argument is not a vector object, it 
+            modifies the vector magnitude by value vec.    
+
+        """
+
         try:
-            return (self.s*vec.s)*scipy.dot(self.unit.T,vec.unit)
+            return (self.s*vec.s)*scipy.dot(self.unit.T, vec.unit)
         except AttributeError:
-            return Vec(self.unit,vec*self.s)
+            return Vec(self.unit, vec*self.s, flag=self.flag)
 
     def __div__(self, val):
-        return Vec(self.unit,self.s/val)
+        """vector magnitude division, x.__div__(y) <==> x.s = x.s/y
 
-    def __getitem__(self,idx):
+        Args:
+            val: float or numpy array
+                
+        Returns:
+            Vector object with coordinate system of object.    
+
+        """
+
+        return Vec(self.unit, self.s/val, flag=self.flag)
+
+    def __getitem__(self, idx):
+        """coordinates at index, x.__getitem__(y) <==> x[y]
+
+        Args:
+            idx: int or int array
+                index of interest.
+
+        Returns:
+            numpy array of cartesian or cylindrical coordinate
+            values at index.
+
+        """
+
         if self.flag:
             return self.r()[idx]
         else:
             return self.x()[idx]
 
     def copy(self):
+        """copy of object
+
+        Returns:
+            copy of object 
+        """
+
+
         return copy.deepcopy(self)
 
     def _cross(self):
-        " matrix necessary for a cross-product calculation"""
+        """returns matrix multiplication form of vector cross product
+
+        Returns:
+            numpy square 3x3 array of cartesian coordinate
+            values at index.  It is assumed that while there
+            might be multiple magnitudes to the vector, that
+            there are is only a singular direction.
+
+        """
+
         return  scipy.array(((0,-self.unit[2],self.unit[1]),
                              (self.unit[2],0,-self.unit[0]),
                              (-self.unit[1],self.unit[0],0)))
 
     def x0(self):
-        """x0,x1,x2 is taking care of an array multiplication problem"""
+        """returns cartesian coordinate along first direction
+
+        Returns:
+           numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[0]
 
-    def x1(self):
+    def x1(self):        
+        """returns cartesian coordinate along second direction
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[1]
     
     def x2(self):
+        """returns cartesian coordinate along third direction
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[2]
 
     def c(self):
+        """Conversion of vector to opposite coordinate system
+
+        Returns:
+            copy of vector object with opposite coordinate system
+            (set with .flag parameter)
+
+        """
         return Vec(self.unit,self.s, flag = (not self.flag))
 
-    def x(self):
-        """ cartesian full vector"""
+    def x(self):        
+        """return cartesian coordinate values
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+        """
         return scipy.squeeze([self.x0(),
                               self.x1(),
                               self.x2()])
     
     def r(self):
-        """ cylindrical full vector"""
+        """returns cylindrical coordinate values
+
+        Returns:
+            numpy array of cylindrical coordinates in meters and radians
+
+        """
         return scipy.squeeze([self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
                               scipy.arctan2(self.unit[1],self.unit[0]),
                               self.s*self.unit[2]])
 
     def point(self,ref,err=[]):
+        """returns point based off of vector
+
+        Args:
+            ref: reference origin
+
+        Kwargs:
+            err: the error in meters in point position
+
+        Returns:
+            Point object
+
+        """
         return Point(self, ref, err=err)
                    
 
 def angle(Vec1, Vec2):
-    """angle between two vectors"""
-    return scipy.arccos(Vec1 * Vec2) 
+    """Returns angle between two vectors.
+
+    Args:
+        Vec1: Vec Object
+
+        Vec2: Vec Object
+
+    Returns:
+        angle in radians [0,pi] seperating the two vectors
+        on the plane defined by the two.
+     
+    """
+    return scipy.arccos((Vec1 * Vec2)/(Vec1.s * Vec2.s)) 
 
 def cross(Vec1, Vec2):
-    """cross product"""
+    """Returns angle between two vectors.
+
+    Args:
+        Vec1: Vec Object
+
+        Vec2: Vec Object
+
+    Returns:
+        Vec object of the vector cross product of the two vectors.
+        It is in the coordinate system of the first argument.
+     
+    """
     new = Vec(scipy.dot(Vec1._cross(),Vec2.unit),Vec1.s*Vec2.s)
     new.flag = Vec1.flag
     return new
@@ -355,11 +492,6 @@ class Point(Vec):
                 vec2 = Vec(vec1.unit,vec1.s*2)
     """
 
-""" a point class can only be defined relative to an origin,
-    there will be an additional point class which will be known
-    as grid which reduces the redundant reference to origin
-    and depth for memory savings, and will order points in 
-    such a way for easier calculation."""
     def __init__(self, x_hat, ref=None, err=None):        
 
 
@@ -385,21 +517,8 @@ class Point(Vec):
             self._origin = ref
             self._depth = ref._depth + 1
                 
-            
-
-        #if type(x_hat) is Vec:
-        #    temp = x_hat
-        #elif ref.flag:
-        #    temp = Vecr(x_hat)
-        #else:
-        #    temp = Vecx(x_hat)
-
         if not err is None:
             self.err = err
-            
-        #self._origin = ref
-        #self._depth = ref._depth + 1 # basis origin is depth = 0
-        #super(Point,self).__init__(temp.unit, temp.s, flag=ref.flag)
          
     def redefine(self, neworigin):
         """ changes depth of point by calculating with respect to a new
@@ -511,42 +630,6 @@ class Point(Vec):
     def c(self):
         raise NotImplementedError('point locked by reference coordinate system')
 
-
-class Grid(Point):
-    
-    def __init__(self, x_hat, ref, mask=(False,False,False), err=scipy.array((0,0,0))):
-        """ a grid compartmentalizes a large set of points which
-        are easily defined on a regular grid. Unlike points, grids
-        points cannot change reference frames.  While this might
-        be okay for a flat plane of points, for shapes such as 
-        spheres, parabolas, ellipsoids and other complicated shapes
-        would not be easily defined.  When a reference frame change
-        is required, it will revert to a similarly sized array
-        of Point Objects, which use order mxn more memory"""
-        
-        # x_hat is expected to be a tuple containing three entities.
-        # the entities are described with the mask variable which provides
-        # a basic descriptor of the functional dependence.  At most,
-        # only two variables may be dependent on the third.
-        self._x = x_hat
-        
-        # mask provides an understanding of the nature of the grid, whether
-        # it is planar or follows a funciton in a specific dimension this
-        # should allow for various shapes to easily be implemented
-        self._mask = mask
-
-    def redefine(self,neworigin):
-        """ redefine will break the simplicity of the grid, have it spit back
-        a tuple of Points at memory cost"""
-        raise ValueError
-
-    def x(self):
-
-        # access the mask, and determine if the variable is a function.
-
-        # it is a ssumed that the masked variables are functions of the
-        # other inputs. 
-        return self._x # its not this simple
 
 class Origin(Point):
     """Origin object with inherent cartesian backend mathematics.
