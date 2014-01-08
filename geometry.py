@@ -80,11 +80,11 @@ def Vecx(x_hat, s=None):
 
         Generate a cartesian vector (vec1) into direction (1,3,-4)::
             
-                vec1 = Vecx(scipy.array(1.,3.,-4.))
+                vec1 = Vecx(scipy.array([1.,3.,-4.]))
 
         Generate a cartesian vector (vec2) into direction (2,2,2)::
             
-                vec2 = Vecx(scipy.array(1.,1.,1.)/3.0,s=scipy.array(2.0))
+                vec2 = Vecx(scipy.array([1.,1.,1.])/3.0,s=scipy.array(2.0))
 
         Generate a cartesian vector (vec3) into direction (3,3,3)::
             
@@ -140,11 +140,11 @@ def Vecr(x_hat, s=None):
 
         Generate a cartesian vector (vec1) into direction (1,pi/3,-4)::
             
-                vec1 = Vecr(scipy.array(1.,scipy.pi/3,-4.))
+                vec1 = Vecr(scipy.array([1.,scipy.pi/3,-4.]))
 
         Generate a cartesian vector (vec2) into direction (6,0,8)::
             
-                vec2 = Vecr(scipy.array(3.,0.,4.)/5.0,s=scipy.array(10.0))
+                vec2 = Vecr(scipy.array([3.,0.,4.])/5.0,s=scipy.array(10.0))
 
         Generate a cartesian vector (vec3) into direction (.3,0,.4)::
             
@@ -196,8 +196,8 @@ class Vec(object):
             cartesian if False, or cylindrical if True.
                 
     Examples:   
-        Accepts all array like (tuples included) inputs, though all data 
-        is stored in numpy arrays.
+        Accepts all array like (tuples included) inputs, though
+        all data is stored in numpy arrays.
 
         Generate an x direction unit vector (xdir)::
             
@@ -205,7 +205,7 @@ class Vec(object):
 
         Generate a cartesian vector (vec1) into direction (2,2,2)::
             
-                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+                vec1 = Vec(scipy.array([1.,1.,1.])/3.0,scipy.array(2.0))
 
         Generate a cartesian vector (vec2) into direction (4,4,4)::
             
@@ -342,7 +342,7 @@ class Vec(object):
                              (-self.unit[1],self.unit[0],0)))
 
     def x0(self):
-        """returns cartesian coordinate along first direction
+        """returns cartesian coordinate along first dimension
 
         Returns:
            numpy array of cartesian coordinates in meters
@@ -351,7 +351,7 @@ class Vec(object):
         return self.s*self.unit[0]
 
     def x1(self):        
-        """returns cartesian coordinate along second direction
+        """returns cartesian coordinate along second dimension
 
         Returns:
             numpy array of cartesian coordinates in meters
@@ -360,7 +360,7 @@ class Vec(object):
         return self.s*self.unit[1]
     
     def x2(self):
-        """returns cartesian coordinate along third direction
+        """returns cartesian coordinate along third dimension
 
         Returns:
             numpy array of cartesian coordinates in meters
@@ -389,7 +389,7 @@ class Vec(object):
                               self.x2()])
     
     def r(self):
-        """returns cylindrical coordinate values
+        """return cylindrical coordinate values
 
         Returns:
             numpy array of cylindrical coordinates in meters and radians
@@ -450,34 +450,30 @@ def cross(Vec1, Vec2):
 class Point(Vec):
     """Point object with inherent cartesian backend mathematics.
      
-     Creates a new Point instance which can be set to a default 
-     coordinate system of cartesian or cylindrical coordinates.
-     All vector mathematics are accomplished in cartesian to 
-     simplify computation effort. Cylindrical vectors are
-     converted at last step for return.
+    Creates a new Point instance which can be set to a default 
+    coordinate system of cartesian or cylindrical coordinates
+    which is determined from the reference coordinate system.
+    All vector mathematics are accomplished in cartesian to 
+    simplify computation effort. Cylindrical vectors are
+    converted at last step for return.
     
-     It is highly recommendws to utilize the Vecx and Vecr 
-     functions to allow for proper data checks in generating
-     vectors.
+    It is highly recommendws to utilize the Vecx and Vecr 
+    functions to allow for proper data checks in generating
+    vectors.
 
     Args:
-        x_hat: Array like of size 3 or 3xN in cartesian or Vector object.
-            if array, then for all i, 
-            x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
-            is equal to 1.
-
-        s: Array-like of size 1 or shape N.
-            Values of the positions of the 2nd
-            dimension of f. Must be monotonic without duplicates.
+        x_hat: geometry object or 3xN coordinate system values.
+             Input coordinate system value options assume that
+             it matches the coordinate system of the reference
+             origin.
 
     Kwargs:
         ref: Origin object.
-            Sets the default coordinate nature of the vector to 
-            cartesian if False, or cylindrical if True.
+            Sets the default coordinate nature 
                 
     Examples:   
-        Accepts all array like (tuples included) inputs, though all data 
-        is stored in numpy arrays.
+        Accepts all array like (tuples included) inputs, though
+        all data is stored in numpy arrays.
 
         Generate an x direction unit vector (xdir)::
             
@@ -485,7 +481,7 @@ class Point(Vec):
 
         Generate a cartesian vector (vec1) into direction (2,2,2)::
             
-                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+                vec1 = Vec(scipy.array([1.,1.,1.])/3.0,scipy.array(2.0))
 
         Generate a cartesian vector (vec2) into direction (4,4,4)::
             
@@ -493,7 +489,8 @@ class Point(Vec):
     """
 
     def __init__(self, x_hat, ref=None, err=None):        
-
+        """
+        """
 
         try:
             super(Point,self).__init__(x_hat.unit, x_hat.s, flag=x_hat.flag)
@@ -830,8 +827,16 @@ class Center(Origin):
         # lower references or rotations to this, the main coordinate system
 
 def pts2Vec(pt1,pt2):
-    """
-    pts2Vec creates a vector from pt1 pointing to pt2
+    """Returns angle between two vectors.
+
+    Args:
+        pt1: geometry Object with reference origin
+
+        pt2: geometry Object with reference origin
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
     """
     if pt1._origin is pt2._origin:
         return pt2 - pt1
@@ -839,6 +844,22 @@ def pts2Vec(pt1,pt2):
         raise ValueError("points must exist in same coordinate system")
 
 def fill(funtype,x0,x1,x2,*args,**kwargs):
+    """Recursive function to generate TRIPPy Objects
+
+    Args:
+        funtype: Object type to replicate
+        
+        x0: coordinate of 1st direction
+
+        x1: coordinate of 2md direction
+        
+        x2: coordinate of 3rd direction
+
+    Returns:
+        Tuple of, or object of type funtype.
+    
+    """
+
     try:
         temp = []
         for i in xrange(x0.shape[0]):
