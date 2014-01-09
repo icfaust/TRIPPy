@@ -888,24 +888,24 @@ class Origin(Point):
         except KeyError:
             return super(Origin,self).split(self._origin, obj=type(self), Vec=[self.meri,self.norm], flag=self.flag)
 
-
+        
 class Center(Origin):
-   """Center object with inherent cartesian backend mathematics.
-     
+    """Center object with inherent cartesian backend mathematics.
+    
     Creates a new Center instance which can be set to a default 
     coordinate system of cartesian or cylindrical coordinates.
     All vector mathematics are accomplished in cartesian to 
     simplify computation effort. Cylindrical vectors are
     converted at last step for return.  It defaults to cylindrical
     coordinates
-
+    
     The Center class which underlies all positional calculation.
     It is located at (0,0,0) and is inherently a cylindrical coordinate
     system (unless flag set otherwise). It is from the translation
     of inherently cylindrical data into toroidal coordinates 
     requires this rosetta stone, it can be dynamically set to 
     becoming an origin given a specification of another origin.
-
+    
     Kwargs:
         flag: Boolean.
             Sets the default coordinate nature of the vector to 
