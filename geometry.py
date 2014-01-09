@@ -471,17 +471,18 @@ class Point(Vec):
         Accepts all array like (tuples included) inputs, though
         all data is stored in numpy arrays.
 
-        Generate an x direction unit vector (xdir)::
+        Generate a point 1m in x from point U (xdir)::
             
-                xdir = Vec((1.,0.,0.),1.0)
+                xdir = Vec((1.,0.,0.),U) #implicitly in cyl. coords.
 
-        Generate a cartesian vector (vec1) into direction (2,2,2)::
+        Generate a cartesian point into direction (2,2,2) from Q::
             
-                vec1 = Vec(scipy.array([1.,1.,1.])/3.0,scipy.array(2.0))
+                vec2 = Vec((2.,2.,2.), ref=Q)
 
-        Generate a cartesian vector (vec2) into direction (4,4,4)::
+        Generate a cylindrical radial vector (vec2) into direction (1,0,1)::
             
-                vec2 = Vec(vec1.unit,vec1.s*2)
+                cent = Center() #implicitly in cyl. coords.
+                vec2 = Vec(vec1, ref=cent)
     """
 
     def __init__(self, x_hat, ref=None):        
