@@ -62,7 +62,7 @@ def Vecx(x_hat, s=None):
             direction and magnitude as seperate values.  
  
     Kwargs:
-        s: Array like or scalar float.
+        s: Array-like or scalar float.
             Vector magnitude in meters. When specified, it is assumed that 
             x_hat is representative of direction only and is of unit
             length. Saves in computation as length calculation is avoided.
@@ -119,10 +119,10 @@ def Vecr(x_hat, s=None):
         x_hat: Array-like, 3 or 3xN.
             3 dimensional cylindrical vector input, which is stores the 
             direction and magnitude as seperate values.  All values of 
-            theta will be aliased to (-pi,pi]
+            theta will be aliased to :math:`(\pi,\pi]`
  
     Kwargs:
-        s: Array like or scalar float.
+        s: Array-like or scalar float.
             Vector magnitude in meters. When specified, it is assumed that 
             x_hat is representative of direction only and is of unit
             length. Saves in computation as length calculation avoided.
@@ -182,7 +182,7 @@ class Vec(object):
     vectors.
 
     Args:
-        x_hat: Array like of size 3 or 3xN in cartesian.
+        x_hat: Array-like of size 3 or 3xN in cartesian.
             for all i, x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
             is equal to 1.
 
@@ -424,7 +424,7 @@ def angle(Vec1, Vec2):
         Vec2: Vec Object
 
     Returns:
-        angle in radians [0,pi] seperating the two vectors
+        angle in radians :math:`[0,\pi]` seperating the two vectors
         on the plane defined by the two.
      
     """
@@ -450,16 +450,12 @@ def cross(Vec1, Vec2):
 class Point(Vec):
     """Point object with inherent cartesian backend mathematics.
      
-    Creates a new Point instance which can be set to a default 
+    Creates a new Point instance which is set to a default 
     coordinate system of cartesian or cylindrical coordinates
-    which is determined from the reference coordinate system.
-    All vector mathematics are accomplished in cartesian to 
-    simplify computation effort. Cylindrical vectors are
-    converted at last step for return.
-    
-    It is highly recommendws to utilize the Vecx and Vecr 
-    functions to allow for proper data checks in generating
-    vectors.
+    determined from the reference coordinate system. All vector
+    mathematics are accomplished in cartesian to simplify 
+    computation effort. Cylindrical vectors are converted at
+    last step for return.
 
     Args:
         x_hat: geometry object or 3xN coordinate system values.
@@ -488,7 +484,7 @@ class Point(Vec):
                 vec2 = Vec(vec1.unit,vec1.s*2)
     """
 
-    def __init__(self, x_hat, ref=None, err=None):        
+    def __init__(self, x_hat, ref=None):        
         """
         """
 
@@ -513,15 +509,21 @@ class Point(Vec):
         else:
             self._origin = ref
             self._depth = ref._depth + 1
-                
-        if not err is None:
-            self.err = err
          
-    def redefine(self, neworigin):
-        """ changes depth of point by calculating with respect to a new
-        origin, for calculations with respect to a flux grid, etc. this
-        should reduce caluclation substantially."""
-        
+    def redefine(self, neworigin):        
+        """redefine point into new coordinate system
+
+        Args:
+            neworigin: Origin or Origin-derived object
+               
+
+        Returns:
+            Vector object with coordinate system of first argument,
+            If the second argument is not a vector object, it 
+            modifies the vector magnitude by value vec.    
+
+        """
+       
         # use _lca to find common ancestor and return tree to common
         lca = self._lca(neworigin)
         
@@ -569,6 +571,17 @@ class Point(Vec):
             self.s = temp.s
 
     def split(self, *args, **kwargs):
+        """split coordinate values into seperate objects
+
+        Kwargs:
+            obj: geometry-derived object which to form from data
+
+        Returns:
+            Object tuple size N for N points. Works to arbitrary
+            dimension.
+
+        """
+        
         obj = kwargs.pop('obj', None)
         if obj is None:
             obj = type(self)
@@ -579,8 +592,16 @@ class Point(Vec):
             return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
 
     def _genOriginsToParent(self):
-        """ generate a list of points which leads to the overall basis
-        origin of the geometry, the number of elements will be the depth"""
+        """vector addition, x.__sub__(y) <==> x-y
+
+        Args:
+            vec: Vector object
+
+        Returns:
+            Vector object with coordinate system of first argument
+
+        """
+
         temp = self._origin
         pnts = self._depth*[0]
 
@@ -592,10 +613,15 @@ class Point(Vec):
         return pnts
     
     def _lca(self, point2):
-        """ recursively solve for the common point of reference
-        between two points as given by a depth number starting
-        from the base of the tree. It will return a tuple which
-        contains the nodes leading to the common point."""
+        """vector addition, x.__sub__(y) <==> x-y
+
+        Args:
+            vec: Vector object
+
+        Returns:
+            Vector object with coordinate system of first argument
+
+        """
         
         temp = True
         idx = 0
@@ -631,28 +657,56 @@ class Point(Vec):
 class Origin(Point):
     """Origin object with inherent cartesian backend mathematics.
      
-     Creates a new Origin instance which can be set to a default 
-     coordinate system of cartesian or cylindrical coordinates.
-     All vector mathematics are accomplished in cartesian to 
-     simplify computation effort. Cylindrical vectors are
-     converted at last step for return.
+    Creates a new Origin instance which can be set to a default 
+    coordinate system of cartesian or cylindrical coordinates.
+    All vector mathematics are accomplished in cartesian to 
+    simplify computation effort. Cylindrical vectors are
+    converted at last step for return.
     
-     It is highly recommended to utilize the Vecx and Vecr 
-     functions to allow for proper data checks in generating
-     vectors.
+    An Origin is defined by a point and two vectors. The two 
+    vectors being: 1st the normal to the surface, principal axis,
+    z-vector or the (0,0,1) vector of the new system defined in
+    the reference system. The second vector along with the 
+    first fully defines meridonial ray paths, y-vector or the
+    (0,1,0) vector (.meri). The sagittal ray path, x-vector or
+    the (1,0,0) is defined through a cross product (.sagi).
+    Point position and rotation matricies are stored at
+    instantiation.
 
+    These conventions of norm to z, meri to y axis and sagi to
+    x axis are exactly as perscribed in the OSLO optical code,
+    allowing for easier translation from its data into Toroidal
+    systems.
+           
+    If the angles alpha, beta, and gamma are specified following
+    the eulerian rotation formalism, it is processed in the 
+    following manner: alpha is the rotation from the principal
+    axis in the meridonial plane, beta is the rotation about the
+    plane normal to the meridonial ray, or 2nd specified vector,
+    and gamma is the 2nd rotation about the principal axis. 
+    This might change based on what is most physically intuitive.
+    These are converted to vectors and stored as attributes.
+    
     Args:
-        x_hat: Array like of size 3 or 3xN in cartesian or Vector object.
-            if array, then for all i, 
-            x_hat[0][i]**2 + x_hat[1][i]**2 + x_hat[2][i]**2
-            is equal to 1.
-
-        s: Array-like of size 1 or shape N.
-            Values of the positions of the 2nd
-            dimension of f. Must be monotonic without duplicates.
+        x_hat: geometry-derived object or Array-like of size 3 or 3xN.
 
     Kwargs:
-        ref: Origin object.
+        ref: Origin or Origin-derived object.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+
+        vec: Tuple of two Vector objects
+            The two vectors describe the normal (or z) axis and
+            the meridonial (or y) axis. Inputs should follow
+            [meri,normal]. If not specified, it assumed that angle
+            is specified.
+
+        angle: tuple or array of 3 floats
+            alpha, beta and gamma are eulerian rotation angles which
+            describe the rotation and thus the sagittal and 
+            meridonial rays.
+            
+        flag: Boolean.
             Sets the default coordinate nature of the vector to 
             cartesian if False, or cylindrical if True.
                 
@@ -660,51 +714,45 @@ class Origin(Point):
         Accepts all array like (tuples included) inputs, though all data 
         is stored in numpy arrays.
 
-        Generate an x direction unit vector (xdir)::
+        Generate an origin at (0,0,0) with a :math:`\pi/2` rotation:
             
-                xdir = Vec((1.,0.,0.),1.0)
+                cent = Center() #implicitly in cyl. coords.
+                newy = Vecr((1.,scipy.pi,0.))
+                z = Vecr((0.,0.,1.))
+                ex = Origin((0.,0.,0.), cent, vec=[newy,z])
 
-        Generate a cartesian vector (vec1) into direction (2,2,2)::
+        Generate an origin at (0,0,0) with a :math:`\pi/2` rotation:
             
-                vec1 = Vec(scipy.array(1.,1.,1.)/3.0,scipy.array(2.0))
+                cent = Center() #implicitly in cyl. coords.
+                ex1 = Origin((0.,0.,0.), cent, angle=(scipy.pi/2,0.,0.))
 
-        Generate a cartesian vector (vec2) into direction (4,4,4)::
-            
-                vec2 = Vec(vec1.unit,vec1.s*2)
+        Generate an origin at (1,10,-7) with a cartesian coord system:
+
+                cent = Center() #implicitly in cyl. coords.
+                place = Vecx((1.,10.,-7.))
+                ex2 = Origin(place, cent, angle=(0.,0.,0.), flag=False)
+
+        Generate an origin at (1,1,1) with a cartesian coord system:
+
+                cent = Center(flag=False) #cartesian coords.
+                ex3 = Origin((1.,1.,1.), cent, angle=(0.,0.,0.))
+
     """
 
-    def __init__(self, x_hat, ref, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=None):
-        """ an Origin is defined by a point and two vectors.
-        The two vectors being: 1st the normal to the surface,
-        principal axis, z-vector or the (0,0,1) vector of the
-        new system defined in the reference system . The 
-        second vector along with the first fully defines 
-        meridonial ray paths, x-vector or the (1,0,0) vector.
-        The sagittal ray path, y-vector or the (0,1,0)
-        is defined through a cross product.  Point position
-        and rotation matricies are stored at instantiation.
-
-        If the angles alpha, beta, and gamma are specified 
-        following the eulerian rotation formalism, it is
-        processed in the following manner: alpha is the 
-        rotation from the principal axis in the meridonial
-        plane, beta is the rotation about the plane normal
-        to the meridonial ray, or 2nd specified vector,
-        and gamma is the 2nd rotation about the principal
-        axis.  This might change based on what is most
-        physically intuitive."""
+    def __init__(self, x_hat, ref=None, vec=None, angle=None, flag=None):
+        """ 
+        """
         # test Vec1 and Vec2 for ortho-normality
-        super(Origin,self).__init__(x_hat, ref=ref, err=err)
-        if Vec:
+        super(Origin,self).__init__(x_hat, ref=ref)
+        if not vec is None:
             # generate point based off of previous origin
-
-            self.norm = Vec[1]
-            self.meri = Vec[0]
+            self.norm = vec[1]
+            self.meri = vec[0]
 
             self.sagi = cross(self.meri,self.norm)
             # generate rotation matrix based off coordinate system matching (this could get very interesting)
 
-        elif len(angle):
+        elif not angle is None:
 
             a = scipy.array(angle[0])
             b = scipy.array(angle[1])
@@ -785,7 +833,18 @@ class Origin(Point):
         return temp
 
     def split(self, *args, **kwargs):
-        
+        """split coordinate values into seperate objects
+
+        Kwargs:
+            obj: geometry-derived object which to form from data.
+                If not specified, returns a tuple of Origin objects.
+
+        Returns:
+            Object tuple size N for N points. Works to arbitrary
+            dimension.
+
+        """
+
         try:
             obj = kwargs['obj']
             return super(Origin,self).split(*args,**kwargs)
@@ -794,13 +853,39 @@ class Origin(Point):
 
 
 class Center(Origin):
-    """ this is the class which underlies all positional calculation.
+   """Center object with inherent cartesian backend mathematics.
+     
+    Creates a new Center instance which can be set to a default 
+    coordinate system of cartesian or cylindrical coordinates.
+    All vector mathematics are accomplished in cartesian to 
+    simplify computation effort. Cylindrical vectors are
+    converted at last step for return.  It defaults to cylindrical
+    coordinates
+
+    The Center class which underlies all positional calculation.
     It is located at (0,0,0) and is inherently a cylindrical coordinate
-    system (unless flag set otherwise). 
-    It is from the translation of inherently cylindrical data
-    into toroidal coordinates requires this rosetta stone, it can
-    be dynamically set to becoming an origin given a specification
-    of another origin."""
+    system (unless flag set otherwise). It is from the translation
+    of inherently cylindrical data into toroidal coordinates 
+    requires this rosetta stone, it can be dynamically set to 
+    becoming an origin given a specification of another origin.
+
+    Kwargs:
+        flag: Boolean.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate a Center in cylindrical coordinates:
+            
+                cent = Center() #implicitly in cyl. coords.
+
+        Generate a Center in cartesian coordinates:
+            
+                cent = Center(flag=False) 
+    """
 
     _depth = 0
     _origin = []
@@ -812,7 +897,9 @@ class Center(Origin):
             norm.unit]
 
     def __init__(self, flag=True):
-        
+        """
+        """
+
         temp = Vec((0.,0.,0.), one, flag=flag)
         self.unit = temp.unit
         self.s = temp.s
@@ -856,8 +943,7 @@ def fill(funtype,x0,x1,x2,*args,**kwargs):
         x2: coordinate of 3rd direction
 
     Returns:
-        Tuple of, or object of type funtype.
-    
+        Tuple or object of type funtype.
     """
 
     try:
