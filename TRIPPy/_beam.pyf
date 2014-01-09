@@ -1,0 +1,35 @@
+! File _beam.pyf
+python module _beam
+interface
+    
+C    This file is part of the TRIPPy package.
+C
+C    EqTools is free software: you can redistribute it and/or modify
+C    it under the terms of the GNU General Public License as published by
+C    the Free Software Foundation, either version 3 of the License, or
+C    (at your option) any later version.
+C
+C    EqTools is distributed in the hope that it will be useful,
+C    but WITHOUT ANY WARRANTY; without even the implied warranty of
+C    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+C    GNU General Public License for more details.
+C
+C    You should have received a copy of the GNU General Public License
+C    along with EqTools.  If not, see <http://www.gnu.org/licenses/>.
+C
+C    Copyright 2013 Ian C. Faust
+
+   subroutine intercept2d(outval,pt1,pt2,outliner,outlinez,ix)
+      intent(c) intercept2d
+      intent(c)
+
+      integer intent(hide),depend(outliner) :: ix = len(outliner)
+      double precision intent(in) :: pt1(3)
+      double precision intent(in) :: pt2(3)
+      double precision intent(in) :: outliner(ix)
+      double precision intent(in) :: outlinez(ix)
+      double precision intent(out) :: outval(1)	
+   end subroutine intercept2d
+
+end interface
+end python module _beam
