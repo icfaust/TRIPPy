@@ -511,17 +511,11 @@ class Point(Vec):
             self._depth = ref._depth + 1
          
     def redefine(self, neworigin):        
-        """redefine point into new coordinate system
+        """redefine Point object or Point-derived object
+        into new coordinate system
 
         Args:
             neworigin: Origin or Origin-derived object
-               
-
-        Returns:
-            Vector object with coordinate system of first argument,
-            If the second argument is not a vector object, it 
-            modifies the vector magnitude by value vec.    
-
         """
        
         # use _lca to find common ancestor and return tree to common
@@ -531,6 +525,19 @@ class Point(Vec):
         self._translate(lca, neworigin)
 
     def _translate(self, lca, neworigin):
+        """performs necessary rotations and translations of point.
+
+        Args:
+            lca: tuple of Origins or Origin-derived Objects
+                Contains a tuple of Origins in order to common
+                ancestor of current Object and another tuple of 
+                Origins to the new base Origin (neworigin).
+             
+            neworigin: Origin or Origin-derived object
+                New origin for the Point or Point-derived object.
+
+        """
+
         org = lca[0]
         orgnew = lca[1]
         shape = self.unit.shape
@@ -592,14 +599,11 @@ class Point(Vec):
             return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
 
     def _genOriginsToParent(self):
-        """vector addition, x.__sub__(y) <==> x-y
-
-        Args:
-            vec: Vector object
+        """Tuple of Origins to Center of space.
 
         Returns:
-            Vector object with coordinate system of first argument
-
+            Tuple of Origin or Origin derived objects in order
+            of increasing depth
         """
 
         temp = self._origin
@@ -613,14 +617,14 @@ class Point(Vec):
         return pnts
     
     def _lca(self, point2):
-        """vector addition, x.__sub__(y) <==> x-y
+        """Lowest Common Ancestor
 
         Args:
-            vec: Vector object
+            point2: Point or Point-derived object
 
         Returns:
-            Vector object with coordinate system of first argument
-
+            (pt1,pt2) Tuple of tuples which contain all Origin or
+            Origin-derived Objects to lowest common ancestor.
         """
         
         temp = True
@@ -789,7 +793,12 @@ class Origin(Point):
 
 
     def redefine(self, neworigin):
-        """ rotation matrix also needs to be redefined """
+        """redefine Origin object or Origin-derived object
+        into new coordinate system
+
+        Args:
+            neworigin: Origin or Origin-derived object
+        """
 
         lca = self._lca(neworigin)
         super(Origin,self)._translate(lca, neworigin)
@@ -797,7 +806,23 @@ class Origin(Point):
 
 
     def _rotate(self, lca, neworigin):
-        """ rotates the fundamental vectors of the space"""
+        """performs necessary rotations and translations of Origin.
+
+        Origin or Origin-derived Object requires that the coordinate
+        system basis vectors be accurately modified for the new
+        origin.  This requires a set of rotations and anti-rotations
+        through the lowest common ancestor.
+
+        Args:
+            lca: tuple of Origins or Origin-derived Objects
+                Contains a tuple of Origins in order to common
+                ancestor of current Object and another tuple of 
+                Origins to the new base Origin (neworigin).
+             
+            neworigin: Origin or Origin-derived object
+                New origin for the Point or Point-derived object.
+
+        """
         org = lca[0]
         orgnew = lca[1]
 
@@ -821,13 +846,24 @@ class Origin(Point):
         self.meri.s = mtemp
 
     def rot(self,vec):
+        """Rotate vector into coordinates of Origin.
 
+        Args:
+            Vec: Vector object
+        """
         temp = Vec(scipy.dot(scipy.array(self._rot).T, vec.unit),vec.s)
         temp.flag = vec.flag
         return temp                
     
     def arot(self,vec):
+        """Rotate vector out of coordinates of Origin.
+        (Anti-Rotate)
 
+        Inverse of rot() function
+
+        Args:
+            Vec: Vector object
+        """
         temp = Vec(scipy.dot(self._rot, vec.unit), vec.s)      
         temp.flag = vec.flag
         return temp
