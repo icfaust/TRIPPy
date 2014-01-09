@@ -433,12 +433,12 @@ class Beam(geometry.Origin):
         return out
 
 
-def multiBeam(surf1,surf2,x=10,y=10):
-    """ This function provides the capability of generating multiple beams
-    from two surfaces using the split functionality.  The total number of
-    beams goes as (x*y)^2, thus at very small numbers of x,y the code slows
-    abruptly"""
-
-    temp1 = surf1.split(x,y)
-    temp2 = surf2.split(x,y)
-    for 
+#def multiBeam(surf1,surf2,x=10,y=10):
+#    """ This function provides the capability of generating multiple beams
+#    from two surfaces using the split functionality.  The total number of
+#    beams goes as (x*y)^2, thus at very small numbers of x,y the code slows
+#    abruptly"""#
+#
+#    temp1 = surf1.split(x,y)
+#    temp2 = surf2.split(x,y)
+#    for 
