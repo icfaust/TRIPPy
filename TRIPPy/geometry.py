@@ -51,7 +51,7 @@ def Vecx(x_hat, s=None):
         
     .. math::
     
-        \vec{x}= \texttt{x_hat}[0]\hat{x} + \texttt{x_hat}[1]\hat{y} + \texttt{x_hat}[2]\hat{z}
+        \vec{x}= \texttt{xhat}[0]\hat{x} + \texttt{xhat}[1]\hat{y} + \texttt{xhat}[2]\hat{z}
     
     Capable of storing multiple directions and lengths as a single
     vector, but highly discouraged (from POLS).
@@ -110,7 +110,7 @@ def Vecr(x_hat, s=None):
         
     .. math::
     
-        \vec{x}= \texttt{x_hat}[0]\hat{r} + \texttt{x_hat}[1]\hat{\theta} + \texttt{x_hat}[2]\hat{z}
+        \vec{x}= \texttt{xhat}[0]\hat{r} + \texttt{xhat}[1]\hat{\theta} + \texttt{xhat}[2]\hat{z}
     
     Capable of storing multiple directions and lengths as a single
     vector, but highly discouraged (from POLS).
@@ -399,20 +399,17 @@ class Vec(object):
                               scipy.arctan2(self.unit[1],self.unit[0]),
                               self.s*self.unit[2]])
 
-    def point(self,ref,err=[]):
+    def point(self,ref):
         """returns point based off of vector
 
         Args:
             ref: reference origin
 
-        Kwargs:
-            err: the error in meters in point position
-
         Returns:
             Point object
 
         """
-        return Point(self, ref, err=err)
+        return Point(self, ref)
                    
 
 def angle(Vec1, Vec2):

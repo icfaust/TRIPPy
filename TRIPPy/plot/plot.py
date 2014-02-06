@@ -2,8 +2,7 @@ import mayavi.mlab as mlab,scipy,eqtools
 import tvtk.api
 from tvtk.util.ctf import PiecewiseFunction
 import sys
-sys.path.append('/home/ian/python/TRIPPy')
-import geometry
+import TRIPPy.geometry as geometry
 
 
 def plotLine(vector,val=1.0, close=False, **kwargs):

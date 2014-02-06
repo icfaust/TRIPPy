@@ -14,72 +14,72 @@ def XTOMOchip(temp):
         diodes[i] = surface.Rect(vecin,temp,area,Vec=Vec)
     return diodes
 
-def XTOMO1(temp, place=(,0,),angle =(,,)):
-    # this is the hard part, tree storage values are not done in such a manner
-    pos = geometry.Origin(place,temp,angle=angle)
-    area = [3e-3,1e-3]
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    offset = goemetry.Origin((,,),aperature,Vec=Vec)
-    diodes = XTOMOchip(offset)
-    for i in diodes:
-        i.redefine(temp)
-        diodes.append(aperature)
-        diodes[-1].redefine(temp)
-    return diodes
+#def XTOMO1(temp, place=(,0,),angle =(,,)):
+#    # this is the hard part, tree storage values are not done in such a manner
+#    pos = geometry.Origin(place,temp,angle=angle)
+#    area = [3e-3,1e-3]
+#    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+#    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+#    offset = goemetry.Origin((0.,0.,0.),aperature,Vec=Vec)
+#    diodes = XTOMOchip(offset)
+#    for i in diodes:
+#        i.redefine(temp)
+#        diodes.append(aperature)
+#        diodes[-1].redefine(temp)
+#    return diodes
+#
+#def XTOMO2(temp, place=(,0,),angle =(,,)):
+#    # this is the hard part, tree storage values are not done in such a manner
+#    pos = geometry.Origin(place,temp,angle=angle)
+#    area = [3.6e-3,5e-4]
+#    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+#    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+#    offset = goemetry.Origin((,,),aperature,Vec=Vec)
+#    diodes = XTOMOchip(offset)
+#    for i in diodes:
+#        i.redefine(temp)
+#        diodes.append(aperature)
+#        diodes[-1].redefine(temp)
+#    return diodes
+#
+#def XTOMO3(temp, place=(,0,),angle =(,,)):
+#    # this is the hard part, tree storage values are not done in such a manner
+#    pos = geometry.Origin(place,temp,angle=angle)
+#    area = [3e-3,1e-3]
+#    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+#    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+#    offset = goemetry.Origin((,,),aperature,Vec=Vec)
+#    diodes = XTOMOchip(offset)
+#    for i in diodes:
+#        i.redefine(temp)
+#        diodes.append(aperature)
+#        diodes[-1].redefine(temp)
+#    return diodes
+#
+#def XTOMO4(temp, place=(,0,),angle =(,,)):
+#    # this is the hard part, tree storage values are not done in such a manner
+#    pos = geometry.Origin(place,temp,angle=angle)
+#    area = [3.6e-3,5e-4]
+#    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+#    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+#    offset = goemetry.Origin((,,),aperature,Vec=Vec)
+#    diodes = XTOMOchip(offset)
+#    for i in diodes:
+#        i.redefine(temp)
+#        diodes.append(aperature)
+#        diodes[-1].redefine(temp)
+#    return diodes
 
-def XTOMO2(temp, place=(,0,),angle =(,,)):
-    # this is the hard part, tree storage values are not done in such a manner
-    pos = geometry.Origin(place,temp,angle=angle)
-    area = [3.6e-3,5e-4]
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    offset = goemetry.Origin((,,),aperature,Vec=Vec)
-    diodes = XTOMOchip(offset)
-    for i in diodes:
-        i.redefine(temp)
-        diodes.append(aperature)
-        diodes[-1].redefine(temp)
-    return diodes
-
-def XTOMO3(temp, place=(,0,),angle =(,,)):
-    # this is the hard part, tree storage values are not done in such a manner
-    pos = geometry.Origin(place,temp,angle=angle)
-    area = [3e-3,1e-3]
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    offset = goemetry.Origin((,,),aperature,Vec=Vec)
-    diodes = XTOMOchip(offset)
-    for i in diodes:
-        i.redefine(temp)
-        diodes.append(aperature)
-        diodes[-1].redefine(temp)
-    return diodes
-
-def XTOMO4(temp, place=(,0,),angle =(,,)):
-    # this is the hard part, tree storage values are not done in such a manner
-    pos = geometry.Origin(place,temp,angle=angle)
-    area = [3.6e-3,5e-4]
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    offset = goemetry.Origin((,,),aperature,Vec=Vec)
-    diodes = XTOMOchip(offset)
-    for i in diodes:
-        i.redefine(temp)
-        diodes.append(aperature)
-        diodes[-1].redefine(temp)
-    return diodes
-
-def XTOMO5(temp, place=(,0,),angle =(,,)):
-    # this is the hard part, tree storage values are not done in such a manner
-    pos = geometry.Origin(place,temp,angle=angle)
-    area = [3e-3,1e-3]
-    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
-    offset = goemetry.Origin((,,),aperature,Vec=Vec)
-    diodes = XTOMOchip(offset)
-    for i in diodes:
-        i.redefine(temp)
-        diodes.append(aperature)
-        diodes[-1].redefine(temp)
-    return diodes
+#def XTOMO5(temp, place=(,0,),angle =(,,)):
+#    # this is the hard part, tree storage values are not done in such a manner
+#    pos = geometry.Origin(place,temp,angle=angle)
+#    area = [3e-3,1e-3]
+#    Vec = [geometry.Vecx((1.,0.,0.)),geometry.Vecx((0.,0.,1.))]
+#    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+#    offset = goemetry.Origin((,,),aperature,Vec=Vec)
+#    diodes = XTOMOchip(offset)
+#    for i in diodes:
+#        i.redefine(temp)
+#        diodes.append(aperature)
+#        diodes[-1].redefine(temp)
+#    return diodes
