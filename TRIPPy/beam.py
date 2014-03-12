@@ -6,15 +6,61 @@ import _beam
 #import matplotlib.pyplot as plt
 
 class Ray(geometry.Point):
+ r"""Generates a ray vector object
+        
+    Uses the definition:
+        
+    .. math::
+    
+        \vec{x}= \vec{x}_0 + \vec{x}_1
+    
+    Args:
+        pt1: Point or Point-derived object
+            Defines the origin of the Ray, based on the coordinate system
+            of the origin.  pt1 position is accessible through Ray(0).
 
-    def __init__(self, pt1, inp2, err=[]):
+        pt2: Point or Vector-derived object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+    Returns:
+        Ray: Ray object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+                
+                
+
+        Generate a cartesian vector (vec1) into direction (1,pi/3,-4)::
+            
+                vec1 = Vecr(scipy.array([1.,scipy.pi/3,-4.]))
+
+        Generate a cartesian vector (vec2) into direction (6,0,8)::
+            
+                vec2 = Vecr(scipy.array([3.,0.,4.])/5.0,s=scipy.array(10.0))
+
+        Generate a cartesian vector (vec3) into direction (.3,0,.4)::
+            
+                vec3 = Vecr(vec2.r()/vec2.s,s=scipy.array(.1))
+    """
+
+
+    def __init__(self, pt1, inp2):
 
         try:
             self.norm = geometry.pts2Vec(pt1, inp2)
         except AttributeError:
             self.norm = inp2
             
-        super(Ray,self).__init__(pt1, err=err)
+        super(Ray,self).__init__(pt1)
 
     def x(self):
         return (self + self.norm).x()
