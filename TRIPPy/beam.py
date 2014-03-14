@@ -36,20 +36,7 @@ class Ray(geometry.Point):
                 cen = geometry.Center(flag=True)
                 ydir = geometry.Vecx((0,1,0))
                 zpt = geometry.Point((0,0,1),cen)
-                
-                
 
-        Generate a cartesian vector (vec1) into direction (1,pi/3,-4)::
-            
-                vec1 = Vecr(scipy.array([1.,scipy.pi/3,-4.]))
-
-        Generate a cartesian vector (vec2) into direction (6,0,8)::
-            
-                vec2 = Vecr(scipy.array([3.,0.,4.])/5.0,s=scipy.array(10.0))
-
-        Generate a cartesian vector (vec3) into direction (.3,0,.4)::
-            
-                vec3 = Vecr(vec2.r()/vec2.s,s=scipy.array(.1))
     """
 
 
@@ -274,12 +261,40 @@ class Ray(geometry.Point):
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
-    """ generates an origin with defined etendue and non scalar.
-    Beams propagation is assumed to be non-refractive, such that
-    the variation in the nature of the etendue analytical. 
+ r"""Generates a Beam vector object
+        
+    Uses the definition:
+        
+    .. math::
+    
+        \vec{x}= \vec{x}_0 + \vec{x}_1
+    
+    Args:
+        surf1: Surface or Surface-derived object
+            Defines the origin surface, based on the coordinate system
+            of the surface.  Center position is accessible through Ray(0).
+
+        surf2: Surface or Surface-derived object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+    Returns:
+        Beam: Beam object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+
     """
 
-    def __init__(self, surf1, surf2, err=[]):
+    def __init__(self, surf1, surf2):
         """ the beam generates a normal vector which points from
         surface 1 to surface 2.  After which the sagittal and 
         meridonial rays are simply the surface 1 sagittal and
@@ -290,7 +305,7 @@ class Beam(geometry.Origin):
 
         snew = surf1.sagi - normal*((surf1.sagi * normal)*(surf1.sagi.s/normal.s))
         mnew = surf1.meri - normal*((surf1.meri * normal)*(surf1.meri.s/normal.s))
-        super(Beam, self).__init__(surf1, surf1._origin, Vec = [mnew,normal], err=err)
+        super(Beam, self).__init__(surf1, surf1._origin, Vec = [mnew,normal])
         #calculate area at diode.
         self.sagi.s = snew.s
         a1 = surf1.area(snew.s,mnew.s)
