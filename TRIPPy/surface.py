@@ -8,12 +8,12 @@ edges = scipy.array(([-1,-1],
 
 class Surf(geometry.Origin):
 
-    def __init__(self, x_hat, ref, area, Vec=[], err=scipy.array((0,0,0)), angle=[], flag=None):
+    def __init__(self, x_hat, ref, area, vec=[], angle=[], flag=None):
         
         if flag is None:
             flag = ref.flag
 
-        super(Surf,self).__init__(x_hat, ref, Vec=Vec, err=err, angle=angle, flag=flag)
+        super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])/2
         self.meri.s = scipy.atleast_1d(area[1])/2 
         # this utilizes an unused attribute of the geometry.Origin where the length
@@ -61,10 +61,18 @@ class Rect(Surf):
         self.sagi.s = stemp*sagi
         self.meri.s = mtemp*meri
 
-        temp = Rect(x_hat, self._origin, [2*stemp,2*mtemp], Vec=[self.meri.copy(),self.norm.copy()], flag=self.flag)
+        temp = Rect(x_hat,
+                    self._origin,
+                    [2*stemp,2*mtemp],
+                    vec=[self.meri.copy(), self.norm.copy()],
+                    flag=self.flag)
         #return temp
 
-        return super(Rect, temp).split(temp._origin, [2*stemp,2*mtemp], Vec=[temp.meri,temp.norm], flag=temp.flag, obj=type(temp))
+        return super(Rect, temp).split(temp._origin,
+                                       [2*stemp,2*mtemp],
+                                       vec=[temp.meri,temp.norm],
+                                       flag=temp.flag,
+                                       obj=type(temp))
 """
 class Parabola(Surf):
 
@@ -74,7 +82,7 @@ class Sphere(Surf):
 """
 class Ellipse(Surf):
 
-    def area(self,sagi = None, meri = None):
+    def area(self, sagi=None, meri=None):
         if not sagi is None:
             sagi = self.sagi.s
         if not meri is None:
@@ -82,22 +90,21 @@ class Ellipse(Surf):
 
         return scipy.pi*sagi*meri
 
-    def edgetest(self,meri,sagi):
+    def edgetest(self, meri, sagi):
         if (meri/self.meri)**2+(sagi/self.sagi)**2 <= 1:
             return True
         else:
             return False
 
-
 class Circle(Ellipse):
 
-    def area(self,radius = None):
+    def area(self, radius=None):
         if not radius is None:
             radius = self.sagi
 
-        super(Circle,self).area(radius,radius)
+        super(Circle, self).area(radius, radius)
 
-    def edgetest(self,radius = None):
+    def edgetest(self, radius=None):
         if not radius is None:
             radius = self.sagi
-        super(Circle,self).edgetest(radius,0)
+        super(Circle, self).edgetest(radius, 0)

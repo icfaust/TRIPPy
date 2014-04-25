@@ -7,9 +7,9 @@ def diode1(temp,place=(2.0,0,2e-2), angle=(0,scipy.pi/2,0)):
     centervec = geometry.Vecx(scipy.array((.815,0,.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+    aperature = surface.Rect((0.,0.,0.),pos,area,vec=Vec)
     Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
-    offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
+    offset = geometry.Origin((0,0.,-2.25e-2),aperature,vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)

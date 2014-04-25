@@ -3,21 +3,84 @@ import tvtk.api
 from tvtk.util.ctf import PiecewiseFunction
 import sys
 import TRIPPy.geometry as geometry
+import scipy
 
 
-def plotLine(vector,val=1.0, close=False, **kwargs):
+def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs):
+    """
+    PlotLine creates a single plot object from a singular vector or from a n-dimensional
+    tuple or list.
+    """
+    plot = False
     try:
-        temp = vector.x()
-    except ValueError:
-        for i in len(vector):
-            plotLine(i, close=close, **kwargs)
-    temp = temp.reshape(3,temp.size/3)
-    if close:
-        temp = scipy.concatenate((temp,
-                                  scipy.atleast_2d(temp[:,0]).T),
-                                 axis = 1)
+        x = vector.x()
+        temp0 = x[0]
+        temp1 = x[1]
+        temp2 = x[2]
+        s =  val*scipy.ones((len(temp0),))
 
-    mlab.plot3d(temp[0],temp[1],temp[2],val*scipy.ones((temp.size/3,)),**kwargs)
+            # For surface objects, this keyword allows for the last corner to connect with the first
+        if close:
+            for i in [temp0,temp1,temp2,s]:
+                i = scipy.concatenate((i,scipy.atleast_1d(i[0])))
+
+        if not index is None:
+            N = len(temp0)
+            connect = scipy.vstack([scipy.arange(index,   index + N - 1.5),
+                                    scipy.arange(index + 1, index + N - .5)]
+                                   ).T # I want to rewrite this...
+            index += N
+
+    except AttributeError:
+             
+        temp0 = []
+        temp1 = []
+        temp2 = []
+        s = []
+        connect = []
+       
+        # if it is not some sort of vector or vector-derived class, iterate through and make a surface object 
+        if index is None:
+            index = 0
+            plot = True
+                    
+        for i in vector:
+            output = plotLine(i, close=close, index=index, **kwargs)
+            temp0 += [output[0]]
+            temp1 += [output[1]]
+            temp2 += [output[2]]
+            s += [output[3]]
+            connect += [output[4]]
+            index = output[5]
+
+        #turn to arrays here so I don't accidentally nest lists or tuples
+        temp0 = scipy.hstack(temp0)
+        temp1 = scipy.hstack(temp1)
+        temp2 = scipy.hstack(temp2)
+        s = scipy.hstack(s)
+        connect = scipy.vstack(connect)
+
+    if index is None:
+        mlab.plot3d(temp0, 
+                    temp1,
+                    temp2, 
+                    s,
+                    vmin=0.,
+                    vmax=1.,
+                    tube_radius=tube_radius,
+                    **kwargs)
+ 
+    else:
+        if plot:
+            # follows http://docs.enthought.com/mayavi/mayavi/auto/example_plotting_many_lines.html#example-plotting-many-lines
+   
+            src = mlab.pipeline.scalar_scatter(temp0, temp1, temp2, s)
+            src.mlab_source.dataset.lines = connect      
+            lines = mlab.pipeline.stripper(src)
+            mlab.pipeline.surface(lines, **kwargs)
+ 
+        else:
+            return (temp0,temp1,temp2,s,connect,index)
     
 def plotView(rays,pts=None, **kwargs):
       

@@ -38,7 +38,6 @@ def unit(x_hat):
     """
 
     temp = scipy.squeeze(x_hat)
- 
     if len(temp) != 3 or temp.max() > 1 or temp.min() < -1:
         raise ValueError
     return temp
@@ -215,7 +214,7 @@ class Vec(object):
     def __init__(self, x_hat, s, flag=False):
         """ 
         """
-
+        s = scipy.array(s)
         self.unit = unit(x_hat)
         self.s = scipy.squeeze(s)
         self.flag = flag

@@ -6,7 +6,7 @@ import _beam
 #import matplotlib.pyplot as plt
 
 class Ray(geometry.Point):
- r"""Generates a ray vector object
+    r"""Generates a ray vector object
         
     Uses the definition:
         
@@ -28,8 +28,8 @@ class Ray(geometry.Point):
         Ray: Ray object.
         
     Examples:
-        Accepts all array like (tuples included) inputs, though all data 
-        is stored in numpy arrays.
+        Accepts all point and point-derived object inputs, though all data 
+        is stored as a python object.
 
         Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
             
@@ -39,8 +39,9 @@ class Ray(geometry.Point):
 
     """
 
-
     def __init__(self, pt1, inp2):
+        """
+        """
 
         try:
             self.norm = geometry.pts2Vec(pt1, inp2)
@@ -48,6 +49,9 @@ class Ray(geometry.Point):
             self.norm = inp2
             
         super(Ray,self).__init__(pt1)
+        self.norm.s = scipy.concatenate(([0.],self.norm.s))
+
+
 
     def x(self):
         return (self + self.norm).x()
@@ -91,6 +95,31 @@ class Ray(geometry.Point):
             temp1 = orgnew[idx].arot(temp1)
 
         self.norm = temp1
+
+    def trace3(self, plasma, limiter=0):
+        """ extends the norm vector into finding viewing length in vessel"""
+        temp = [0.]
+        # norm vector is modfied following the convention set in geometry.Origin
+        if not self._origin is plasma:
+            self.redefine(plasma)
+
+        invesselflag = plasma.inVessel(self.r()[...,-1])
+        vessel = plasma.eq.getMachineCrossSection()
+        
+        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
+        if scipy.isfinite(intersect):
+            self.norm.s = scipy.append(self.norm.s,intersect)
+
+        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
+        if not invesselflag and scipy.isfinite(intersect):
+            self.norm.s = scipy.append(self.norm.s,intersect)
+        
+        # This is used when the actual plasma vessel structure is not as described in the eqdsk
+        # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
+        # and look for the next as the true wall intersection.
+        for i in xrange(limiter):
+            intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
+            self.norm.s[-1] = intersect
 
     def trace2(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""
@@ -261,7 +290,7 @@ class Ray(geometry.Point):
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
- r"""Generates a Beam vector object
+    r"""Generates a Beam vector object assuming macroscopic 
         
     Uses the definition:
         
@@ -272,7 +301,7 @@ class Beam(geometry.Origin):
     Args:
         surf1: Surface or Surface-derived object
             Defines the origin surface, based on the coordinate system
-            of the surface.  Center position is accessible through Ray(0).
+            of the surface.  Center position is accessible through Beam(0).
 
         surf2: Surface or Surface-derived object
             Direction of the ray can be defined by a vector object (assumed
@@ -283,8 +312,8 @@ class Beam(geometry.Origin):
         Beam: Beam object.
         
     Examples:
-        Accepts all array like (tuples included) inputs, though all data 
-        is stored in numpy arrays.
+        Accepts all surface or surface-derived object inputs, though all data 
+        is stored as a python object.
 
         Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
             
@@ -295,17 +324,15 @@ class Beam(geometry.Origin):
     """
 
     def __init__(self, surf1, surf2):
-        """ the beam generates a normal vector which points from
-        surface 1 to surface 2.  After which the sagittal and 
-        meridonial rays are simply the surface 1 sagittal and
-        meridonial rays with respect """
+        """
+        """
 
         normal = geometry.pts2Vec(surf1, surf2)
         #orthogonal coordinates based off of connecting normal
 
         snew = surf1.sagi - normal*((surf1.sagi * normal)*(surf1.sagi.s/normal.s))
         mnew = surf1.meri - normal*((surf1.meri * normal)*(surf1.meri.s/normal.s))
-        super(Beam, self).__init__(surf1, surf1._origin, Vec = [mnew,normal])
+        super(Beam, self).__init__(surf1, surf1._origin, vec=[mnew,normal])
         #calculate area at diode.
         self.sagi.s = snew.s
         a1 = surf1.area(snew.s,mnew.s)
@@ -316,6 +343,10 @@ class Beam(geometry.Origin):
 
         #generate etendue
         self.etendue = a1*a2/(normal.s ** 2)
+
+        # give inital beam, which is two points      
+        self.norm.s = scipy.insert(self.norm.s,0,0.)
+
 
     def trace(self, plasma, eps=1e-4):
         """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
@@ -396,6 +427,31 @@ class Beam(geometry.Origin):
             #probably need a try catch for bad inverses.
         goods = params[0][scipy.logical_and(params[1] > 0,params[1] < 1)]  #index where there are actual intercepts  
         return goods[goods > 0].min()
+
+    def trace3(self, plasma, limiter=0):
+        """ extends the norm vector into finding viewing length in vessel"""
+        temp = [0.]
+        # norm vector is modfied following the convention set in geometry.Origin
+        if not self._origin is plasma:
+            self.redefine(plasma)
+
+        invesselflag = plasma.inVessel(self.r()[...,-1])
+        vessel = plasma.eq.getMachineCrossSection()
+        
+        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
+        if scipy.isfinite(intersect):
+            self.norm.s = scipy.append(self.norm.s,intersect)
+
+        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
+        if not invesselflag and scipy.isfinite(intersect):
+            self.norm.s = scipy.append(self.norm.s,intersect)
+        
+        # This is used when the actual plasma vessel structure is not as described in the eqdsk
+        # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
+        # and look for the next as the true wall intersection.
+        for i in xrange(limiter):
+            intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
+            self.norm.s[-1] = intersect
 
     def trace2(self, plasma, step=1e-2):
         """ extends the norm vector into finding viewing length in vessel"""

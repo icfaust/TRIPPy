@@ -13,9 +13,10 @@ def sens(beams,plasmameth,time,points,step=1e-3):
     output = scipy.zeros((len(time),len(beams),len(points)))
 
     for i in xrange(len(beams)):
-        temp = beams[i].norm.s      
-        beams[i].norm.s = scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:step]
-        mapped = plasmameth(beams[i].r()[0],beams[i].r()[2],time)
+        #temp = beams[i].norm.s      
+        #beams[i].norm.s = scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:step] #obsolete standard, taken care of internally.
+        temp = beams[i](scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:step])
+        mapped = plasmameth(temp.r()[0],temp.r()[2],time)
  
         # knowing that the last point (point[-1]) is assumed to be a ZERO emissivity point,
         #an additional brightness is added which only sees the last emissivity to yield the zero
@@ -34,7 +35,7 @@ def sens(beams,plasmameth,time,points,step=1e-3):
             output[:,i,idx[:,j]] += out[:,j]
             scipy.place(out[:,j], out[:,j] == len(points), len(points) - 1)
             output[:,i,idx[:,j]+1] += step - out[:,j]
-        beams[i].norm.s = temp      
+        #beams[i].norm.s = temp     see above about standard 
 
     return output
 
