@@ -40,7 +40,7 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
 
   /* initialize variables */
   int i;
-  double A,A0,B,B0,C,C0,delr,delz,temp,s1,s2;
+  double A,A0,B,B0,C,C0,delr,delz,temp,s1,s2,res=1e-6;
   *s = INFINITY;
 
   C0 = pow(pt0[0],2) + pow(pt0[1],2);
@@ -55,7 +55,7 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
       
       delr = outliner[i+1]-outliner[i];
       delz = outlinez[i+1]-outlinez[i];
-     
+
       if(delz)
 	{
 	  temp = outliner[i] + (delr/delz)*(pt0[2]-outlinez[i]);
@@ -69,13 +69,14 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
 	{ 
 	  /*prevents rest of quadratic iteration from occuring */
 	  s1 = (outlinez[i] - pt0[2])/norm[2];
-	  temp = sqrt(pow(pt0[0]+norm[0]*s1,2) + pow(pt0[1]+norm[1]*s1,2))/delr;
-	  if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > 0))
-	    { 
+	  temp = (sqrt(pow(pt0[0]+norm[0]*s1,2) + pow(pt0[1]+norm[1]*s1,2)) - outliner[i])/delr;
+	  
+	  if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > res))
+	    {
 	      *s = s1;
 	    } 
 	}
-      
+
       if(A) /*the quadratic form*/
 	{
 	  temp = B*B - 4*A*C; /*reuse a variable, not exactly a good idea */
@@ -85,14 +86,14 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
 	      s1 = -.5*(temp + B)/A;
 	      s2 = .5*(temp - B)/A;
 	      temp = (s1*norm[2] + (pt0[2] - outlinez[i]))/delz; /*length along cylinder parameterization of intercept */
-	      if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > 0))
-		{ 
+	      if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > res))
+		{
 		  *s = s1;
 		}
 	      
 	      temp = (s2*norm[2] + (pt0[2] - outlinez[i]))/delz; /*length along cylinder parameterization of intercept */
-	      if((temp > 0) & (temp <= 1) & (s2 < *s) & (s2 > 0))
-		{ 
+	      if((temp > 0) & (temp <= 1) & (s2 < *s) & (s2 > res))
+		{
 		  *s = s2;
 		}
 	      
@@ -102,8 +103,8 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
 	{
 	  s1 = -B/C;
 	  temp = (s1*norm[2]+(pt0[2]-outlinez[0]))/delz; /*length along cylinder parameterization of intercept */
-	  if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > 0))
-	    { 
+	  if((temp > 0) & (temp <= 1) & (s1 < *s) & (s1 > res))
+	    {
 	      *s = s1;
 	    }
 	}	  
