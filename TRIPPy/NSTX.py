@@ -23,9 +23,9 @@ def diode2(temp,place=(2.0,0,-2e-2), angle=(0,scipy.pi/2,0)):
     centervec = geometry.Vecx(scipy.array((.815,0,-.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+    aperature = surface.Rect((0.,0.,0.),pos,area,vec=Vec)
     Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
-    offset = geometry.Origin((0,0.,-2.25e-2),aperature,Vec=Vec)
+    offset = geometry.Origin((0,0.,-2.25e-2),aperature,vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
@@ -39,9 +39,9 @@ def diode3(temp,place=(.8,0,1.8), angle=(0,scipy.pi/2,0)):
     centervec = geometry.Vecx(scipy.array((.815-.075,0,0))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+    aperature = surface.Rect((0.,0.,0.),pos,area,vec=Vec)
     Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
-    offset = geometry.Origin((0,0.,-1.25e-2),aperature,Vec=Vec)
+    offset = geometry.Origin((0,0.,-1.25e-2),aperature,vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
@@ -55,9 +55,9 @@ def diode4(temp,place=(1.5,0,-1.5), angle=(0,scipy.pi/2,0)):
     centervec = geometry.Vecx(scipy.array((.815-.4,0,-1.175))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
-    aperature = surface.Rect((0.,0.,0.),pos,area,Vec=Vec)
+    aperature = surface.Rect((0.,0.,0.),pos,area,vec=Vec)
     Vec = [geometry.Vecx((0.,1.,0.)),geometry.Vecx((0.,0.,1.))]
-    offset = geometry.Origin((0,0.,-2.5e-2),aperature,Vec=Vec)
+    offset = geometry.Origin((0,0.,-2.5e-2),aperature,vec=Vec)
     diodes = AXUV.AXUV20(offset)
     for i in diodes:
         i.redefine(temp)
@@ -88,7 +88,7 @@ def diode5(center,ap=(2e-3,0,8e-2)):
     Vec = [geometry.cross(cent.c(),geometry.Vecx((0,0,1))),cent.c()]
     # need to clean this all up and put in unary minus dear lord
 
-    diodeorigin = geometry.Origin(pos.x(),center,Vec=Vec,flag=False)
+    diodeorigin = geometry.Origin(pos.x(),center,vec=Vec,flag=False)
 
     #rot = geometry.Origin((0,0,0),diodeorigin,angle=angler)#(scipy.pi/2,scipy.pi/2,scipy.pi/2))
     diodes = AXUV.AXUV20(diodeorigin)
@@ -127,7 +127,7 @@ def diode6(center,ap=(2.25e-2,0,8e-2),angler=(0,0,0)):
     Vec = [geometry.cross(cent.c(),geometry.Vecx((0,0,1))),cent.c()]
     # need to clean this all up and put in unary minus dear lord
 
-    diodeorigin = geometry.Origin(pos.x(),center,Vec=Vec,flag=False)
+    diodeorigin = geometry.Origin(pos.x(),center,vec=Vec,flag=False)
 
     #rot = geometry.Origin((0,0,0),diodeorigin,angle=angler)#(scipy.pi/2,scipy.pi/2,scipy.pi/2))
     diodes = AXUV.AXUV20(diodeorigin)
