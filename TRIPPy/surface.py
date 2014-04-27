@@ -8,7 +8,7 @@ edges = scipy.array(([-1,-1],
 
 class Surf(geometry.Origin):
 
-    def __init__(self, x_hat, ref, area, vec=[], angle=[], flag=None):
+    def __init__(self, x_hat, ref, area, vec=None, angle=None, flag=None):
         
         if flag is None:
             flag = ref.flag
@@ -24,10 +24,10 @@ class Surf(geometry.Origin):
 
 class Rect(Surf):
 
-    def area(self,sagi = [], meri = []):
-        if not sagi:
+    def area(self,sagi = None, meri = None):
+        if not sagi is None:
             sagi = self.sagi.s
-        if not meri:
+        if not meri is None:
             meri = self.meri.s
 
         return sagi*meri*4
@@ -82,7 +82,7 @@ class Sphere(Surf):
 """
 class Ellipse(Surf):
 
-    def __init__(self, x_hat, ref, area, vec=[], angle=[], flag=None):
+    def __init__(self, x_hat, ref, area, vec=None, angle=None, flag=None):
  
         super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])
@@ -115,7 +115,7 @@ class Ellipse(Surf):
 
 class Circle(Ellipse):
 
-    def __init__(self, x_hat, ref, radius, vec=[], angle=[], flag=None):
+    def __init__(self, x_hat, ref, radius, vec=None, angle=None, flag=None):
  
         super(Ellipse,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(radius)
