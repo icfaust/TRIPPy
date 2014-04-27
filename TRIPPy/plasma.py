@@ -1,33 +1,29 @@
 import geometry,scipy,eqtools
+import surface
 import scipy.linalg
 
 class Tokamak(geometry.Center):
 
-    def __init__(self,equilib,flag=True):
+    def __init__(self, equilib, flag=True):
         self.eq = equilib
-        super(Tokamak,self).__init__(flag=flag)
+        super(Tokamak, self).__init__(flag=flag)
+        self.meri.s = self.eq.getMachineCrossSection()[0] #store R and Z of limiter structure vacuum vessel
+        self.sagi.s = self.meri.s #link together.
+        self.norm.s = self.eq.getMachineCrossSection()[1]
 
-    def genWireFrame(self,pts=250):
-        theta = scipy.linspace(0,2*scipy.pi,pts)
-        theta = scipy.append(theta,0)
-        x = scipy.cos(theta)
-        y = scipy.sin(theta)
-        z = scipy.ones(theta.shape)
-        return x,y,z
-
-    def inVessel(self,ptin):
-        Rlim,Zlim = self.eq.getMachineCrossSection()
-        return bool(eqtools.inPolygon(Rlim,Zlim,ptin[0],ptin[2]))
+    def inVessel(self, ptin):
+        return bool(eqtools.inPolygon(self.sagi.s,self.norm.s,ptin[0],ptin[2]))
             
-    def getVessel(self,idx,pts=250):
-        Rlim,Zlim = self.eq.getMachineCrossSection()
-        if idx < Rlim.size:
+    def getVessel(self, idx, pts=250):
+        if idx < self.norm.s.size:
             theta = scipy.linspace(0,2*scipy.pi,pts)
-            return geometry.Point((Rlim[idx]*scipy.ones(theta.size),
-                                   theta,
-                                   Zlim[idx]*scipy.ones(theta.size)),self)
+            return surface.Circle((0.,0.,self.norm.s[idx]),
+                                  self,
+                                  self.meri.s[idx],
+                                  vec = [self.meri,self.norm])
 
-    # to be added, inversion functions etc! I'm glad I spent the day on this.
+    def getMachineCrossSection(self):
+        return geometry.Point(self.norm+self.sagi,self)
 
     def pnt2RhoTheta(self, point,t=0, method = 'psinorm', n=0, poloidal_plane=0):
         """ takes r,theta,z and the plasma, and map it to the toroidal position

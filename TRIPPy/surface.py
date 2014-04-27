@@ -58,7 +58,7 @@ class Rect(Surf):
                                                  scipy.linspace(-self.meri.s*inm,self.meri.s*inm,meri))
 
         x_hat = self + self.sagi + self.meri #creates a vector which includes all the centers of the subsurface
-        self.sagi.s = stemp*sagi
+        self.sagi.s = stemp*sagi #returns values to previous numbers
         self.meri.s = mtemp*meri
 
         temp = Rect(x_hat,
@@ -82,6 +82,23 @@ class Sphere(Surf):
 """
 class Ellipse(Surf):
 
+    def __init__(self, x_hat, ref, area, vec=[], angle=[], flag=None):
+ 
+        super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
+        self.sagi.s = scipy.atleast_1d(area[0])
+        self.meri.s = scipy.atleast_1d(area[1])
+
+
+    def edge(self, angle=[0,2*scipy.pi], pts=250):
+        theta = scipy.linspace(angle[0], angle[1], pts)
+        temp = geometry.Point(geometry.Vecr(scipy.sqrt((self.sagi.s*scipy.cos(theta))**2 +(self.meri.s*scipy.cos(theta))**2)*scipy.ones(theta.shape),
+                                            theta,
+                                            scipy.zeros(theta.shape))
+                              ,self)
+
+        temp.redefine(self._origin)
+        return temp
+
     def area(self, sagi=None, meri=None):
         if not sagi is None:
             sagi = self.sagi.s
@@ -97,6 +114,12 @@ class Ellipse(Surf):
             return False
 
 class Circle(Ellipse):
+
+    def __init__(self, x_hat, ref, radius, vec=[], angle=[], flag=None):
+ 
+        super(Ellipse,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
+        self.sagi.s = scipy.atleast_1d(radius)
+        self.meri.s = scipy.atleast_1d(radius)
 
     def area(self, radius=None):
         if not radius is None:
