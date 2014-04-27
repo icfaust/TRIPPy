@@ -117,7 +117,7 @@ class Circle(Ellipse):
 
     def __init__(self, x_hat, ref, radius, vec=None, angle=None, flag=None):
  
-        super(Ellipse,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
+        super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(radius)
         self.meri.s = scipy.atleast_1d(radius)
 
