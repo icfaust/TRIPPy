@@ -367,6 +367,33 @@ class Vec(object):
         """
         return self.s*self.unit[2]
 
+    def r0(self):
+        """returns cylindrical coordinate along first dimension
+
+        Returns:
+           numpy array of cylindrical coordinates in meters
+
+        """
+        return self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2)
+
+    def r1(self):        
+        """returns cylindrical coordinate along second dimension
+
+        Returns:
+            numpy array of cylindrical coordinates in radians
+
+        """
+        return scipy.arctan2(self.unit[1],self.unit[0])
+    
+    def r2(self):
+        """returns cylindrical coordinate along third dimension
+
+        Returns:
+            numpy array of cylindrical coordinates in meters
+
+        """
+        return self.x2()
+
     def c(self):
         """Conversion of vector to opposite coordinate system
 
@@ -394,9 +421,21 @@ class Vec(object):
             numpy array of cylindrical coordinates in meters and radians
 
         """
-        return scipy.squeeze([self.s*scipy.sqrt(self.unit[0]**2+self.unit[1]**2),
-                              scipy.arctan2(self.unit[1],self.unit[0]),
-                              self.s*self.unit[2]])
+        return scipy.squeeze([self.r0(),
+                              self.r1(),
+                              self.x2()])
+
+    def spin(self,angle):
+        """Spin vector object about the cylindrical (0,0,1)/norm vector
+        axis. This function is different from rot.
+
+        Args:
+            anlge: Singule element float or scipy array.
+        """
+        newang = self.r1()+angle
+        self.unit[0] = scipy.cos(newang)
+        self.unit[1] = scipy.sin(newang)
+
 
     def point(self,ref):
         """returns point based off of vector
@@ -842,11 +881,23 @@ class Origin(Point):
         self.meri = cross(self.norm, self.sagi)
         self.meri.s = mtemp
 
-    def rot(self,vec):
-        """Rotate vector into coordinates of Origin.
+    def spin(self,angle):
+        """Spin vector or vector-derived object around Origin
+        about the cylindrical (0,0,1)/norm vector axis. This function
+        is different from rot.
 
         Args:
-            Vec: Vector object
+            vec: Vector or Vector-derived object
+        """
+        super(Point,self).spin(angle)
+        self.sagi.spin(angle)
+        self.meri.spin(angle)
+        
+    def rot(self,vec):
+        """Rotate input vector objects into coordinates of Origin.
+
+        Args:
+            vec: Vector object
         """
         temp = Vec(scipy.dot(scipy.array(self._rot).T, vec.unit),vec.s)
         temp.flag = vec.flag
@@ -859,7 +910,7 @@ class Origin(Point):
         Inverse of rot() function
 
         Args:
-            Vec: Vector object
+            vec: Vector or Vector-derived object
         """
         temp = Vec(scipy.dot(self._rot, vec.unit), vec.s)      
         temp.flag = vec.flag
