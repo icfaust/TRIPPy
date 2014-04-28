@@ -25,6 +25,34 @@ class Tokamak(geometry.Center):
     def getMachineCrossSection(self):
         return geometry.Point(self.norm+self.sagi,self)
 
+    def trace(self, ray, limiter=0):
+        try:
+            temp = [0.]
+        # norm vector is modfied following the convention set in geometry.Origin
+            if not ray._origin is self:
+                ray.redefine(plasma)
+                
+            invesselflag = self.inVessel(ray.r()[...,-1])
+            
+            intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+            if scipy.isfinite(intersect):
+                ray.norm.s = scipy.append(ray.norm.s,intersect)
+
+            intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+            if not invesselflag and scipy.isfinite(intersect):
+                ray.norm.s = scipy.append(ray.norm.s,intersect)
+        
+            # This is used when the actual plasma vessel structure is not as described in the eqdsk
+            # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
+            # and look for the next as the true wall intersection.
+            for i in xrange(limiter):
+                intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+                ray.norm.s[-1] = intersect
+        
+        except AttributeError:
+            for i in ray:
+                self.trace(i, limiter=limiter)
+
     def pnt2RhoTheta(self, point,t=0, method = 'psinorm', n=0, poloidal_plane=0):
         """ takes r,theta,z and the plasma, and map it to the toroidal position
         this will be replaced by a toroidal point generating system based of
@@ -52,7 +80,5 @@ class Tokamak(geometry.Center):
     
         if zgrid is None:
             zgrid = self.eq.getZGrid()
-
-        
 
         print('not implemented')

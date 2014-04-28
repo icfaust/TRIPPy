@@ -51,13 +51,22 @@ class Ray(geometry.Point):
         super(Ray,self).__init__(pt1)
         self.norm.s = scipy.concatenate(([0.],self.norm.s))
 
+    def x0(self):
+        return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
 
+    def x1(self):
+        return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
 
-    def x(self):
-        return (self + self.norm).x()
+    def x2(self):
+        return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
 
     def r(self):
         return (self + self.norm).r()
+
+    def smin(self):
+        return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
+                          self.unit[1]*self.norm.unit[1]
+                          )/(self.norm.unit[0]**2+self.norm.unit[1]**2)
 
     def __getitem__(self,idx):
         return (self + self.norm)[idx]
@@ -96,174 +105,6 @@ class Ray(geometry.Point):
 
         self.norm = temp1
 
-    def trace3(self, plasma, limiter=0):
-        """ extends the norm vector into finding viewing length in vessel"""
-        temp = [0.]
-        # norm vector is modfied following the convention set in geometry.Origin
-        if not self._origin is plasma:
-            self.redefine(plasma)
-
-        invesselflag = plasma.inVessel(self.r()[...,-1])
-        vessel = plasma.eq.getMachineCrossSection()
-        
-        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
-        if scipy.isfinite(intersect):
-            self.norm.s = scipy.append(self.norm.s,intersect)
-
-        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
-        if not invesselflag and scipy.isfinite(intersect):
-            self.norm.s = scipy.append(self.norm.s,intersect)
-        
-        # This is used when the actual plasma vessel structure is not as described in the eqdsk
-        # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
-        # and look for the next as the true wall intersection.
-        for i in xrange(limiter):
-            intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1])
-            self.norm.s[-1] = intersect
-
-    def trace2(self, plasma, step=1e-2):
-        """ extends the norm vector into finding viewing length in vessel"""
-        
-        # norm vector is modfied following the convention set in geometry.Origin
-        if not self._origin is plasma:
-            self.redefine(plasma)
-
-        end = plasma.eq.getMachineCrossSection()[0].max() + self.s
-        #step = end/1e2
-
-        temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
-        sin = temp.size
-
-        # set if in cylindrical coordinates
-        idx = 1
-        invesselflag = plasma.inVessel(temp[:,0])
-
-        # if diode is not invessel, find when the view is in vessel
-        if not invesselflag:
-            flag = True
-            while flag:
-
-                pntinves = plasma.inVessel(temp[:,idx])
-                idx += 1
-
-                if pntinves or idx + 1 == sin:
-                    flag = False
-                invesselflag = pntinves
-            self._start = idx*step
-
-        # find point at which the view escapes vessel
-        if invesselflag:
-            flag = True
-            while flag:
-            
-                pntinves = plasma.inVessel(temp[:,idx])
-                idx += 1
-
-                if not pntinves or idx + 1 == sin:
-                    flag = False
-                invesselflag = pntinves
-            self._end = idx*step
-        
-        self.norm.s = scipy.array([0])
-        if self._start:
-            self.norm.s = scipy.append(self.norm.s, self._start)
-        if self._end:
-            self.norm.s = scipy.append(self.norm.s, self._end)
-
-    def trace(self,plasma,eps=1e-4):
-        """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
-        pt1 = self(0).r() # pull r,z of diode (pt1)
-        pntinves = plasma.inVessel(pt1) # test if invessel
-
-        s = eps #self.norm.s
-        dels = s
-        vessel = plasma.eq.getMachineCrossSection()
-        trig = True
-
-        while trig:
-
-            pt2 = self(s).r() # pull vec of 'aperature' (pt2)
-            dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
-
-            # find at least 2 intercepts
-            s += dels
-            pt1 = pt2
-            
-            if abs(dels) < eps:
-                trig = False
-
-        if not pntinves:
-
-            s1 = s.copy()
-            s += eps
-            dels = eps
-
-            pt1 = self(s).r()
-            trig = True
-
-            while trig:
-
-                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)                
-                dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
-                
-                # find at least 2 intercepts
-                s += dels
-                pt1 = pt2
-            
-                if abs(dels) < eps:
-                    trig = False
-
-            self.norm.s = scipy.array([0,s1,s])
-        else:
-            self.norm.s = scipy.array([0,s])
-            
-    def _intercept(self,pt1,pt2,outline,flag=False):
-        r = outline[0]
-        z = outline[1]
-        delr = pt1[0] - pt2[0]
-        delz = pt1[2] - pt2[2]
-        params = scipy.zeros((2,len(r)))
-
-        for i in xrange(len(r)-1):
-            #mat = scipy.array([[delr, r[i+1]-r[i]],
-            #                   [delz, z[i+1]-z[i]]])
-
-
-            a = delr
-            b = r[i+1]-r[i]
-            c = delz
-            d = z[i+1]-z[i]
-
-            invmat = scipy.array([[d, -b], [-c, a]])/(a*d - b*c)
-            params[:,i] = scipy.dot(invmat,scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
-
-            #params[:,i] = scipy.dot(scipy.linalg.inv(mat),
-            #                      scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
-
-            #probably need a try catch for bad inverses.
-        goods = params[0][scipy.logical_and(params[1] > 0,params[1] < 1)]  #index where there are actual intercepts  
-        return goods[goods > 0].min()
-
-
-    def intercept(self,surface):
-        if self._origin is surface._origin:
-            try:
-                params = scipy.dot(scipy.linalg.inv(scipy.array([self.norm.unit,
-                                                                 surface.meri.unit,
-                                                                 surface.sagi.unit])),
-                                   (self-surface).x())
-
-                if surface.edgetest(params[1],params[2]):
-                    return params[0]
-                else:
-                    return []
-
-            except ValueError:
-                print('no?')
-                return []
-        else:
-            return []
-
     def tangency(self, point, sigma=False):
         """ returns a vector which points from the point to the closest
         approach of the ray"""
@@ -290,7 +131,7 @@ class Ray(geometry.Point):
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
-    r"""Generates a Beam vector object assuming macroscopic 
+    r"""Generates a Beam vector object assuming macroscopic surfaces
         
     Uses the definition:
         
@@ -348,157 +189,6 @@ class Beam(geometry.Origin):
         self.norm.s = scipy.insert(self.norm.s,0,0.)
 
 
-    def trace(self, plasma, eps=1e-4):
-        """ finds intercepts with vessel surfaces assuming that the vessel is toroidal"""
-        pt1 = self(0).r() # pull r,z of diode (pt1)
-        pntinves = plasma.inVessel(pt1) # test if invessel
-
-        s = eps #self.norm.s
-        dels = s
-        vessel = plasma.eq.getMachineCrossSection()
-        trig = True
-
-        while trig:
-
-            pt2 = self(s).r() # pull vec of 'aperature' (pt2)
-            dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
-
-            # find at least 2 intercepts
-            s += dels
-            pt1 = pt2
-            
-            if abs(dels) < eps:
-                trig = False
-
-        if not pntinves:
-
-            s1 = s.copy()
-            s += eps
-            dels = eps
-
-            pt1 = self(s).r()
-            trig = True
-
-            while trig:
-
-                pt2 = self(s+eps).r() # pull vec of 'aperature' (pt2)                
-                dels *= _beam.intercept2d(pt1,pt2,vessel[0],vessel[1])-1
-                
-                # find at least 2 intercepts
-                s += dels
-
-                pt1 = pt2
-            
-                if abs(dels) < eps:
-                    trig = False
-
-            self.norm.s = scipy.array([0,s1,s])
-        else:
-            self.norm.s = scipy.array([0,s])
-    
-    def _intercept(self,pt1,pt2,outline):
-        r = outline[0]
-        z = outline[1]
-        delr = pt1[0] - pt2[0]
-        delz = pt1[2] - pt2[2]
-        params = scipy.zeros((2,len(r)))
-
-        for i in xrange(len(r)-1):
-            #mat = scipy.array([[delr, r[i+1]-r[i]],
-            #                   [delz, z[i+1]-z[i]]])
-
-            a = delr
-            b = r[i+1]-r[i]
-            c = delz
-            d = z[i+1]-z[i]
-
-            #e = pt1[0]-r[i]
-            #f = pt1[2]-z[i]
-
-
-            #params[:,i] = scipy.array([d*e - b*f,a*f - c*e])/(a*d - b*c)
-            invmat = scipy.array([[d, -b], [-c, a]])/(a*d - b*c)
-            params[:,i] = scipy.dot(invmat,scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
-
-
-            #params[:,i] = scipy.dot(scipy.linalg.inv(mat),
-            #                      scipy.array([pt1[0]-r[i],pt1[2]-z[i]]))
-
-            #probably need a try catch for bad inverses.
-        goods = params[0][scipy.logical_and(params[1] > 0,params[1] < 1)]  #index where there are actual intercepts  
-        return goods[goods > 0].min()
-
-    def trace3(self, plasma, limiter=0):
-        """ extends the norm vector into finding viewing length in vessel"""
-        temp = [0.]
-        # norm vector is modfied following the convention set in geometry.Origin
-        if not self._origin is plasma:
-            self.redefine(plasma)
-
-        invesselflag = plasma.inVessel(self.r()[...,-1])
-        vessel = plasma.eq.getMachineCrossSection()
-        
-        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
-        if scipy.isfinite(intersect):
-            self.norm.s = scipy.append(self.norm.s,intersect)
-
-        intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
-        if not invesselflag and scipy.isfinite(intersect):
-            self.norm.s = scipy.append(self.norm.s,intersect)
-        
-        # This is used when the actual plasma vessel structure is not as described in the eqdsk
-        # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
-        # and look for the next as the true wall intersection.
-        for i in xrange(limiter):
-            intersect = _beam.interceptCyl(self.x()[...,-1],self.norm.unit,vessel[0],vessel[1]) + self.norm.s[-1]
-            self.norm.s[-1] = intersect
-
-    def trace2(self, plasma, step=1e-2):
-        """ extends the norm vector into finding viewing length in vessel"""
-
-        end = plasma.eq.getMachineCrossSection()[0].max() + self.s
-        
-
-        self.redefine(plasma)
-
-        temp = self(scipy.mgrid[0:end:step]).r() #start from diode, and trace through to find when it hits the vessel
-        sin = temp.size
-
-        # set if in cylindrical coordinates
-        idx = 1
-        invesselflag = plasma.inVessel(temp[:,0])
-        # if diode is not invessel, find when the view is in vessel
-        if not invesselflag:
-            flag = True
-            while flag:
-
-                pntinves = plasma.inVessel(temp[:,idx])
-                idx += 1
-                if pntinves or idx + 1 == sin:
-                    flag = False
-                invesselflag = pntinves
-
-            self._start = self.norm.s[idx]
-
-        # find point at which the view escapes vessel
-        if invesselflag:
-            flag = True
-            while flag:
-            
-                pntinves = plasma.inVessel(temp[:,idx])
-                idx += 1
-                if not pntinves or idx + 1 == sin:
-                    flag = False
-                invesselflag = pntinves
-            self._end = self.norm.s[idx]
-        
-        self.norm.s = scipy.array([0])
-        if self._start:
-            self.norm.s = scipy.append(self.norm.s, self._start)
-        if self._end:
-            self.norm.s = scipy.append(self.norm.s, self._end)
-
-
     def tangent(self,point=None):
         """ returns the point of closest approach of the beam as
         defined by its position and normal vector """
@@ -525,11 +215,22 @@ class Beam(geometry.Origin):
         else:
             return []
 
-    def x(self):
-        return (self + self.norm).x()
+    def x0(self):
+        return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
+
+    def x1(self):
+        return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
+
+    def x2(self):
+        return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
 
     def c(self):
         return (self + self.norm).c()
+
+    def smin(self):
+        return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
+                          self.unit[1]*self.norm.unit[1]
+                          )/(self.norm.unit[0]**2+self.norm.unit[1]**2) 
 
     def r(self):
         return (self + self.norm).r()
