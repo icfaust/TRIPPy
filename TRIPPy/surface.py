@@ -91,9 +91,9 @@ class Ellipse(Surf):
 
     def edge(self, angle=[0,2*scipy.pi], pts=250):
         theta = scipy.linspace(angle[0], angle[1], pts)
-        temp = geometry.Point(geometry.Vecr(scipy.sqrt((self.sagi.s*scipy.cos(theta))**2 +(self.meri.s*scipy.cos(theta))**2)*scipy.ones(theta.shape),
+        temp = geometry.Point(geometry.Vecr((scipy.sqrt((self.sagi.s*scipy.cos(theta))**2 +(self.meri.s*scipy.sin(theta))**2)*scipy.ones(theta.shape),
                                             theta,
-                                            scipy.zeros(theta.shape))
+                                            scipy.zeros(theta.shape)))
                               ,self)
 
         temp.redefine(self._origin)

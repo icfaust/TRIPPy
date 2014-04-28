@@ -20,7 +20,7 @@ class Tokamak(geometry.Center):
             return surface.Circle((0.,0.,self.norm.s[idx]),
                                   self,
                                   self.meri.s[idx],
-                                  vec = [self.meri,self.norm])
+                                  vec = [self.meri.copy(),self.norm.copy()])
 
     def getMachineCrossSection(self):
         return geometry.Point(self.norm+self.sagi,self)

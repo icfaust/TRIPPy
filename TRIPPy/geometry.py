@@ -432,9 +432,9 @@ class Vec(object):
         Args:
             anlge: Singule element float or scipy array.
         """
-        newang = self.r1()+angle
-        self.unit[0] = scipy.cos(newang)
-        self.unit[1] = scipy.sin(newang)
+        temp = self.r0()/self.s
+        self.unit[0] = temp*scipy.cos(angle)
+        self.unit[1] = temp*scipy.sin(angle)
 
 
     def point(self,ref):
