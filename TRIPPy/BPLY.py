@@ -11,7 +11,6 @@ import plasma, eqtools
 
 def BPLY(temp, place=(1.87,0,.157277), angle=(0,.17453+scipy.pi/2,-1.62385+scipy.pi/2)):
 
-
     pos = geometry.Origin(place, temp, angle=angle)
     area = [4e-3,3e-3]
     # Vec in this case determines the meridonial and normal rays in the 
@@ -27,15 +26,12 @@ def BPLY(temp, place=(1.87,0,.157277), angle=(0,.17453+scipy.pi/2,-1.62385+scipy
     diodes[-1].redefine(temp)
     return diodes
 
-
 def BPLYbeam(alcator):
 
     temp = BPLY(alcator)
-    output = 22*[0]
-    for i in xrange(len(output)):
-        output[i] = beamin.Beam(temp[i],temp[-1])
-        output[i].trace(alcator)
-    return output
+    beams = beamin.multiBeam(temp[:-1],temp[-1])
+    alcator.trace(beams)
+    return beams
 
 def getBeamFluxSpline(beam,plasma,t,lim1,lim2,points = 1000):
     """ generates a spline off of the beampath.  Assumes
@@ -178,11 +174,6 @@ def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
         #else:
         #    output[i] = [temp1,temp2,temp3]
     return output
-    
-
-
-
-
 
 def effectiveHeight(surf1, surf2, plasma, t, lim1=.88, lim2=.92):
     """ calculate the effective height of a view through the scrape-off-layer"""
