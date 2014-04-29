@@ -79,7 +79,7 @@ class Ray(geometry.Point):
         return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
 
     def r(self):
-       """return cylindrical coordinate values
+        """return cylindrical coordinate values
 
         Returns:
             numpy array of cylindrical coordinates in meters and radians
@@ -89,7 +89,7 @@ class Ray(geometry.Point):
 
     def rmin(self):
         """rmin returns the s value along the norm vector which minimizes
-        the r0() value (the closest position to the origin norm axis
+        the r0() value (the closest position to the origin norm axis)
 
         Returns:
             numpy array of s values in meters
@@ -182,9 +182,9 @@ class Beam(geometry.Origin):
             of the surface.  Center position is accessible through Beam(0).
 
         surf2: Surface or Surface-derived object
-            Direction of the ray can be defined by a vector object (assumed
-            to be in the space of the pt1 origin) from pt1, or a point, which 
-            generates a vector pointing from pt1 to pt2.
+            Defines the aperature surface, based on the coordinate system
+            of the surface. Both surfaces must be in the same coordinate
+            system.
             
     Returns:
         Beam: Beam object.
@@ -291,7 +291,7 @@ class Beam(geometry.Origin):
 
     def rmin(self):
         """rmin returns the s value along the norm vector which minimizes
-        the r0() value (the closest position to the origin norm axis
+        the r0() value (the closest position to the origin norm axis)
 
         Returns:
             numpy array of s values in meters
@@ -301,8 +301,8 @@ class Beam(geometry.Origin):
                           )/(self.norm.unit[0]**2+self.norm.unit[1]**2) 
 
     def r(self):
-       """return cylindrical coordinate values
-
+        """return cylindrical coordinate values
+        
         Returns:
             numpy array of cylindrical coordinates in meters and radians
 
@@ -325,12 +325,56 @@ class Beam(geometry.Origin):
         return out
 
 
-#def multiBeam(surf1,surf2,x=10,y=10):
-#    """ This function provides the capability of generating multiple beams
-#    from two surfaces using the split functionality.  The total number of
-#    beams goes as (x*y)^2, thus at very small numbers of x,y the code slows
-#    abruptly"""#
-#
-#    temp1 = surf1.split(x,y)
-#    temp2 = surf2.split(x,y)
-#    for 
+def multiBeam(surf1, surf2, split=None):
+    r"""Generate a tuple of Beam objects from tuples of surface objects
+    
+    Args:
+        surf1: tuple of Surfaces or a Surface object
+            Defines the origin surfaces, based on the coordinate system
+            of the surfaces.  Center position is accessible through Beam(0),
+            Beam.x()[...,0] or Beam.r()[...,0] (last two options create
+            numpy arrays, the first generats a geometry.Vec object).
+
+        surf2: tuple of Surfaces or a Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+    Returns:
+        Beam: Beam object.
+        
+    Examples:
+        Accepts all surface or surface-derived object inputs, though all data 
+        is stored as a python object.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+
+    """
+    if not split is None:
+        surf1 = surf1.split(split[0],split[1])
+        surf2 = surf2.split(split[0],split[1])
+    
+    output = []
+    try:
+        output += [beam.Beam(surf1,surf2)]
+                
+    except AttributeError:
+        try:
+            for i in surf1:
+                try:
+                    output += [Beam(i,surf2)]
+                except AttributeError:
+                    output += multiBeam(i,surf2)
+                    
+        except TypeError:
+            for i in surf2:
+                try:
+                    output += [Beam(surf1,i)]
+                except AttributeError:
+                    output += mulitBeam(surf1,i)
+                
+    return output
