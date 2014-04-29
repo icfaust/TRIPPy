@@ -52,18 +52,48 @@ class Ray(geometry.Point):
         self.norm.s = scipy.concatenate(([0.],self.norm.s))
 
     def x0(self):
+        """returns cartesian coordinate along first dimension
+
+        Returns:
+           numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
 
     def x1(self):
+        """returns cartesian coordinate along second dimension
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
 
     def x2(self):
+        """returns cartesian coordinate along third dimension
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
 
     def r(self):
+       """return cylindrical coordinate values
+
+        Returns:
+            numpy array of cylindrical coordinates in meters and radians
+
+        """
         return (self + self.norm).r()
 
-    def smin(self):
+    def rmin(self):
+        """rmin returns the s value along the norm vector which minimizes
+        the r0() value (the closest position to the origin norm axis
+
+        Returns:
+            numpy array of s values in meters
+        """
         return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
                           self.unit[1]*self.norm.unit[1]
                           )/(self.norm.unit[0]**2+self.norm.unit[1]**2)
@@ -84,6 +114,13 @@ class Ray(geometry.Point):
         return out
 
     def redefine(self, neworigin):
+        """redefine Ray object or Ray-derived object
+        into new coordinate system
+
+        Args:
+            neworigin: Origin or Origin-derived object
+        """
+
         lca = self._lca(neworigin)
         self._rotate(lca, neworigin)
         super(Ray,self)._translate(lca, neworigin)
@@ -216,23 +253,60 @@ class Beam(geometry.Origin):
             return []
 
     def x0(self):
+        """returns cartesian coordinate along first dimension
+
+        Returns:
+           numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
 
     def x1(self):
+        """returns cartesian coordinate along second dimension
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
 
     def x2(self):
+        """returns cartesian coordinate along third dimension
+
+        Returns:
+            numpy array of cartesian coordinates in meters
+
+        """
         return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
 
     def c(self):
+        """Conversion of vector to opposite coordinate system
+
+        Returns:
+            copy of vector object with opposite coordinate system
+            (set with .flag parameter)
+
+        """
         return (self + self.norm).c()
 
-    def smin(self):
+    def rmin(self):
+        """rmin returns the s value along the norm vector which minimizes
+        the r0() value (the closest position to the origin norm axis
+
+        Returns:
+            numpy array of s values in meters
+        """
         return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
                           self.unit[1]*self.norm.unit[1]
                           )/(self.norm.unit[0]**2+self.norm.unit[1]**2) 
 
     def r(self):
+       """return cylindrical coordinate values
+
+        Returns:
+            numpy array of cylindrical coordinates in meters and radians
+
+        """
         return (self + self.norm).r()
     
     def __getitem__(self,idx):

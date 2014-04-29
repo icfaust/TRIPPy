@@ -430,7 +430,7 @@ class Vec(object):
         axis. This function is different from rot.
 
         Args:
-            anlge: Singule element float or scipy array.
+            angle: Singule element float or scipy array.
         """
         temp = self.r0()/self.s
         self.unit[0] = temp*scipy.cos(angle)
