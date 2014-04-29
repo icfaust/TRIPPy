@@ -9,18 +9,58 @@ edges = scipy.array(([-1,-1],
 class Surf(geometry.Origin):
 
     def __init__(self, x_hat, ref, area, vec=None, angle=None, flag=None):
-        
+        """
+        """
+
         if flag is None:
             flag = ref.flag
 
         super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])/2
         self.meri.s = scipy.atleast_1d(area[1])/2 
-        # this utilizes an unused attribute of the geometry.Origin where the length
-        # of the defining coordinate system unit vectors are used to define the
-        # cross sectional area of the rectangle
+        # this utilizes an unused attribute of the geometry.Origin where 
+        #the length of the defining coordinate system unit vectors are used
+        #to define the cross sectional area of the surface, and the norm is
+        #the normal.
 
+    def intercept(self,ray):
+        """Solves for intersection point of surface and a ray or Beam
+    
+        Args:
+            ray: Ray or Beam object
+                It must be in the same coordinate space as the surface object.
+            
+        Returns:
+            s: value of s [meters] which intercepts along norm, otherwise an
+            empty tuple (for no intersection).
+        
+        Examples:
+            Accepts all point and point-derived object inputs, though all data 
+            is stored as a python object.
 
+            Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                    cen = geometry.Center(flag=True)
+                    ydir = geometry.Vecx((0,1,0))
+                    zpt = geometry.Point((0,0,1),cen)
+
+        """
+        if self._origin is ray._origin:
+            try:
+                params = scipy.dot(scipy.inv(scipy.array([ray.norm.unit,
+                                                          self.meri.unit,
+                                                          self.sagi.unit])),
+                                   (ray-self).x())
+
+                if self.edgetest(params[2],params[1]):
+                    return params[0]
+                else:
+                    return []
+
+            except AttributeError:
+                raise ValueError('not a surface object')
+        else:           
+            raise ValueError('not in same coordinate system, use redefine and try again')
 
 class Rect(Surf):
 
@@ -83,6 +123,8 @@ class Sphere(Surf):
 class Ellipse(Surf):
 
     def __init__(self, x_hat, ref, area, vec=None, angle=None, flag=None):
+        """
+        """
  
         super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(area[0])
@@ -91,7 +133,8 @@ class Ellipse(Surf):
 
     def edge(self, angle=[0,2*scipy.pi], pts=250):
         theta = scipy.linspace(angle[0], angle[1], pts)
-        temp = geometry.Point(geometry.Vecr((scipy.sqrt((self.sagi.s*scipy.cos(theta))**2 +(self.meri.s*scipy.sin(theta))**2)*scipy.ones(theta.shape),
+        temp = geometry.Point(geometry.Vecr((scipy.sqrt((self.sagi.s*scipy.cos(theta))**2
+                                                        +(self.meri.s*scipy.sin(theta))**2)*scipy.ones(theta.shape),
                                             theta,
                                             scipy.zeros(theta.shape)))
                               ,self)
@@ -116,7 +159,9 @@ class Ellipse(Surf):
 class Circle(Ellipse):
 
     def __init__(self, x_hat, ref, radius, vec=None, angle=None, flag=None):
- 
+        """
+        """
+
         super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
         self.sagi.s = scipy.atleast_1d(radius)
         self.meri.s = scipy.atleast_1d(radius)

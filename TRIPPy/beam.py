@@ -2,8 +2,6 @@ import geometry
 import surface
 import scipy
 import scipy.linalg
-import _beam
-#import matplotlib.pyplot as plt
 
 class Ray(geometry.Point):
     r"""Generates a ray vector object
@@ -51,32 +49,14 @@ class Ray(geometry.Point):
         super(Ray,self).__init__(pt1)
         self.norm.s = scipy.concatenate(([0.],self.norm.s))
 
-    def x0(self):
-        """returns cartesian coordinate along first dimension
+    def x(self):
+        """returns array of cartesian coordinate in meters
 
         Returns:
            numpy array of cartesian coordinates in meters
 
         """
-        return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
-
-    def x1(self):
-        """returns cartesian coordinate along second dimension
-
-        Returns:
-            numpy array of cartesian coordinates in meters
-
-        """
-        return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
-
-    def x2(self):
-        """returns cartesian coordinate along third dimension
-
-        Returns:
-            numpy array of cartesian coordinates in meters
-
-        """
-        return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
+        return (self + self.norm).x()
 
     def r(self):
         """return cylindrical coordinate values
@@ -97,6 +77,31 @@ class Ray(geometry.Point):
         return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
                           self.unit[1]*self.norm.unit[1]
                           )/(self.norm.unit[0]**2+self.norm.unit[1]**2)
+
+    def smin(self, point=None):
+        """Calculates and returns the s value along the norm vector
+        which minimizes the distance from the ray to a point 
+        (default is the origin which the ray is defined).
+
+        Kwargs:
+            point: Point or Point-derived object, otherwise defaults to ray 
+            origin
+        
+        Returns:
+            numpy array of s values in meters
+        """
+
+        if point is None:
+            return -self.s*( self.norm.unit[0]*self.unit[0] +
+                             self.norm.unit[1]*self.unit[1] +
+                             self.norm.unit[2]*self.unit[2] )
+        # test in same coordinate system
+        if not self._origin is point._origin :
+            raise ValueError('not in same coordinate system, use redefine')
+        else:
+            return -1*( self.norm.unit[0]*(self.unit[0]*self.s - point.x0() )+
+                        self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
+                        self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
 
     def __getitem__(self,idx):
         return (self + self.norm)[idx]
@@ -142,30 +147,6 @@ class Ray(geometry.Point):
 
         self.norm = temp1
 
-    def tangency(self, point, sigma=False):
-        """ returns a vector which points from the point to the closest
-        approach of the ray"""
-
-
-        # test in same coordinate system
-        if not ((self._origin is point._origin) or(self._origin is point)) :
-            raise ValueError('not in same coordinate system, use redefine')
-
-        # define vector r1, from point to ray origin
-        temp = self(0)
-        r1 = temp - point
-
-        # define tangency sigma (or length along rtan to tangency point
-        sigma = -(r1*self.norm)/(temp.s**2)
-        if sigma:
-            return sigma
-        else:
-            return r1 + geometry.Vecx(sigma*self.norm.unit)
-
-    def point(self,err=[]):
-        return Point((self+self.norm), self.ref, err=err)
-
-
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
     r"""Generates a Beam vector object assuming macroscopic surfaces
@@ -180,6 +161,7 @@ class Beam(geometry.Origin):
         surf1: Surface or Surface-derived object
             Defines the origin surface, based on the coordinate system
             of the surface.  Center position is accessible through Beam(0).
+            Generated beam contains same origin as from surf1.
 
         surf2: Surface or Surface-derived object
             Defines the aperature surface, based on the coordinate system
@@ -216,8 +198,10 @@ class Beam(geometry.Origin):
         a1 = surf1.area(snew.s,mnew.s)
 
         #calculate area at aperature
-        a2 = surf2.area((((self.sagi*surf2.sagi)/self.sagi.s)**2 + ((self.meri*surf2.sagi)/self.meri.s)**2)**.5,
-                        (((self.sagi*surf2.meri)/self.sagi.s)**2 + ((self.meri*surf2.meri)/self.meri.s)**2)**.5)
+        a2 = surf2.area((((self.sagi*surf2.sagi)/self.sagi.s)**2
+                         + ((self.meri*surf2.sagi)/self.meri.s)**2)**.5,
+                        (((self.sagi*surf2.meri)/self.sagi.s)**2 
+                         + ((self.meri*surf2.meri)/self.meri.s)**2)**.5)
 
         #generate etendue
         self.etendue = a1*a2/(normal.s ** 2)
@@ -225,59 +209,14 @@ class Beam(geometry.Origin):
         # give inital beam, which is two points      
         self.norm.s = scipy.insert(self.norm.s,0,0.)
 
-
-    def tangent(self,point=None):
-        """ returns the point of closest approach of the beam as
-        defined by its position and normal vector """
-        if point is None:
-            point = self._origin
-
-
-    def intercept(self,surface):
-        if self._origin is surface._origin:
-            try:
-                params = scipy.dot(scipy.inv(scipy.array([self.norm.unit,
-                                                          surface.meri.unit,
-                                                          surface.sagi.unit])),
-                                   (self-surface.vec).x())
-
-                if surface.edgetest(params[1],params[2]):
-                    return params[0]
-                else:
-                    return []
-
-            except ValueError:
-                print('no?')
-                return []
-        else:
-            return []
-
-    def x0(self):
-        """returns cartesian coordinate along first dimension
+    def x(self):
+        """returns array of cartesian coordinate in meters
 
         Returns:
            numpy array of cartesian coordinates in meters
 
         """
-        return self.s*self.unit[0] + self.norm.s*self.norm.unit[0]
-
-    def x1(self):
-        """returns cartesian coordinate along second dimension
-
-        Returns:
-            numpy array of cartesian coordinates in meters
-
-        """
-        return self.s*self.unit[1] + self.norm.s*self.norm.unit[1]
-
-    def x2(self):
-        """returns cartesian coordinate along third dimension
-
-        Returns:
-            numpy array of cartesian coordinates in meters
-
-        """
-        return self.s*self.unit[2] + self.norm.s*self.norm.unit[2]
+        return (self + self.norm).x()
 
     def c(self):
         """Conversion of vector to opposite coordinate system
@@ -290,8 +229,9 @@ class Beam(geometry.Origin):
         return (self + self.norm).c()
 
     def rmin(self):
-        """rmin returns the s value along the norm vector which minimizes
-        the r0() value (the closest position to the origin norm axis)
+        """Calculates and returns the s value along the norm vector
+        which minimizes the r0() value (the closest position to the
+        origin norm axis)
 
         Returns:
             numpy array of s values in meters
@@ -299,6 +239,31 @@ class Beam(geometry.Origin):
         return -1*self.s*(self.unit[0]*self.norm.unit[0] - 
                           self.unit[1]*self.norm.unit[1]
                           )/(self.norm.unit[0]**2+self.norm.unit[1]**2) 
+
+    def smin(self, point=None):
+        """Calculates and returns the s value along the norm vector
+        which minimizes the distance from the ray to a point 
+        (default is the origin which the ray is defined).
+
+        Kwargs:
+            point: Point or Point-derived object, otherwise defaults to ray 
+            origin
+        
+        Returns:
+            numpy array of s values in meters
+        """
+
+        if point is None:
+            return -self.s*( self.norm.unit[0]*self.unit[0] +
+                             self.norm.unit[1]*self.unit[1] +
+                             self.norm.unit[2]*self.unit[2] )
+        # test in same coordinate system
+        if not self._origin is point._origin :
+            raise ValueError('not in same coordinate system, use redefine')
+        else:
+            return -1*( self.norm.unit[0]*(self.unit[0]*self.s - point.x0() )+
+                        self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
+                        self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
 
     def r(self):
         """return cylindrical coordinate values
@@ -324,13 +289,12 @@ class Beam(geometry.Origin):
 
         return out
 
-
 def multiBeam(surf1, surf2, split=None):
     r"""Generate a tuple of Beam objects from tuples of surface objects
     
     Args:
         surf1: tuple of Surfaces or a Surface object
-            Defines the origin surfaces, based on the coordinate system
+            Beam origin surfaces, based on the coordinate system
             of the surfaces.  Center position is accessible through Beam(0),
             Beam.x()[...,0] or Beam.r()[...,0] (last two options create
             numpy arrays, the first generats a geometry.Vec object).
@@ -360,7 +324,7 @@ def multiBeam(surf1, surf2, split=None):
     
     output = []
     try:
-        output += [beam.Beam(surf1,surf2)]
+        output += [Beam(surf1,surf2)]
                 
     except AttributeError:
         try:
@@ -375,6 +339,6 @@ def multiBeam(surf1, surf2, split=None):
                 try:
                     output += [Beam(surf1,i)]
                 except AttributeError:
-                    output += mulitBeam(surf1,i)
+                    output += multiBeam(surf1,i)
                 
     return output

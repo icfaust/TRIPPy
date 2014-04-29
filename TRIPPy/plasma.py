@@ -1,6 +1,7 @@
 import geometry,scipy,eqtools
 import surface
 import scipy.linalg
+import _beam
 
 class Tokamak(geometry.Center):
 
@@ -27,18 +28,25 @@ class Tokamak(geometry.Center):
 
     def trace(self, ray, limiter=0):
         try:
-            temp = [0.]
+
         # norm vector is modfied following the convention set in geometry.Origin
             if not ray._origin is self:
-                ray.redefine(plasma)
+                ray.redefine(self)
                 
             invesselflag = self.inVessel(ray.r()[...,-1])
             
-            intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+            intersect = _beam.interceptCyl(ray.x()[...,-1], 
+                                           ray.norm.unit, 
+                                           self.meri.s,
+                                           self.norm.s) + ray.norm.s[-1]
             if scipy.isfinite(intersect):
                 ray.norm.s = scipy.append(ray.norm.s,intersect)
 
-            intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+            intersect = _beam.interceptCyl(ray.x()[...,-1],
+                                           ray.norm.unit,
+                                           self.meri.s,
+                                           self.norm.s) + ray.norm.s[-1]
+
             if not invesselflag and scipy.isfinite(intersect):
                 ray.norm.s = scipy.append(ray.norm.s,intersect)
         
@@ -46,7 +54,10 @@ class Tokamak(geometry.Center):
             # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
             # and look for the next as the true wall intersection.
             for i in xrange(limiter):
-                intersect = _beam.interceptCyl(ray.x()[...,-1], ray.norm.unit, self.meri.s, self.norm.s) + ray.norm.s[-1]
+                intersect = _beam.interceptCyl(ray.x()[...,-1],
+                                               ray.norm.unit,
+                                               self.meri.s,
+                                               self.norm.s) + ray.norm.s[-1]
                 ray.norm.s[-1] = intersect
         
         except AttributeError:
@@ -68,7 +79,8 @@ class Tokamak(geometry.Center):
         z = self.eq.getMagZ()
 
         rho = self.eq.rz2rho(method,point[0],point[2],t)
-        theta = (scipy.arctan2(point[2]-z,point[0]-r) + (n*point[1]) + scipy.pi)% (2*scipy.pi) - scipy.pi
+        theta = (scipy.arctan2(point[2]-z,point[0]-r)
+                 + (n*point[1]) + scipy.pi)% (2*scipy.pi) - scipy.pi
         return rho,theta
 
     def gridWeight(self, beams, rgrid=None, zgrid=None, spacing=1e-3):
