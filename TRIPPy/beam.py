@@ -2,6 +2,7 @@ import geometry
 import surface
 import scipy
 import scipy.linalg
+import _beam
 
 class Ray(geometry.Point):
     r"""Generates a ray vector object
@@ -102,7 +103,52 @@ class Ray(geometry.Point):
             return -1*( self.norm.unit[0]*(self.unit[0]*self.s - point.x0() )+
                         self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
                         self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
+    def rzmin(self, r, z, trace=False):
+        """Calculates and returns the s value along the norm vector
+        which minimizes the distance from the ray to a circle defined by
+        input (r,z). 
 
+        Args:
+            r: value, iterable or scipy.array, radius in meters 
+            
+            z: value, iterable or scipy.array, z value in meters
+        
+        Kwargs:
+            trace: bool if set true, the ray is assumed to be traced within a
+            tokamak.  A further evaluation reduces the value to one within
+            the bounds of the vacuum vessel/limiter.
+
+        Returns:
+            numpy array of s values in meters
+        """
+        r = scipy.atleast_1d(r)
+        z = scipy.atleast_1d(z)
+        params = _beam.lineCirc(self(0).x(),
+                                self.norm.unit,
+                                r,
+                                z)
+
+        sout = scipy.zeros(r.shape)
+
+        for i in xrange(len(params)):
+            temp = scipy.roots(params[i])
+
+            # only positive real solutions are taken
+            temp = temp[scipy.imag(temp) == 0]
+            temp = scipy.real(temp[temp > 0])
+
+            test = self(temp).r()
+            if not trace:
+                # must decide between local and global minima
+                sout[i] = temp[((test[0]-r[i])**2 
+                                + (test[2] - z[i])**2).argmin()]
+            else:
+                #need to implement this such that it searches only in area of interest
+                sout[i] = temp[scipy.logical_and(temp > self.norm.s[-2],
+                                                 temp < self.norm.s[-1])].min()
+
+        return sout
+   
     def __getitem__(self,idx):
         return (self + self.norm)[idx]
 
@@ -218,6 +264,15 @@ class Beam(geometry.Origin):
         """
         return (self + self.norm).x()
 
+    def r(self):
+        """return cylindrical coordinate values
+        
+        Returns:
+            numpy array of cylindrical coordinates in meters and radians
+
+        """
+        return (self + self.norm).r()
+    
     def c(self):
         """Conversion of vector to opposite coordinate system
 
@@ -265,15 +320,52 @@ class Beam(geometry.Origin):
                         self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
                         self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
 
-    def r(self):
-        """return cylindrical coordinate values
-        
-        Returns:
-            numpy array of cylindrical coordinates in meters and radians
+    def rzmin(self, r, z, trace=False):
+        """Calculates and returns the s value along the norm vector
+        which minimizes the distance from the ray to a circle defined by
+        input (r,z). 
 
+        Args:
+            r: value, iterable or scipy.array, radius in meters 
+            
+            z: value, iterable or scipy.array, z value in meters
+        
+        Kwargs:
+            trace: bool if set true, the ray is assumed to be traced within a
+            tokamak.  A further evaluation reduces the value to one within
+            the bounds of the vacuum vessel/limiter.
+
+        Returns:
+            numpy array of s values in meters
         """
-        return (self + self.norm).r()
-    
+        r = scipy.atleast_1d(r)
+        z = scipy.atleast_1d(z)
+        params = _beam.lineCirc(self(0).x(),
+                                self.norm.unit,
+                                r,
+                                z)
+
+        sout = scipy.zeros(r.shape)
+
+        for i in xrange(len(params)):
+            temp = scipy.roots(params[i])
+
+            # only positive real solutions are taken
+            temp = temp[scipy.imag(temp) == 0]
+            temp = scipy.real(temp[temp > 0])
+
+            test = self(temp).r()
+            if not trace:
+                # must decide between local and global minima
+                sout[i] = temp[((test[0]-r[i])**2 
+                                + (test[2] - z[i])**2).argmin()]
+            else:
+                #need to implement this such that it searches only in area of interest
+                sout[i] = temp[scipy.logical_and(temp > self.norm.s[-2],
+                                                 temp < self.norm.s[-1])].min()
+
+        return sout
+
     def __getitem__(self,idx):
         return (self + self.norm)[idx]
 

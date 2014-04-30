@@ -47,8 +47,8 @@ C    Copyright 2013 Ian C. Faust
       intent(c) lineCirc
       intent(c)
 
-      integer intent(hide),depend(outliner) :: ix = len(r)
-      double precision intent(in) :: pt1(3)
+      integer intent(hide),depend(r) :: ix = len(r)
+      double precision intent(in) :: pt0(3)
       double precision intent(in) :: norm(3)
       double precision intent(in) :: r(ix)
       double precision intent(in) :: z(ix)
