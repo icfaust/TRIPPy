@@ -1,1 +1,2 @@
-from .plot import *
+from .mayavi import *
+from .pyplot import *
