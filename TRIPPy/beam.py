@@ -355,14 +355,14 @@ class Beam(geometry.Origin):
             temp = scipy.real(temp[temp > 0])
 
             test = self(temp).r()
-            if not trace:
-                # must decide between local and global minima
-                sout[i] = temp[((test[0]-r[i])**2 
-                                + (test[2] - z[i])**2).argmin()]
-            else:
+            
+            # must decide between local and global minima
+            sout[i] = temp[((test[0]-r[i])**2 
+                            + (test[2] - z[i])**2).argmin()]
+            
+            if trace and ((sout[i] > self.norm.s[-1]) or (sout[i] < self.norm.s[-2])):
                 #need to implement this such that it searches only in area of interest
-                sout[i] = temp[scipy.logical_and(temp > self.norm.s[-2],
-                                                 temp < self.norm.s[-1])].min()
+                sout[i] = None
 
         return sout
 
