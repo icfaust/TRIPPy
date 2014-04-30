@@ -400,10 +400,10 @@ class Vec(object):
 
         Args:
             r: scipy-array of floats or float in meters. r is
-            specified in meters.
+                specified in meters.
 
             z: scipy-array of floats or float in meters. z is
-            specified in meters.
+                specified in meters.
 
         Returns:
             numpy array of cylindrical coordinates in meters
@@ -418,10 +418,10 @@ class Vec(object):
 
         Args:
             r: scipy-array of floats or float in meters. r is
-            specified in meters.
+                specified in meters.
 
             z: scipy-array of floats or float in meters. z is
-            specified in meters.
+                specified in meters.
 
         Returns:
             numpy array of cylindrical coordinates in meters
@@ -463,6 +463,13 @@ class Vec(object):
     def t(self, r, z):
         """return toroidal coordinate values for given cylindrical
         coordinates (r,z).
+
+        Args:
+            r: scipy-array of floats or float in meters. r is
+                specified in meters.
+
+            z: scipy-array of floats or float in meters. z is
+                specified in meters.
 
         Returns:
             numpy array of cylindrical coordinates in [meters,radians,radians]
