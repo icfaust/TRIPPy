@@ -68,6 +68,23 @@ class Ray(geometry.Point):
         """
         return (self + self.norm).r()
 
+    def t(self, r, z):
+        """return toroidal coordinate values for given cylindrical
+        coordinates (r,z) in coordinates of the ray origin.
+
+        Args:
+            r: scipy-array of floats or float in meters. r is
+            specified in meters.
+
+            z: scipy-array of floats or float in meters. z is
+            specified in meters.
+
+        Returns:
+            numpy array of cylindrical coordinates in [meters,radians,radians]
+            where it is radius in meters, toroidal angle and then poloidal angle.
+        """
+        return (self + self.norm).t(r, z)
+
     def rmin(self):
         """rmin returns the s value along the norm vector which minimizes
         the r0() value (the closest position to the origin norm axis)
@@ -272,6 +289,23 @@ class Beam(geometry.Origin):
 
         """
         return (self + self.norm).r()
+
+    def t(self, r, z):
+        """return toroidal coordinate values for given cylindrical
+        coordinates (r,z) in coordinates of the beam origin.
+
+        Args:
+            r: scipy-array of floats or float in meters. r is
+            specified in meters.
+
+            z: scipy-array of floats or float in meters. z is
+            specified in meters.
+
+        Returns:
+            numpy array of cylindrical coordinates in [meters,radians,radians]
+            where it is radius in meters, toroidal angle and then poloidal angle.
+        """
+        return (self + self.norm).t(r, z)
     
     def c(self):
         """Conversion of vector to opposite coordinate system
@@ -397,7 +431,7 @@ def multiBeam(surf1, surf2, split=None):
             generates a vector pointing from pt1 to pt2.
             
     Returns:
-        Beam: Beam object.
+        output: tuple of beam objects.
         
     Examples:
         Accepts all surface or surface-derived object inputs, though all data 

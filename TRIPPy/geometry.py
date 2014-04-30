@@ -394,6 +394,41 @@ class Vec(object):
         """
         return self.x2()
 
+    def t0(self, r, z)
+        """returns toroidal distance given cylindrical
+        coordinates (r,z).
+
+        Args:
+            r: scipy-array of floats or float in meters. r is
+            specified in meters.
+
+            z: scipy-array of floats or float in meters. z is
+            specified in meters.
+
+        Returns:
+            numpy array of cylindrical coordinates in meters
+
+        """
+        return scipy.sqrt((self.r0() - r)**2 + (self.x2() - z)**2)
+
+
+    def t2(self, r, z):
+        """returns poloidal angle given cylindrical
+        coordinates (r,z)
+
+        Args:
+            r: scipy-array of floats or float in meters. r is
+            specified in meters.
+
+            z: scipy-array of floats or float in meters. z is
+            specified in meters.
+
+        Returns:
+            numpy array of cylindrical coordinates in meters
+
+        """
+        return scipy.arctan2(self.x2() - z,self.r0() - r)
+
     def c(self):
         """Conversion of vector to opposite coordinate system
 
@@ -424,6 +459,18 @@ class Vec(object):
         return scipy.squeeze([self.r0(),
                               self.r1(),
                               self.x2()])
+
+    def t(self, r, z):
+        """return toroidal coordinate values for given cylindrical
+        coordinates (r,z).
+
+        Returns:
+            numpy array of cylindrical coordinates in [meters,radians,radians]
+            where it is radius in meters, toroidal angle and then poloidal angle.
+        """
+        return scipy.squeeze([self.t0(),
+                              self.r1(),
+                              self.t2()])
 
     def spin(self,angle):
         """Spin vector object about the cylindrical (0,0,1)/norm vector
