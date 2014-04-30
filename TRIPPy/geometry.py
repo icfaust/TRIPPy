@@ -729,6 +729,9 @@ class Origin(Point):
     
     Args:
         x_hat: geometry-derived object or Array-like of size 3 or 3xN.
+            Position in the coordinate system defined by origin, 
+            which, if it is a scipy array, follows the input convention
+            of the origin. Specified vector will be converted as necessary.
 
     Kwargs:
         ref: Origin or Origin-derived object.
