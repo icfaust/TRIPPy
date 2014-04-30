@@ -6,6 +6,8 @@ import _beam
 class Tokamak(geometry.Center):
 
     def __init__(self, equilib, flag=True):
+        """
+        """
         self.eq = equilib
         super(Tokamak, self).__init__(flag=flag)
         self.meri.s = self.eq.getMachineCrossSection()[0] #store R and Z of limiter structure vacuum vessel

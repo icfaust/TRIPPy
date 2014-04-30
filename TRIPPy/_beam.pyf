@@ -31,17 +31,29 @@ C    Copyright 2013 Ian C. Faust
       double precision intent(out) :: outval(1)	
    end subroutine intercept2d
 
-   subroutine interceptCyl(s,pt1,norm,outliner,outlinez,ix)
+   subroutine interceptCyl(s,pt0,norm,outliner,outlinez,ix)
       intent(c) interceptCyl
       intent(c)
 
       integer intent(hide),depend(outliner) :: ix = len(outliner)
-      double precision intent(in) :: pt1(3)
+      double precision intent(in) :: pt0(3)
       double precision intent(in) :: norm(3)
       double precision intent(in) :: outliner(ix)
       double precision intent(in) :: outlinez(ix)
       double precision intent(out) :: s(1)	
    end subroutine intercept2d
+
+   subroutine lineCirc(out,pt0,norm,r,z,ix)
+      intent(c) lineCirc
+      intent(c)
+
+      integer intent(hide),depend(outliner) :: ix = len(r)
+      double precision intent(in) :: pt1(3)
+      double precision intent(in) :: norm(3)
+      double precision intent(in) :: r(ix)
+      double precision intent(in) :: z(ix)
+      double precision intent(out) :: out(ix,5)	
+   end subroutine lineCirc
 
 end interface
 end python module _beam

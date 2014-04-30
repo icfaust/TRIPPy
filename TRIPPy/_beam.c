@@ -111,4 +111,21 @@ void interceptCyl(double *s, double pt0[3], double norm[3], double outliner[], d
     }
 }
 
+void line2Circ(double out[][5], double pt0[3], double norm[3], double r[], double z[],int ix)
+{ int i;
+  double eps,epst,f0r,f1r;
+  
+  f0r = pow(pt0[0],2) + pow(pt0[1],2);
+  f1r = pow(norm[0],2) + pow(norm[1],2);
+  eps = pt0[0]*norm[0] + pt0[1]*norm[1];
 
+  for(i=0;i < ix; i++)
+    { 
+      epst = eps - (pt0[2] - z[i])*norm[2];
+      out[i][0] = f1r;
+      out[i][1] = 2*eps*(1 + f1r);
+      out[i][2] = f0r + 4*eps*epst + f1r*(pow(epst,2) - pow(r[i],2)*f1r);
+      out[i][3] = 2*(f0r*epst + eps*(pow(epst,2) - pow(r[i],2)*f1r));
+      out[i][4] = f0r*pow(epst,2) - pow(r[i],2)*pow(epst,2);
+    }
+}
