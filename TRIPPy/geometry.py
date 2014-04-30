@@ -394,7 +394,7 @@ class Vec(object):
         """
         return self.x2()
 
-    def t0(self, r, z)
+    def t0(self, r, z):
         """returns toroidal distance given cylindrical
         coordinates (r,z).
 
