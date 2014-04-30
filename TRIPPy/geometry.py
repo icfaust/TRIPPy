@@ -475,9 +475,9 @@ class Vec(object):
             numpy array of cylindrical coordinates in [meters,radians,radians]
             where it is radius in meters, toroidal angle and then poloidal angle.
         """
-        return scipy.squeeze([self.t0(),
+        return scipy.squeeze([self.t0(r, z),
                               self.r1(),
-                              self.t2()])
+                              self.t2(r, z)])
 
     def spin(self,angle):
         """Spin vector object about the cylindrical (0,0,1)/norm vector
