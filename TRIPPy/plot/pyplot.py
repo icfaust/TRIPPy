@@ -21,14 +21,14 @@ def plotLine(line, invessel=True, ds=2.5e-3, **kwargs):
         for i in line:
             plotLine(i, invessel=invessel, **kwargs)
 
-def sinogram(beam, r, z, invessel=True, ds=2.5e-3, **kwargs):
+def sinogram(beam, r, z, invessel=True, ds=2.5e-3, *args, **kwargs):
     
     try:
         if invessel:
             temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds])
         else:
             temp = beam(scipy.mgrid[beam.norm.s[0]:beam.norm.s[-1]:ds])
-        plt.plot(temp.t2(r, z), temp.t0(r, z), **kwargs)
+        plt.plot(temp.t2(r, z), temp.t0(r, z), *args, **kwargs)
     except AttributeError:
         for i in beam:
-            sinogram(i, r, z, invessel=invessel, **kwargs)
+            sinogram(i, r, z, invessel=invessel, *args, **kwargs)
