@@ -25,10 +25,10 @@ def sinogram(beam, r, z, invessel=True, **kwargs):
     
     try:
         if invessel:
-            temp = line(scipy.mgrid[line.norm.s[-2]:line.norm.s[-1]:ds]).t(r, z)
+            temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds]).t(r, z)
         else:
-            temp = line(scipy.mgrid[line.norm.s[0]:line.norm.s[-1]:ds]).t(r, z)
+            temp = beam(scipy.mgrid[beam.norm.s[0]:beam.norm.s[-1]:ds]).t(r, z)
         plt.plot(temp[2], temp[0], **kwargs)
     except AttributeError:
-        for i in line:
+        for i in beam:
             sinogram(i, r, z, invessel=invessel, **kwargs)
