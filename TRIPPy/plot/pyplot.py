@@ -16,7 +16,7 @@ def plotLine(line, invessel=True, ds=2.5e-3, **kwargs):
             temp = line(scipy.mgrid[line.norm.s[-2]:line.norm.s[-1]:ds]).r()
         else:
             temp = line(scipy.mgrid[line.norm.s[0]:line.norm.s[-1]:ds]).r()
-        plt.plot(temp[0],temp[2],**kwargs)
+        plt.plot(temp[0], temp[2], **kwargs)
     except AttributeError:
         for i in line:
             plotLine(i, invessel=invessel, **kwargs)
@@ -28,7 +28,7 @@ def sinogram(beam, r, z, invessel=True, **kwargs):
             temp = line(scipy.mgrid[line.norm.s[-2]:line.norm.s[-1]:ds]).t(r, z)
         else:
             temp = line(scipy.mgrid[line.norm.s[0]:line.norm.s[-1]:ds]).t(r, z)
-        plt.plot(temp[2],temp[0],**kwargs)
+        plt.plot(temp[2], temp[0], **kwargs)
     except AttributeError:
         for i in line:
             sinogram(i, r, z, invessel=invessel, **kwargs)
