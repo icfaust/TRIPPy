@@ -2,7 +2,6 @@ import scipy
 import TRIPPy
 import matplotlib.pyplot as plt
 
-
 def plotTokamak(tokamak, axis=True, *args, **kwargs):
 
     plt.plot(tokamak.sagi.s, tokamak.norm.s, *args, **kwargs)
@@ -46,6 +45,7 @@ def sinogram(beam, r, z, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
             plt.plot(temp2,temp0, pargs, **kwargs)
         else:
             plt.plot(temp2,temp0, **kwargs)
+
     except AttributeError:
         for i in beam:
             sinogram(i, r, z, invessel=invessel, pargs=pargs, **kwargs)
