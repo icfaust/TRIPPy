@@ -1,0 +1,1 @@
+Search.setIndex({envversion:42,terms:{plot:2},objtypes:{},objnames:{},filenames:["TRIPPy.plot","modules","TRIPPy"],titles:["TRIPPy.plot package","TRIPPy","TRIPPy package"],objects:{},titleterms:{subpackag:2,nstx:2,surfac:2,packag:[0,2],plot:0,modul:[0,2],submodul:[0,2],content:[0,2],beam:2,xtomo:2,cmodt:2,bply:2,geometri:2,axuv:2,plasma:2,invert:2,trippi:[0,1,2]}})

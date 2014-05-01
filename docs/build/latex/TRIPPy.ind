@@ -1,0 +1,182 @@
+\begin{theindex}
+\def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
+
+  \bigletter A
+  \item angle() (in module TRIPPy.geometry), \hyperpage{25}
+  \item area() (TRIPPy.surface.Circle method), \hyperpage{32}
+  \item area() (TRIPPy.surface.Ellipse method), \hyperpage{33}
+  \item area() (TRIPPy.surface.Rect method), \hyperpage{34}
+  \item arot() (TRIPPy.geometry.Origin method), \hyperpage{20}
+  \item AXUV20() (in module TRIPPy.AXUV), \hyperpage{5}
+  \item AXUV22() (in module TRIPPy.AXUV), \hyperpage{5}
+
+  \indexspace
+  \bigletter B
+  \item Beam (class in TRIPPy.beam), \hyperpage{15}
+  \item BPLY() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item BPLYbeam() (in module TRIPPy.BPLY), \hyperpage{7}
+
+  \indexspace
+  \bigletter C
+  \item c() (TRIPPy.beam.Beam method), \hyperpage{15}
+  \item c() (TRIPPy.geometry.Point method), \hyperpage{21}
+  \item c() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item calcArea() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item calctoTree() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item Center (class in TRIPPy.geometry), \hyperpage{19}
+  \item Chords() (in module TRIPPy.CmodTS), \hyperpage{9}
+  \item Circle (class in TRIPPy.surface), \hyperpage{31}
+  \item copy() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item cross() (in module TRIPPy.geometry), \hyperpage{25}
+
+  \indexspace
+  \bigletter D
+  \item diode1() (in module TRIPPy.NSTX), \hyperpage{11}
+  \item diode2() (in module TRIPPy.NSTX), \hyperpage{11}
+  \item diode3() (in module TRIPPy.NSTX), \hyperpage{11}
+  \item diode4() (in module TRIPPy.NSTX), \hyperpage{11}
+  \item diode5() (in module TRIPPy.NSTX), \hyperpage{11}
+  \item diode6() (in module TRIPPy.NSTX), \hyperpage{11}
+
+  \indexspace
+  \bigletter E
+  \item edge() (TRIPPy.surface.Ellipse method), \hyperpage{33}
+  \item edge() (TRIPPy.surface.Rect method), \hyperpage{34}
+  \item edgetest() (TRIPPy.surface.Circle method), \hyperpage{32}
+  \item edgetest() (TRIPPy.surface.Ellipse method), \hyperpage{33}
+  \item edgetest() (TRIPPy.surface.Rect method), \hyperpage{34}
+  \item effectiveHeight() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item Ellipse (class in TRIPPy.surface), \hyperpage{32}
+
+  \indexspace
+  \bigletter F
+  \item fill() (in module TRIPPy.geometry), \hyperpage{25}
+
+  \indexspace
+  \bigletter G
+  \item genCartGrid() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item genCylGrid() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item genVertsFromPixel() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item getBeamFluxSpline() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item getMachineCrossSection() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+  \item getVessel() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+  \item globalpowerCalc() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item gridWeight() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+
+  \indexspace
+  \bigletter I
+  \item intercept() (TRIPPy.surface.Surf method), \hyperpage{35}
+  \item inVessel() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+
+  \indexspace
+  \bigletter M
+  \item meri (TRIPPy.geometry.Center attribute), \hyperpage{19}
+  \item multiBeam() (in module TRIPPy.beam), \hyperpage{17}
+
+  \indexspace
+  \bigletter N
+  \item norm (TRIPPy.geometry.Center attribute), \hyperpage{19}
+
+  \indexspace
+  \bigletter O
+  \item Origin (class in TRIPPy.geometry), \hyperpage{19}
+
+  \indexspace
+  \bigletter P
+  \item plotLine() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotSymIso() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotTangency() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotTokamak() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotView() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotVol() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item plotVol2() (in module TRIPPy.plot.plot), \hyperpage{1}
+  \item pnt2RhoTheta() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+  \item Point (class in TRIPPy.geometry), \hyperpage{21}
+  \item point() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item pts2Vec() (in module TRIPPy.geometry), \hyperpage{25}
+
+  \indexspace
+  \bigletter R
+  \item r() (TRIPPy.beam.Beam method), \hyperpage{15}
+  \item r() (TRIPPy.beam.Ray method), \hyperpage{16}
+  \item r() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item r0() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item r1() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item r2() (TRIPPy.geometry.Vec method), \hyperpage{22}
+  \item Ray (class in TRIPPy.beam), \hyperpage{16}
+  \item Rect (class in TRIPPy.surface), \hyperpage{33}
+  \item redefine() (TRIPPy.beam.Ray method), \hyperpage{16}
+  \item redefine() (TRIPPy.geometry.Origin method), \hyperpage{20}
+  \item redefine() (TRIPPy.geometry.Point method), \hyperpage{21}
+  \item rhosens() (in module TRIPPy.invert), \hyperpage{27}
+  \item rmin() (TRIPPy.beam.Beam method), \hyperpage{15}
+  \item rmin() (TRIPPy.beam.Ray method), \hyperpage{17}
+  \item rot() (TRIPPy.geometry.Origin method), \hyperpage{20}
+
+  \indexspace
+  \bigletter S
+  \item sagi (TRIPPy.geometry.Center attribute), \hyperpage{19}
+  \item sens() (in module TRIPPy.invert), \hyperpage{27}
+  \item smin() (TRIPPy.beam.Beam method), \hyperpage{15}
+  \item smin() (TRIPPy.beam.Ray method), \hyperpage{17}
+  \item spin() (TRIPPy.geometry.Origin method), \hyperpage{20}
+  \item spin() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item split() (TRIPPy.geometry.Origin method), \hyperpage{21}
+  \item split() (TRIPPy.geometry.Point method), \hyperpage{21}
+  \item split() (TRIPPy.surface.Rect method), \hyperpage{34}
+  \item Surf (class in TRIPPy.surface), \hyperpage{34}
+
+  \indexspace
+  \bigletter T
+  \item t() (TRIPPy.beam.Beam method), \hyperpage{16}
+  \item t() (TRIPPy.beam.Ray method), \hyperpage{17}
+  \item t() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item t0() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item t2() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item tmin() (TRIPPy.beam.Beam method), \hyperpage{16}
+  \item tmin() (TRIPPy.beam.Ray method), \hyperpage{17}
+  \item Tokamak (class in TRIPPy.plasma), \hyperpage{29}
+  \item trace() (TRIPPy.plasma.Tokamak method), \hyperpage{29}
+  \item trend() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item TRIPPy (module), \hyperpage{37}
+  \item TRIPPy.AXUV (module), \hyperpage{5}
+  \item TRIPPy.beam (module), \hyperpage{15}
+  \item TRIPPy.BPLY (module), \hyperpage{7}
+  \item TRIPPy.CmodTS (module), \hyperpage{9}
+  \item TRIPPy.geometry (module), \hyperpage{19}
+  \item TRIPPy.invert (module), \hyperpage{27}
+  \item TRIPPy.NSTX (module), \hyperpage{11}
+  \item TRIPPy.plasma (module), \hyperpage{29}
+  \item TRIPPy.plot (module), \hyperpage{1}
+  \item TRIPPy.plot.plot (module), \hyperpage{1}
+  \item TRIPPy.surface (module), \hyperpage{31}
+  \item TRIPPy.XTOMO (module), \hyperpage{13}
+
+  \indexspace
+  \bigletter U
+  \item unit() (in module TRIPPy.geometry), \hyperpage{25}
+
+  \indexspace
+  \bigletter V
+  \item Vec (class in TRIPPy.geometry), \hyperpage{21}
+  \item Vecr() (in module TRIPPy.geometry), \hyperpage{23}
+  \item Vecx() (in module TRIPPy.geometry), \hyperpage{24}
+  \item viewPoints() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item volWeightBeam() (in module TRIPPy.beam), \hyperpage{17}
+
+  \indexspace
+  \bigletter W
+  \item writeGlobal() (in module TRIPPy.BPLY), \hyperpage{7}
+  \item writeToTree() (in module TRIPPy.BPLY), \hyperpage{7}
+
+  \indexspace
+  \bigletter X
+  \item x() (TRIPPy.beam.Beam method), \hyperpage{16}
+  \item x() (TRIPPy.beam.Ray method), \hyperpage{17}
+  \item x() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item x0() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item x1() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item x2() (TRIPPy.geometry.Vec method), \hyperpage{23}
+  \item XTOMOchip() (in module TRIPPy.XTOMO), \hyperpage{13}
+
+\end{theindex}
