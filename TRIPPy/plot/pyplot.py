@@ -25,7 +25,7 @@ def plotLine(line, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
         for i in line:
             plotLine(i, invessel=invessel, pargs=pargs, **kwargs)
 
-def sinogram(beam, r, z, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
+def sinogramLine(beam, r, z, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
     
     try:
         if invessel:
@@ -37,9 +37,10 @@ def sinogram(beam, r, z, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
         temp0 = temp.t0(r, z)
         temp2 = temp.t2(r, z)
         temp = scipy.arange(temp0.size)[abs(temp2[1:] - temp2[:-1]) > scipy.pi]
+        print(temp)
         if len(temp) > 0:
-            temp0 = scipy.insert(temp0, temp, None)
-            temp2 = scipy.insert(temp2, temp, None)
+            temp0 = scipy.insert(temp0, temp+1, None)
+            temp2 = scipy.insert(temp2, temp+1, None)
 
         if not pargs is None:
             plt.plot(temp2,temp0, pargs, **kwargs)
@@ -48,4 +49,7 @@ def sinogram(beam, r, z, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
 
     except AttributeError:
         for i in beam:
-            sinogram(i, r, z, invessel=invessel, pargs=pargs, **kwargs)
+            sinogramLine(i, r, z, invessel=invessel, pargs=pargs, **kwargs)
+
+def image(r, z, out, **kwargs):
+    plt.imshow(out.T,origin='lower',extent = (r.min(),r.max(),z.min(),z.max()), **kwargs)

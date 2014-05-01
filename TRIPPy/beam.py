@@ -212,7 +212,10 @@ class Ray(geometry.Point):
 
 # generate necessary beams for proper inversion (including etendue, etc)
 class Beam(geometry.Origin):
-    r"""Generates a Beam vector object assuming macroscopic surfaces
+    r"""Generates a Beam vector object assuming macroscopic surfaces. A
+    beam is a ray which has finite, invariant etendue. The etendue is 
+    derived assuming that the angular divergence /cross-sectional area
+    can be parameterized by two surfaces.
         
     Uses the definition:
         
@@ -468,3 +471,65 @@ def multiBeam(surf1, surf2, split=None):
                     output += multiBeam(surf1,i)
                 
     return output
+
+
+def volWeightBeam(beam, rgrid, zgrid, trace=True, ds=2e-3, toroidal=None, **kwargs):
+    r"""Generate a tuple of Beam objects from tuples of surface objects
+    
+    Args:
+        beam: tuple of Surfaces or a Surface object
+            Beam origin surfaces, based on the coordinate system
+            of the surfaces.  Center position is accessible through Beam(0),
+            Beam.x()[...,0] or Beam.r()[...,0] (last two options create
+            numpy arrays, the first generats a geometry.Vec object).
+
+        rgrid: tuple of Surfaces or a Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+        zgrid: tuple of Surfaces or a Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+
+    Returns:
+        output: tuple of beam objects.
+        
+    Examples:
+        Accepts all surface or surface-derived object inputs, though all data 
+        is stored as a python object.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+
+    """
+    out = scipy.zeros((len(rgrid)-1,len(zgrid)-1))
+    try:
+        if toroidal is None:
+            if trace:
+                temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds]).r()
+            else:
+                temp = beam(scipy.mgrid[beam.norm.s[0]:beam.norm.s[-1]:ds]).r()
+                
+            out += scipy.histogram2d(temp[0],
+                                     temp[2], 
+                                     bins = [rgrid, zgrid],
+                                     weights=scipy.ones(temp[0].shape)*beam.etendue*ds)[0]
+        else:
+            if trace:
+                temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds]).t(toroidal[0],toroidal[1])
+            else:
+                temp = beam(scipy.mgrid[beam.norm.s[0]:beam.norm.s[-1]:ds]).t(toroidal[0],toroidal[1])
+            
+            out += scipy.histogram2d(temp[2],
+                                     temp[0],
+                                     bins = [rgrid, zgrid],
+                                     weights=scipy.ones(temp[0].shape)*beam.etendue*ds)[0]
+    except AttributeError:
+        for i in beam:
+            out += volWeightBeam(i, rgrid, zgrid, trace=trace, ds=ds, toroidal=toroidal, **kwargs)
+    return out
