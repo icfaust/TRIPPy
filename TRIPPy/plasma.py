@@ -37,15 +37,15 @@ class Tokamak(geometry.Center):
                 
             invesselflag = self.inVessel(ray.r()[...,-1])
             
-            intersect = _beam.interceptCyl(ray.x()[...,-1], 
-                                           ray.norm.unit, 
+            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]), 
+                                           scipy.atleast_2d(ray.norm.unit), 
                                            self.meri.s,
                                            self.norm.s) + ray.norm.s[-1]
             if scipy.isfinite(intersect):
                 ray.norm.s = scipy.append(ray.norm.s,intersect)
 
-            intersect = _beam.interceptCyl(ray.x()[...,-1],
-                                           ray.norm.unit,
+            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]),
+                                           scipy.atleast_2d(ray.norm.unit),
                                            self.meri.s,
                                            self.norm.s) + ray.norm.s[-1]
 
@@ -56,8 +56,8 @@ class Tokamak(geometry.Center):
             # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
             # and look for the next as the true wall intersection.
             for i in xrange(limiter):
-                intersect = _beam.interceptCyl(ray.x()[...,-1],
-                                               ray.norm.unit,
+                intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]),
+                                               scipy.atleast_2d(ray.norm.unit),
                                                self.meri.s,
                                                self.norm.s) + ray.norm.s[-1]
                 ray.norm.s[-1] = intersect

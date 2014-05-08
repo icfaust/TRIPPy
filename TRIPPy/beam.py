@@ -3,6 +3,7 @@ import surface
 import scipy
 import scipy.linalg
 import _beam
+import mayavi.mlab as mlab
 
 class Ray(geometry.Point):
     r"""Generates a ray vector object
@@ -110,9 +111,9 @@ class Ray(geometry.Point):
         """
 
         if point is None:
-            return -self.s*( self.norm.unit[0]*self.unit[0] +
-                             self.norm.unit[1]*self.unit[1] +
-                             self.norm.unit[2]*self.unit[2] )
+            return -self.s*(self.norm.unit[0]*self.unit[0]+
+                            self.norm.unit[1]*self.unit[1]+
+                            self.norm.unit[2]*self.unit[2])
         # test in same coordinate system
         if not self._origin is point._origin :
             raise ValueError('not in same coordinate system, use redefine')
@@ -353,9 +354,9 @@ class Beam(geometry.Origin):
         if not self._origin is point._origin :
             raise ValueError('not in same coordinate system, use redefine')
         else:
-            return -1*( self.norm.unit[0]*(self.unit[0]*self.s - point.x0() )+
-                        self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
-                        self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
+            return -1*(self.norm.unit[0]*(self.unit[0]*self.s - point.x0())+
+                       self.norm.unit[1]*(self.unit[1]*self.s - point.x1())+
+                       self.norm.unit[2]*(self.unit[2]*self.s - point.x2()))
 
     def tmin(self, r, z, trace=False):
         """Calculates and returns the s value along the norm vector
@@ -418,7 +419,122 @@ class Beam(geometry.Origin):
 
         return out
 
-def multiBeam(surf1, surf2, split=None):
+class multiBeam(Beam):
+    r"""Generate an array of Beam objects from two surface objects
+    
+    Args:
+        surf1: Surface object
+            Beam origin surfaces, based on the coordinate system
+            of the surfaces.  Center position is accessible through Beam(0),
+            Beam.x()[...,0] or Beam.r()[...,0] (last two options create
+            numpy arrays, the first generats a geometry.Vec object).
+
+        surf2: Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+    Kwargs:
+        split1: two-element tuple
+            Describes how many segments to split surf1 in [sagi,meri]
+
+        split2: two-element tuple
+            Describes how many segments to split surf1 in [sagi,meri]
+
+    Returns:
+        output: multiBeam object.
+        
+    Examples:
+        Accepts all surface or surface-derived object inputs, though all data 
+        is stored as a python object.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+
+    """
+
+    def __init__(self, surf1, surf2, split1 = None, split2 = None):
+        """
+        """
+        
+        #generating grid off of split1, split2 kwargs
+        if split1 is None:
+            split1 = [1,1]
+        if split2 is None:
+            split2 = [1,1]
+
+        ins1 = float((split1[0]-1))/split1[0]
+        inm1 = float((split1[1]-1))/split1[1]
+        ins2 = float((split2[0]-1))/split2[0]
+        inm2 = float((split2[1]-1))/split2[1] 
+
+        grid = scipy.meshgrid(surf1.sagi.s*scipy.linspace(-ins1,
+                                                           ins1,
+                                                           split1[0]),
+                              surf1.meri.s*scipy.linspace(-inm1,
+                                                           inm1,
+                                                           split1[1]),
+                              surf2.sagi.s*scipy.linspace(-ins2,
+                                                           ins2,
+                                                           split2[0]),
+                              surf2.meri.s*scipy.linspace(-inm2,
+                                                           inm2,
+                                                           split2[1]))
+        
+        #check to see if they are in same coordinate system
+        surf1cents = surf1 + surf1.sagi(grid[0]) + surf1.meri(grid[1]) #vectors
+        surf2cents = surf2 + surf2.sagi(grid[2]) + surf2.meri(grid[3])
+    
+        del grid
+        self.norm = surf2cents - surf1cents
+        self.s = surf1cents.s
+        self.unit = surf1cents.unit
+        #orthogonal coordinates based off of connecting normal
+
+        self.sagi = surf1.sagi - self.norm*((surf1.sagi * self.norm)*(surf1.sagi.s/self.norm.s))
+        self.meri = surf1.meri - self.norm*((surf1.meri * self.norm)*(surf1.meri.s/self.norm.s))
+        
+        #reduce calcuations in calling super to inherited classes
+        self._origin = surf1._origin
+        self._depth = surf1._depth
+        self.flag = surf1.flag
+
+        #calculate area at diode.
+        self.sagi.s /= split1[0]
+        self.meri.s /= split1[1]
+        a1 = surf1.area(self.sagi.s,self.meri.s)
+
+        #calculate area at aperature
+        a2 = surf2.area((((self.sagi*surf2.sagi)/self.sagi.s)**2
+                         + ((self.meri*surf2.sagi)/self.meri.s)**2)**.5,
+                        (((self.sagi*surf2.meri)/self.sagi.s)**2 
+                         + ((self.meri*surf2.meri)/self.meri.s)**2)**.5)/(split2[0]*split2[1])
+
+        #generate etendue
+        self.etendue = a1*a2/(self.norm.s ** 2)
+
+        # give inital beam, which is two points      
+        # figure this out once it is put together.
+
+    def __getitem__(self,idx):
+        return geometry.Vec(self.unit[idx],s=self.s[idx]) + self.norm[idx]
+
+    def __call__(self,inp):
+        """ call is used to minimize the changes to the norm vector.
+        it returns a vector"""
+        #temporarily store the norm.s
+        temp = self.norm.s
+
+        self.norm.s = inp
+        out = self + self.norm
+        self.norm.s = temp
+
+        return out
+
+def tupleBeam(surf1, surf2, split=None):
     r"""Generate a tuple of Beam objects from tuples of surface objects
     
     Args:

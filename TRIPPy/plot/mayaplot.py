@@ -17,7 +17,7 @@ def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs
         temp0 = x[0]
         temp1 = x[1]
         temp2 = x[2]
-        s =  val*scipy.ones((len(temp0),))
+        s =  val*scipy.ones(temp0.shape)
 
             # For surface objects, this keyword allows for the last corner to connect with the first
         if close:
@@ -61,14 +61,25 @@ def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs
         connect = scipy.vstack(connect)
 
     if index is None:
-        mlab.plot3d(temp0, 
-                    temp1,
-                    temp2, 
-                    s,
-                    vmin=0.,
-                    vmax=1.,
-                    tube_radius=tube_radius,
-                    **kwargs)
+
+        try:
+            mlab.plot3d(temp0, 
+                        temp1,
+                        temp2, 
+                        s,
+                        vmin=0.,
+                        vmax=1.,
+                        tube_radius=tube_radius,
+                        **kwargs)
+        except ValueError:
+            mlab.plot3d(temp0.flatten(), 
+                        temp1.flatten(),
+                        temp2.flatten(), 
+                        s.flatten(),
+                        vmin=0.,
+                        vmax=1.,
+                        tube_radius=tube_radius,
+                        **kwargs)
  
     else:
         if plot:

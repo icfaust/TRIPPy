@@ -38,8 +38,8 @@ def unit(x_hat):
     """
 
     temp = scipy.squeeze(x_hat)
-    if len(temp) != 3 or temp.max() > 1 or temp.min() < -1:
-        raise ValueError
+    if temp.shape[0] != 3 or temp.max() > 1 or temp.min() < -1:
+        raise ValueError('input is not in a coordinate system, first dimension must be 3')
     return temp
 
 
@@ -280,7 +280,12 @@ class Vec(object):
         """
 
         try:
-            return (self.s*vec.s)*scipy.dot(self.unit.T, vec.unit)
+            try:
+                return (self.s*vec.s)*scipy.dot(self.unit.T, vec.unit)
+            except ValueError:
+                temp = vec.unit.shape
+                return (self.s*vec.s)*scipy.dot(self.unit, 
+                                                vec.unit.reshape((3,vec.unit.size/3))).reshape(temp[1:])
         except AttributeError:
             return Vec(self.unit, vec*self.s, flag=self.flag)
 
@@ -315,6 +320,15 @@ class Vec(object):
         else:
             return self.x()[idx]
 
+    def __call__(self,inp):
+        """ call is used to minimize the changes to the vector.
+        it returns a vector"""
+        #temporarily store the norm.s
+        out = self.copy()
+        out.s = inp
+
+        return out
+
     def copy(self):
         """copy of object
 
@@ -325,7 +339,7 @@ class Vec(object):
 
         return copy.deepcopy(self)
 
-    def _cross(self):
+    def _cross(self,vec):
         """returns matrix multiplication form of vector cross product
 
         Returns:
@@ -335,11 +349,21 @@ class Vec(object):
             there are is only a singular direction.
 
         """
+        try:
+            return scipy.dot(scipy.array(((0,-self.unit[2],self.unit[1]),
+                                          (self.unit[2],0,-self.unit[0]),
+                                          (-self.unit[1],self.unit[0],0))),vec.unit)
 
-        return  scipy.array(((0,-self.unit[2],self.unit[1]),
-                             (self.unit[2],0,-self.unit[0]),
-                             (-self.unit[1],self.unit[0],0)))
-
+        except ValueError:
+            temp = scipy.zeros((self.unit.size/3,3,3))
+            temp[...,0,1] = -self.unit[2].flatten()
+            temp[...,0,2] = self.unit[1].flatten()
+            temp[...,1,0] = -temp[...,0,1]
+            temp[...,1,2] = -self.unit[0].flatten()
+            temp[...,2,0] = -temp[...,0,2]
+            temp[...,2,1] = -temp[...,1,2]
+            return scipy.dot(temp,vec.unit.reshape((3,vec.unit.size/3)))
+            
     def x0(self):
         """returns cartesian coordinate along first dimension
 
@@ -532,7 +556,7 @@ def cross(Vec1, Vec2):
         It is in the coordinate system of the first argument.
      
     """
-    new = Vec(scipy.dot(Vec1._cross(),Vec2.unit),Vec1.s*Vec2.s)
+    new = Vec(Vec1._cross(Vec2),Vec1.s*Vec2.s)
     new.flag = Vec1.flag
     return new
 

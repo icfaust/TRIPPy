@@ -31,17 +31,18 @@ C    Copyright 2013 Ian C. Faust
       double precision intent(out) :: outval(1)	
    end subroutine intercept2d
 
-   subroutine interceptCyl(s,pt0,norm,outliner,outlinez,ix)
+   subroutine interceptCyl(s,pt0,norm,outliner,outlinez,ix,jx)
       intent(c) interceptCyl
       intent(c)
 
       integer intent(hide),depend(outliner) :: ix = len(outliner)
-      double precision intent(in) :: pt0(3)
-      double precision intent(in) :: norm(3)
+      integer intent(hide),depend(pt0) :: jx = shape(pt0,0)
+      double precision intent(in) :: pt0(jx,3)
+      double precision intent(in) :: norm(jx,3)
       double precision intent(in) :: outliner(ix)
       double precision intent(in) :: outlinez(ix)
-      double precision intent(out) :: s(1)	
-   end subroutine intercept2d
+      double precision intent(out) :: s(jx)	
+   end subroutine interceptCyl
 
    subroutine lineCirc(out,pt0,norm,r,z,ix)
       intent(c) lineCirc
