@@ -36,7 +36,6 @@ def unit(x_hat):
         ValueError: If any of the dimensions of x_hat are not 3xN or not
             of unit length.
     """
-
     temp = scipy.squeeze(x_hat)
     if temp.shape[0] != 3 or temp.max() > 1 or temp.min() < -1:
         raise ValueError('input is not in a coordinate system, first dimension must be 3')
@@ -91,13 +90,18 @@ def Vecx(x_hat, s=None):
     """
     flag = False
     xin = scipy.array(x_hat, dtype=float)
-
     if s is None:
         s = scipy.sqrt(scipy.sum(xin**2, axis=0)) 
         #in the case that s is 0, avoid /0 problems
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
-            xin = scipy.where(s == 0, xin, xin/s)
+            try:
+                temp = scipy.nonzero(s)
+                xin[0][temp] /= s[temp]
+                xin[1][temp] /= s[temp]
+                xin[2][temp] /= s[temp]
+            except IndexError:
+                xin = scipy.where(s == 0, xin, xin/s)
 
     return Vec(xin, s, flag=flag)
 

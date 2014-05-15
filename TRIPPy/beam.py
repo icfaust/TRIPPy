@@ -419,7 +419,7 @@ class Beam(geometry.Origin):
 
         return out
 
-class multiBeam(Beam):
+class subBeam(Beam):
     r"""Generate an array of Beam objects from two surface objects
     
     Args:
@@ -485,9 +485,11 @@ class multiBeam(Beam):
                                                            split2[1]))
         
         #check to see if they are in same coordinate system
+        print((surf1.x0() + surf1.sagi(grid[0]).x0()).shape)
+        surf1 + surf1.sagi(grid[0])
         surf1cents = surf1 + surf1.sagi(grid[0]) + surf1.meri(grid[1]) #vectors
         surf2cents = surf2 + surf2.sagi(grid[2]) + surf2.meri(grid[3])
-    
+
         del grid
         self.norm = surf2cents - surf1cents
         self.s = surf1cents.s
@@ -515,9 +517,21 @@ class multiBeam(Beam):
 
         #generate etendue
         self.etendue = a1*a2/(self.norm.s ** 2)
+        self.shape = self.s.shape[:]
+        self.main = Beam(surf1,surf2) #minimal memory waste, but infinitely useful for minimizing calculations
+        #self.flatten()
+        # flatten data, but store original shapes.
 
-        # give inital beam, which is two points      
-        # figure this out once it is put together.
+    def flatten(self):
+
+        self.etendue = self.etendue.ravel()
+        self.s = self.s.ravel()
+        self.unit = self.unit.reshape((3,self.unit.size/3))
+        self.norm.s = self.norm.s.ravel()
+        self.norm.unit = self.unit.reshape((3,self.norm.unit.size/3))
+
+    def reshape(self):
+        raise NotImplementedError(' not yet')
 
     def __getitem__(self,idx):
         return geometry.Vec(self.unit[idx],s=self.s[idx]) + self.norm[idx]
@@ -534,7 +548,7 @@ class multiBeam(Beam):
 
         return out
 
-def tupleBeam(surf1, surf2, split=None):
+def multiBeam(surf1, surf2, split=None):
     r"""Generate a tuple of Beam objects from tuples of surface objects
     
     Args:

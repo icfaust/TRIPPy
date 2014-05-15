@@ -37,14 +37,14 @@ class Tokamak(geometry.Center):
                 
             invesselflag = self.inVessel(ray.r()[...,-1])
             
-            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]), 
+            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[:,-1]), 
                                            scipy.atleast_2d(ray.norm.unit), 
                                            self.meri.s,
                                            self.norm.s) + ray.norm.s[-1]
             if scipy.isfinite(intersect):
                 ray.norm.s = scipy.append(ray.norm.s,intersect)
 
-            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]),
+            intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[:,-1]),
                                            scipy.atleast_2d(ray.norm.unit),
                                            self.meri.s,
                                            self.norm.s) + ray.norm.s[-1]
@@ -56,7 +56,7 @@ class Tokamak(geometry.Center):
             # example being the Limiter on Alcator C-Mod, which then keys to neglect an intersection,
             # and look for the next as the true wall intersection.
             for i in xrange(limiter):
-                intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[...,-1]),
+                intersect = _beam.interceptCyl(scipy.atleast_2d(ray.x()[:,-1]),
                                                scipy.atleast_2d(ray.norm.unit),
                                                self.meri.s,
                                                self.norm.s) + ray.norm.s[-1]
@@ -65,6 +65,11 @@ class Tokamak(geometry.Center):
         except AttributeError:
             for i in ray:
                 self.trace(i, limiter=limiter)
+
+        except ValueError:
+            # for subBeams, reference main beam
+            self.trace(ray.main)
+            #self.norm.s = 
 
     def pnt2RhoTheta(self, point,t=0, method = 'psinorm', n=0, poloidal_plane=0):
         """ takes r,theta,z and the plasma, and map it to the toroidal position

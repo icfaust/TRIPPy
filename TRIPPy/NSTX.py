@@ -3,7 +3,7 @@ import scipy
 
 def diode1(temp,place=(2.0,0,2e-2), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [4e-3,3e-3]
+    area = [2e-3,.5e-3]
     centervec = geometry.Vecx(scipy.array((.815,0,.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
@@ -35,7 +35,7 @@ def diode2(temp,place=(2.0,0,-2e-2), angle=(0,scipy.pi/2,0)):
 
 def diode3(temp,place=(.8,0,1.8), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [4e-3,3e-3]
+    area = [2e-3,.5e-3]
     centervec = geometry.Vecx(scipy.array((.815-.075,0,0))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]

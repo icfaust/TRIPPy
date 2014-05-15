@@ -37,7 +37,6 @@ void intercept2d(double outval[], double pt1[3], double pt2[3], double outliner[
 void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner[], double outlinez[], int ix, int jx)
 { 
   /* parabolic intercepts of lines using quadratic formula */
-  printf(" does this even work? %i %i \n",ix,jx);
 
   /* initialize variables */
   int i,j;
@@ -47,7 +46,6 @@ void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner
   for(j=jx;j--;)
     {
 
-      printf("pt0 %e %e %e \n",pt0[j][0],pt0[j][1],pt0[j][2]);
       stemp = INFINITY;
       
       C0 = pow(pt0[j][0],2) + pow(pt0[j][1],2);
@@ -116,16 +114,9 @@ void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner
 		}
 	    }
 	}
-      printf(" stemp %e \n",stemp);
+
       s[j]= stemp;
     }
- for(j=0; j < jx;j++)
-    {
-      printf(" %e \n",s[j]);
-
-    }
-
-
 
 }
 

@@ -2,9 +2,14 @@ import scipy
 import TRIPPy
 import matplotlib.pyplot as plt
 
-def plotTokamak(tokamak, axis=True, *args, **kwargs):
+def plotTokamak(tokamak, axis=True, pargs=None, **kwargs):
+    
+    if pargs is None:
+        plt.plot(tokamak.sagi.s, tokamak.norm.s, **kwargs)
+    else:
+        plt.plot(tokamak.sagi.s, tokamak.norm.s, pargs, **kwargs)
+        
 
-    plt.plot(tokamak.sagi.s, tokamak.norm.s, *args, **kwargs)
     if axis:
         plt.axis('equal')
 
