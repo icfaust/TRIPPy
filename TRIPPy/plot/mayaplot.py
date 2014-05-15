@@ -1,9 +1,16 @@
-import mayavi.mlab as mlab,scipy,eqtools
-import tvtk.api
-from tvtk.util.ctf import PiecewiseFunction
+import warnings
+import eqtools
 import sys
 import TRIPPy.geometry as geometry
 import scipy
+
+try:
+    import mayavi.mlab as mlab
+    import tvtk.api
+    from tvtk.util.ctf import PiecewiseFunction
+except ImportError:
+    warnings.warn("mayavi and tvtk modules could not be loaded"
+                  "mayavi plotting is unavailable")
 
 
 def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs):
