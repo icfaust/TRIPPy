@@ -3,7 +3,6 @@ import surface
 import scipy
 import scipy.linalg
 import _beam
-import mayavi.mlab as mlab
 
 class Ray(geometry.Point):
     r"""Generates a ray vector object
