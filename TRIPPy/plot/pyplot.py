@@ -11,7 +11,8 @@ def plotTokamak(tokamak, axis=True, pargs=None, **kwargs):
         
 
     if axis:
-        plt.axis('equal')
+        plt.gca().set_aspect('equal')
+        plt.autoscale(tight=True)
 
 def plotLine(line, invessel=True, ds=2.5e-3, pargs=None, **kwargs):
     
