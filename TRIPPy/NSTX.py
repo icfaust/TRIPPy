@@ -3,7 +3,7 @@ import scipy
 
 def diode1(temp,place=(2.0,0,-4e-1), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [.5e-4,.75e-3] #[2e-3,.5e-3] set for NSTX rather than NSTXU
+    area = [.5e-4,.5e-3] #[2e-3,.5e-3] set for NSTX rather than NSTXU
     centervec = geometry.Vecx(scipy.array((.815,0,.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
@@ -19,7 +19,7 @@ def diode1(temp,place=(2.0,0,-4e-1), angle=(0,scipy.pi/2,0)):
 
 def diode2(temp,place=(2.0,0,4e-1), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [.5e-4,.75e-3]
+    area = [.5e-4,.5e-3]
     centervec = geometry.Vecx(scipy.array((.815,0,-.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
