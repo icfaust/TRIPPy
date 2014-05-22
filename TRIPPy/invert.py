@@ -5,7 +5,9 @@ import scipy.interpolate
 import matplotlib.pyplot as plt
 
 
-def sens(beams,plasmameth,time,points,step=1e-3):
+# pixel methods using flux surfaces (NEEDS TO BE CLEANED UP MASSIVELY)
+
+def sens(beams,plasmameth,time,points,ds=1e-3):
     """ optimal to give multiple times """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
@@ -13,9 +15,8 @@ def sens(beams,plasmameth,time,points,step=1e-3):
     output = scipy.zeros((len(time),len(beams),len(points)))
 
     for i in xrange(len(beams)):
-        #temp = beams[i].norm.s      
-        #beams[i].norm.s = scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:step] #obsolete standard, taken care of internally.
-        temp = beams[i](scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:step])
+
+        temp = beams[i](scipy.mgrid[beams[i].norm.s[-2]:beams[i].norm.s[-1]:ds])
         mapped = plasmameth(temp.r()[0],temp.r()[2],time)
  
         # knowing that the last point (point[-1]) is assumed to be a ZERO emissivity point,
@@ -34,12 +35,11 @@ def sens(beams,plasmameth,time,points,step=1e-3):
         for j in range(len(idx[0])):
             output[:,i,idx[:,j]] += out[:,j]
             scipy.place(out[:,j], out[:,j] == len(points), len(points) - 1)
-            output[:,i,idx[:,j]+1] += step - out[:,j]
-        #beams[i].norm.s = temp     see above about standard 
+            output[:,i,idx[:,j]+1] += ds - out[:,j]
 
     return output
 
-def rhosens(beams,plasma,time,points,step=1e-3,meth='psinorm'):
+def rhosens(beams,plasma,time,points,ds=1e-3,meth='psinorm'):
     """ optimal to give multiple times """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
@@ -71,3 +71,5 @@ def rhosens(beams,plasma,time,points,step=1e-3,meth='psinorm'):
         beams[i].norm.s = temp
 
     return output
+
+def 

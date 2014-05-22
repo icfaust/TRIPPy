@@ -138,3 +138,13 @@ void lineCirc(double out[][5], double pt0[3], double norm[3], double r[], double
       out[i][4] = f0r*pow(epst,2) - pow(r[i],2)*pow(eps,2);
     }
 }
+
+
+void bessel_fourier_kernel(double out[], double theta[], double m, double zero, double rho, int ix)
+{ int i;
+
+  for(i=ix;i--;)
+    {
+      out[i] = cos(m*theta[i])*sin(zero*(cos(theta[i]) - rho));
+    }
+}
