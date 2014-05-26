@@ -120,6 +120,7 @@ class Ray(geometry.Point):
             return -1*( self.norm.unit[0]*(self.unit[0]*self.s - point.x0() )+
                         self.norm.unit[1]*(self.unit[1]*self.s - point.x1() )+
                         self.norm.unit[2]*(self.unit[2]*self.s - point.x2() ))
+
     def tmin(self, r, z, trace=False):
         """Calculates and returns the s value along the norm vector
         which minimizes the distance from the ray to a circle defined by
