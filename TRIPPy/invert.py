@@ -8,47 +8,66 @@ import scipy.special
 import matplotlib.pyplot as plt
 import warnings
 
-
-# pixel methods using flux surfaces (NEEDS TO BE CLEANED UP MASSIVELY)
-
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
     """ optimal to give multiple times """
     time = scipy.atleast_1d(time)
-    interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
-    # initialize output array of sensitivities
-    m = scipy.unique(mcos+msin)
+    interp = scipy.interpolate.interp1d(points,
+                                        scipy.arange(len(points)),
+                                        kind='cubic')
+    length = len(points)
         
     try:
         
-        output = scipy.zeros((len(time),len(points))) 
+        output = scipy.zeros((len(time),length*len(mcos+msin))) 
         temp = beams(scipy.mgrid[beam.norm.s[-2]:beams.norm.s[-1]:ds])
         mapped = plasmameth(temp.r0(),
                             temp.x2(),
                             time)
- 
+
+        # recover angles of each position in temp vector utlizing the t2 method to geometry.Vec
+        # improper vectorization strategy in t2 causes the use of a for loop
+        angle = scipy.zeros(mapped.shape)
+        for i in xrange(len(time)):
+            pt0 = centermeth(time[i])
+            angle[i] = temp.t2(pt0[0],pt0[1])
+        
         # knowing that the last point (point[-1]) is assumed to be a ZERO emissivity point,
         #an additional brightness is added which only sees the last emissivity to yield the zero
-        scipy.place(mapped,mapped > points[-1], points[-1])
-       
+        scipy.place(mapped, mapped > points[-1], points[-1])
+        if mapped.min() < 0:
+            warning.warn('chord measures at a parameter below point grid',RuntimeWarning)
         # for a given point along a chord, use a spline to solve what reconstruction points
         #it is most close to. Then in the weighting matrix, (which is (brightness,points) in shape add the various fractional weighting.
         out = interp(mapped)
         
         # find out point using a floor like command (returns ints) 
-        idx = out.astype(int)
+        idx1 = out.astype(int)
+        scipy.clip(idx1, 0, length-1, out=idx1)
+        
+        idx2 = idx1 + 1
+        scipy.clip(idx2, 0, length-1, out=idx2)
+        # reduce out to the fraction in nearby bins
+        out = (out % 1.)*ds
+        lim = 0
 
-        # reduce out to the fraction
-        out = (out % 1.)*step
-        for j in range(len(idx[0])):
-            output[:,idx[:,j]] += out[:,j]
-            scipy.place(out[:,j], out[:,j] == len(points), len(points) - 1)
-            output[:,idx[:,j]+1] += ds - out[:,j]
+        for i in mcos:
+            for j in range(idx1.shape[1]):
+                output[:,lim+idx1[:,j]] += out[:,j]*scipy.cos(i*angle)
+                output[:,lim+idx2[:,j]] += (ds - out[:,j])*scipy.cos(i*angle)
+                lim += length
+
+        for i in msin:
+            for j in range(idx2.shape[1]):
+                output[:,lim+idx1[:,j]] += out[:,j]*scipy.sin(i*angle)
+                output[:,lim+idx2[:,j]] += (ds - out[:,j])*scipy.sin(i*angle)
+                lim += length
 
     except AttributeError:
-        output = scipy.zeros((len(time),len(beams),len(points)))
+        output = scipy.zeros((len(time),len(beams),length*len(mcos+msin)))
         for i in xrange(len(beams)):
             output[:,i,:] = fluxFourierSens(beam[i],
                                             plasmameth,
+                                            centermeth,
                                             time,
                                             points,
                                             mcos=mcos,
@@ -58,7 +77,7 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
     return output
 
 def fluxFourierSensRho(beams,plasma,time,points,ds=1e-3,meth='psinorm'):
-    """ optimal to give multiple times """
+    """ optimal to give multiple times, NEEDS TO BE REWORKED AFTER SIN/COS update """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
     
@@ -100,7 +119,7 @@ def besselFourierKernel(m, zero, rho):
                                        scipy.arccos(rho),
                                        args = [m, zero, rho])
 
-def besselFourierSens(beam, rcent, zcent, l=range(15), mcos=[0], msin=[], rmax):
+def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[]):
 
     # find and store bessel zeros 
     m = scipy.unique(mcos+msin)
@@ -139,11 +158,11 @@ def besselFourierSens(beam, rcent, zcent, l=range(15), mcos=[0], msin=[], rmax):
             # fill sens matrix
             for j in xrange(len(mcos)):
                 output[i, idx*length:(idx+1)*length] = scipy.cos(mcos[j]*temp[2])*kernel[scipy.where(m == mcos[j])]
-                idx++
+                idx += 1
 
             for j in xrange(len(msin)):     
                 output[i, idx*length:(idx+1)*length] = scipy.sin(msin[j]*temp[2])*kernel[scipy.where(m == msin[j])]
-                idx++
+                idx += 1
                     
         return output
 

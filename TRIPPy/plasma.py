@@ -14,6 +14,9 @@ class Tokamak(geometry.Center):
         self.sagi.s = self.meri.s #link together.
         self.norm.s = self.eq.getMachineCrossSection()[1]
 
+    def center(self,time):
+        return [self.eq.getMagRSpline(time),self.eq.getMagZSpline(time)]
+
     def inVessel(self, ptin):
         return bool(eqtools.inPolygon(self.sagi.s,self.norm.s,ptin[0],ptin[2]))
             
