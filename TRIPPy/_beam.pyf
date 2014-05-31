@@ -56,15 +56,15 @@ C    Copyright 2013 Ian C. Faust
       double precision intent(out) :: out(ix,5)	
    end subroutine lineCirc
 
-   subroutine bessel_fourier_kernel(out,theta,m,zero,rho,ix)
+   subroutine bessel_fourier_kernel(theta,m,zero,rho,out,ix)
       intent(c) bessel_fourier_kernel
       intent(c)
 
-      integer intent(hide),depend(r) :: ix = len(theta)
+      integer intent(hide),depend(theta) :: ix = len(theta)
       double precision intent(in) :: theta(ix)
-      double precision intent(in) :: m(1)
-      double precision intent(in) :: zero(1)
-      double precision intent(in) :: rho(1)
+      double precision intent(in) :: m
+      double precision intent(in) :: zero
+      double precision intent(in) :: rho
       double precision intent(out) :: out(ix)
       
    end subroutine bessel_fourier_kernel

@@ -140,7 +140,7 @@ void lineCirc(double out[][5], double pt0[3], double norm[3], double r[], double
 }
 
 
-void bessel_fourier_kernel(double out[], double theta[], double m, double zero, double rho, int ix)
+void bessel_fourier_kernel(double theta[], double m, double zero, double rho, double out[], int ix)
 { int i;
 
   for(i=ix;i--;)

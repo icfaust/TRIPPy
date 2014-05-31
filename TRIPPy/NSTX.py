@@ -1,9 +1,10 @@
 import geometry,surface,AXUV
+import beam
 import scipy
 
 def diode1(temp,place=(2.0,0,-4e-1), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [.5e-4,.5e-3] #[2e-3,.5e-3] set for NSTX rather than NSTXU
+    area = [2e-3,.5e-3]#[.5e-4,.5e-3] #[2e-3,.5e-3] set for NSTX rather than NSTXU
     centervec = geometry.Vecx(scipy.array((.815,0,.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
@@ -17,9 +18,15 @@ def diode1(temp,place=(2.0,0,-4e-1), angle=(0,scipy.pi/2,0)):
     diodes[-1].redefine(temp)
     return diodes
 
+def NSTXsightlines(diodefn, plasma):
+    temp = diodefn(plasma)
+    output = beam.multiBeam(temp[:-1],temp[-1])
+    plasma.trace(output)
+    return output
+
 def diode2(temp,place=(2.0,0,4e-1), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [.5e-4,.5e-3]
+    area = [2e-3,.5e-3]#[.5e-4,.5e-3]
     centervec = geometry.Vecx(scipy.array((.815,0,-.5))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
@@ -35,8 +42,8 @@ def diode2(temp,place=(2.0,0,4e-1), angle=(0,scipy.pi/2,0)):
 
 def diode3(temp,place=(.8,0,1.8), angle=(0,scipy.pi/2,0)):
     pos = geometry.Origin(place,temp,angle=angle,flag=False)
-    area = [.5e-4,2.5e-4]
-    centervec = geometry.Vecx(scipy.array((.815-.075,0,0))-place)
+    area = [1e-3,2.5e-4]
+    centervec = geometry.Vecx(scipy.array((.815-.125,0,0))-place)
     # point toward the nominal center
     Vec = [centervec,geometry.cross(geometry.Vecx((0,1,0)),centervec)]
     aperature = surface.Rect((0.,0.,0.),pos,area,vec=Vec)

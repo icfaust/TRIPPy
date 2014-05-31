@@ -48,7 +48,7 @@ class Ray(geometry.Point):
             self.norm = inp2
             
         super(Ray,self).__init__(pt1)
-        self.norm.s = scipy.concatenate(([0.],self.norm.s))
+        self.norm.s = scipy.insert(self.norm.s,0,0.)
 
     def x(self):
         """returns array of cartesian coordinate in meters
@@ -663,3 +663,35 @@ def volWeightBeam(beam, rgrid, zgrid, trace=True, ds=2e-3, toroidal=None, **kwar
         for i in beam:
             out += volWeightBeam(i, rgrid, zgrid, trace=trace, ds=ds, toroidal=toroidal, **kwargs)
     return out
+
+
+def _genBFEdgeZero(plasma, zeros, rcent, zcent):
+    """ this will absolutely need to be rewritten"""
+
+    theta = scipy.linspace(-scipy.pi,scipy.pi,zeros)
+    cent = geometry.Point(geometry.Vecr([rcent,0,zcent]),plasma)
+    zerobeam = []
+    outline = []
+    for i in xrange(len(plasma.norm.s)-1):
+        outline += [geometry.Vecx([plasma.sagi.s[i],
+                                   0,
+                                   plasma.norm.s[i]])-cent]
+        
+    for i in xrange(zeros):
+        temp2 = geometry.Vecr([scipy.cos(theta[i]),
+                               0,
+                               scipy.sin(theta[i])])
+        s = 0
+        for j in outline:
+            temp4 = j*temp2
+            if temp4 > s:
+                s = temp4
+
+        temp2.s = s
+        zerobeam += [Ray(geometry.Point(cent+temp2,
+                                        plasma),
+                         geometry.Vecr([scipy.sin(theta[i]),
+                                        0,
+                                        -scipy.cos(theta[i])]))]
+
+    return zerobeam

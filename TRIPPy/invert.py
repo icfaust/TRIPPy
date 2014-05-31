@@ -1,10 +1,12 @@
 import plasma
 import beam
 import _beam
+import geometry
 import scipy
 import scipy.interpolate
 import scipy.integrate
 import scipy.special
+import scipy.linalg
 import matplotlib.pyplot as plt
 import warnings
 
@@ -24,20 +26,25 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
                             temp.x2(),
                             time)
 
-        # recover angles of each position in temp vector utlizing the t2 method to geometry.Vec
-        # improper vectorization strategy in t2 causes the use of a for loop
+        # recover angles of each position in temp vector utlizing the t2 method
+        # to geometry.Vec improper vectorization strategy in t2 causes the use
+        # of a for loop
         angle = scipy.zeros(mapped.shape)
         for i in xrange(len(time)):
             pt0 = centermeth(time[i])
             angle[i] = temp.t2(pt0[0],pt0[1])
         
-        # knowing that the last point (point[-1]) is assumed to be a ZERO emissivity point,
-        #an additional brightness is added which only sees the last emissivity to yield the zero
+        # knowing that the last point (point[-1]) is assumed to be a ZERO 
+        # emissivity point an additional brightness is added which only sees 
+        # the last emissivity to yield the zero
         scipy.place(mapped, mapped > points[-1], points[-1])
+
         if mapped.min() < 0:
-            warning.warn('chord measures at a parameter below point grid',RuntimeWarning)
-        # for a given point along a chord, use a spline to solve what reconstruction points
-        #it is most close to. Then in the weighting matrix, (which is (brightness,points) in shape add the various fractional weighting.
+            warning.warn('chord measures at a parameter below point grid', RuntimeWarning)
+        # for a given point along a chord, use a spline to solve what 
+        # reconstruction points it is most close to. Then in the weighting
+        # matrix, (which is (brightness,points) in shape add the various 
+        # fractional weighting.
         out = interp(mapped)
         
         # find out point using a floor like command (returns ints) 
@@ -117,18 +124,21 @@ def besselFourierKernel(m, zero, rho):
     return jprime*scipy.integrate.quad(_beam.bessel_fourier_kernel,
                                        0,
                                        scipy.arccos(rho),
-                                       args = [m, zero, rho])
+                                       args = (m, zero, rho))[0]
 
-def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[]):
+def bessel_fourier_kernel(theta,m,zero,rho):
+    return scipy.cos(m*theta)*scipy.sin(zero*(scipy.cos(theta)-rho))
+
+def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], rcond=2e-2):
 
     # find and store bessel zeros 
     m = scipy.unique(mcos+msin)
     length = len(l)
     zeros = scipy.zeros((len(m),length))
     for i in xrange(len(m)):
-        zeros[i] = scipy.special.jn_zeros(i,zeros.shape[1])
+        zeros[i] = scipy.special.jn_zeros(m[i],zeros.shape[1])
 
-    kernel = scipy.zeros(len(m),length)
+    kernel = scipy.zeros((len(m),length))
 
     # need to modify zeros
 
@@ -141,8 +151,15 @@ def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[]):
 
         for i in xrange(len(rcent)):
             idx = 0
-                # returns closest approach vector to plasma center
-            temp = beam(beam.tmin(rcent[i], zcent[i])).t(rcent[i], zcent[i])
+            
+            # returns closest approach vector to plasma center mod for NSTX-U
+            
+            #temp = j(j.tmin(rcent,zcent)).t(rcent,zcent)
+            cent = geometry.Point(geometry.Vecr([rcent[i],0,zcent[i]]),beam._origin)
+            temp2 = beam(beam.smin(cent)) - cent
+            temp = [temp2.s,0,scipy.arctan2(temp2.x2(),temp2.x0())]
+            
+            #temp = beam(beam.tmin(rcent[i], zcent[i])).t(rcent[i], zcent[i])
 
             if temp[0] > rmax[i]:
                 rho = 1.0
@@ -153,8 +170,8 @@ def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[]):
             for j in xrange(len(m)):
                 for k in xrange(length):
                     kernel[j, k] = rmax[i]*besselFourierKernel(m[j],
-                                                                 zeros[j,k],
-                                                                 rho)
+                                                               zeros[j,k],
+                                                               rho)
             # fill sens matrix
             for j in xrange(len(mcos)):
                 output[i, idx*length:(idx+1)*length] = scipy.cos(mcos[j]*temp[2])*kernel[scipy.where(m == mcos[j])]
@@ -173,10 +190,53 @@ def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[]):
                               length*len(mcos+msin)))
         
         for i in xrange(len(beam)):
-            output[:,i,:] += [besselFourierSens(beam[i],
-                                                rcent,
-                                                zcent,
-                                                l=l,
-                                                mcos=mcos,
-                                                msin=msin)]
+            output[:,i,:] += besselFourierSens(beam[i],
+                                               rcent,
+                                               zcent,
+                                               rmax,
+                                               l=l,
+                                               mcos=mcos,
+                                               msin=msin)
+
         return output
+
+    
+def bFInvert(beams, bright, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], zeros=None, plasma=None, rcond=2e-2, out=False):
+    """ zeros adds the capability of providing guaranteed edge zeros"""
+    bright = bright*4*scipy.pi
+    for i in xrange(len(bright)):
+        bright[i] = bright[i]/beams[i].etendue
+    
+    if (not plasma is None) and (not zeros is None):
+        beams += beam._genBFEdgeZero(plasma, zeros, rcent, zcent)
+        bright = scipy.concatenate((bright,scipy.zeros((zeros,)))) #added zeros to bright
+    
+    sens = besselFourierSens(beams, rcent, zcent, rmax, l=l, mcos=mcos, msin=msin, rcond=rcond)
+    output = scipy.zeros((len(sens),len(l)*len(mcos+msin)))
+    for i in xrange(len(sens)):
+        output[i] = scipy.dot(scipy.linalg.pinv(sens[i],rcond=rcond),bright)
+        
+    if out:
+        return output,sens
+    else:
+        return output
+
+def cov(sens):
+    return scipy.linalg.pinv(scipy.dot(sens.T,sens),rcond=2e-2)
+
+def err(emiss, bright, sens, beams, num=None):
+    """ returns the error of emiss"""
+    temp2 = bright[:]
+    for i in xrange(len(temp2)):
+        temp2[i] *= 4*scipy.pi/beams[i].etendue
+    temp = scipy.sum((scipy.dot(sens,emiss)[0:len(bright)]-temp2)**2)
+    var = cov(sens)
+    if num is None:
+        output = scipy.zeros(emiss.shape)
+    else:
+        output = scipy.zeros((num,))
+    
+    for i in xrange(len(output)):
+        output[i] = var[i,i]
+
+    return scipy.sqrt(abs(temp*output/(bright.size-emiss.size)))

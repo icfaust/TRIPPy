@@ -28,8 +28,10 @@ def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs
 
             # For surface objects, this keyword allows for the last corner to connect with the first
         if close:
-            for i in [temp0,temp1,temp2,s]:
-                i = scipy.concatenate((i,scipy.atleast_1d(i[0])))
+            temp0 = scipy.concatenate((temp0,scipy.atleast_1d(temp0[0])))
+            temp1 = scipy.concatenate((temp1,scipy.atleast_1d(temp1[0])))
+            temp2 = scipy.concatenate((temp2,scipy.atleast_1d(temp2[0])))
+            s = scipy.concatenate((s,scipy.atleast_1d(s[0])))
 
         if not index is None:
             N = len(temp0)
