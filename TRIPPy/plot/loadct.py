@@ -46,7 +46,13 @@ def loadct(num, r=False, mayavi=False, **kwargs):
 def loadgs(num, r=False, mayavi=False, **kwargs):
     if isinstance(num,str):
         name = num
-        num = gsdict[num]
+        if name.endswith('_r'):
+
+            r = True
+            num = gsdict[num[:-2]]
+        else:
+            num = gsdict[num]
+ 
     else:
         name = 'gs'
     
