@@ -9,6 +9,7 @@ import scipy.special
 import scipy.linalg
 import matplotlib.pyplot as plt
 import warnings
+import time as timer
 
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
     """ optimal to give multiple times """
@@ -17,14 +18,15 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
                                         scipy.arange(len(points)),
                                         kind='cubic')
     length = len(points)
-        
+  
     try:
-        
+ 
         output = scipy.zeros((len(time),length*len(mcos+msin))) 
-        temp = beams(scipy.mgrid[beam.norm.s[-2]:beams.norm.s[-1]:ds])
-        mapped = plasmameth(temp.r0(),
-                            temp.x2(),
-                            time)
+        temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds])
+        
+        mapped = scipy.atleast_2d(plasmameth(temp.r0(),
+                                             temp.x2(),
+                                             time))
 
         # recover angles of each position in temp vector utlizing the t2 method
         # to geometry.Vec improper vectorization strategy in t2 causes the use
@@ -50,7 +52,7 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
         # find out point using a floor like command (returns ints) 
         idx1 = out.astype(int)
         scipy.clip(idx1, 0, length-1, out=idx1)
-        
+
         idx2 = idx1 + 1
         scipy.clip(idx2, 0, length-1, out=idx2)
         # reduce out to the fraction in nearby bins
@@ -58,20 +60,18 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
         lim = 0
 
         for i in mcos:
-            for j in range(idx1.shape[1]):
-                output[:,lim+idx1[:,j]] += out[:,j]*scipy.cos(i*angle)
-                output[:,lim+idx2[:,j]] += (ds - out[:,j])*scipy.cos(i*angle)
-                lim += length
+            angin = scipy.cos(i*angle)
+            _beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds)
+            lim += length
 
         for i in msin:
-            for j in range(idx2.shape[1]):
-                output[:,lim+idx1[:,j]] += out[:,j]*scipy.sin(i*angle)
-                output[:,lim+idx2[:,j]] += (ds - out[:,j])*scipy.sin(i*angle)
-                lim += length
+            angin = scipy.sin(i*angle)
+            _beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds)             
+            lim += length
 
     except AttributeError:
-        output = scipy.zeros((len(time),len(beams),length*len(mcos+msin)))
-        for i in xrange(len(beams)):
+        output = scipy.zeros((len(time),len(beam),length*len(mcos+msin)))
+        for i in xrange(len(beam)):
             output[:,i,:] = fluxFourierSens(beam[i],
                                             plasmameth,
                                             centermeth,
