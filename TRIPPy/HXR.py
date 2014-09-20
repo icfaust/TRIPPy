@@ -3,9 +3,9 @@ import surface, geometry, scipy
 def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
     pos = geometry.Origin(place, origin, angle=angle)
     area = [5e-3,5e-3]
-    vec = [geometry.Vecx((1.,0.,0.)), geometry.Vecx((0.,0.,1.))]
-    yvec = geometry.Vecx((0.,1.,0.))
-    aperature = surface.Rect((0.,0.,0.),pos,area,vec=vec,flag=False)
+    vec = [geometry.Vecx((0.,0.,1.)), geometry.Vecx((1.,0.,0.))]
+    vecy = geometry.Vecx((0.,1.,0.))
+    aperture = surface.Rect((0.,0.,0.),pos,area,vec=vec,flag=False)
     output = []
 
     rdet=scipy.array([[3.908e-1, 0.,1.015e-1],
@@ -43,12 +43,12 @@ def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
 
 
     for i in rdet:
-        vec2 = geometry.Vec(i)
-        veci = [vec2.cross(vecy),vecy]
+        vec2 = geometry.Vecx(i)
+        veci = [geometry.cross(vec2,vecy),vec2]
         output += [surface.Rect(vec2, pos, area, vec=veci)]
         output[-1].redefine(origin)
 
-    output.append(aperature)
+    output.append(aperture)
     output[-1].redefine(origin)
 
     return output

@@ -37,7 +37,7 @@ def unit(x_hat):
             of unit length.
     """
     temp = scipy.squeeze(x_hat)
-    if temp.shape[0] != 3 or temp.max() > 1 or temp.min() < -1:
+    if temp.shape[0] != 3:
         raise ValueError('input is not in a coordinate system, first dimension must be 3')
     return temp
 
