@@ -1,4 +1,4 @@
-import surface, geometry, scipy
+import surface, geometry, beam, scipy
 
 def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
     pos = geometry.Origin(place, origin, angle=angle)
@@ -41,7 +41,6 @@ def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
                       [3.923e-1, 0., -9.53e-2],
                       [3.907e-1, 0.,-1.017e-1]])
 
-
     for i in rdet:
         vec2 = geometry.Vecx(i)
         veci = [geometry.cross(vec2,vecy),vec2]
@@ -52,3 +51,10 @@ def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
     output[-1].redefine(origin)
 
     return output
+
+def HXRbeam(alcator):
+    temp = HXR(alcator)
+    beams = beam.multiBeam(temp[:-1],temp[-1])
+    alcator.trace(beams)
+    return beams
+
