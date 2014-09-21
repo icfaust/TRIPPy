@@ -182,3 +182,6 @@ def plotBFbright(sens,bright,prof,beams):
     plt.gca().axes.get_xaxis().set_ticks_position('bottom')
     plt.gca().axes.get_yaxis().set_ticks_position('left')
     plt.gca().legend(loc='upper right',numpoints=1)
+
+def test():
+    print('nothing')

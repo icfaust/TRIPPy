@@ -1,4 +1,11 @@
-from .mayaplot import *
-from .pyplot import *
-from .loadct import *
 
+try:
+    from .mayaplot import *
+except:
+    pass
+
+try:
+    from .pyplot import *
+    from .loadct import *
+except:
+    pass
