@@ -1,6 +1,6 @@
 
 try:
-    from .mayaplot import *
+    import mayaplot
 except:
     pass
 
