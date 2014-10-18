@@ -1,5 +1,4 @@
 import warnings
-import eqtools
 import sys
 import TRIPPy.geometry as geometry
 import scipy
@@ -116,6 +115,13 @@ def plotTokamak(tokamak, angle=[0,scipy.pi*2], pts=250, section=None, **kwargs):
     else:
         plotLine(temp[1:],**kwargs)
 
+
+def plotSurf(surf):
+
+    k = surf.edge().x()
+    mlab.mesh(k[0].reshape((2,2)),
+              k[1].reshape((2,2)),
+              k[2].reshape((2,2)))
 
     
 def plotView(rays,pts=None, **kwargs):

@@ -1,5 +1,6 @@
 import geometry
 import surface
+import scipy
 
 
 def XTOMOchip(temp):
@@ -11,7 +12,10 @@ def XTOMOchip(temp):
     #pos = scipy.linspace(e-3,e-3,38)
     for i in range(len(diodes)):
         vecin = geometry.Vecx((0.,pos[i],0.))
-        diodes[i] = surface.Rect(vecin,temp,area,Vec=Vec)
+        diodes[i] = surface.Rect(vecin,
+                                 temp,
+                                 area,
+                                 vec=Vec)
     return diodes
 
 #def XTOMO1(temp, place=(,0,),angle =(,,)):
