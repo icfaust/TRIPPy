@@ -12,7 +12,30 @@ import warnings
 import time as timer
 
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
-    """ optimal to give multiple times """
+    """Calculates the distance weight matrix for specified fourier components
+
+    Args:
+        beam: geometry Object with reference origin
+
+        plasmameth: geometry Object with reference origin
+
+        centerment:
+        
+        time:
+        
+        points:
+
+    Kwargs:
+        mcos:
+
+        msin:
+        
+        ds:
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
+    """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,
                                         scipy.arange(len(points)),
@@ -83,8 +106,31 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
 
     return output
 
-def fluxFourierSensRho(beams,plasma,time,points,ds=1e-3,meth='psinorm'):
-    """ optimal to give multiple times, NEEDS TO BE REWORKED AFTER SIN/COS update """
+def fluxFourierSensRho(beams,plasma,time,points,mcos=[0],msin=[],ds=1e-3,meth='psinorm'):
+    """Calculates the distance weight matrix for specified fourier components
+
+    Args:
+        beams: geometry Object with reference origin
+
+        plasma: geometry Object with reference origin
+        
+        time:
+        
+        points:
+
+    Kwargs:
+        mcos:
+
+        msin:
+        
+        ds:
+        
+        meth:
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
+    """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
     
@@ -119,6 +165,21 @@ def fluxFourierSensRho(beams,plasma,time,points,ds=1e-3,meth='psinorm'):
     return output
 
 def besselFourierKernel(m, zero, rho):
+    """Calculates the distance weight matrix for specified fourier components
+
+    Args:
+        m: geometry Object with reference origin
+
+        zero: geometry Object with reference origin
+        
+        rho:
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
+    """
+
+
     # I SHOULD TRY AND VECTORIZE THIS AS MUCH AS POSSIBLE
     jprime = (scipy.special.jn(m+1, zero) - scipy.special.jn(m-1, zero))
     return jprime*scipy.integrate.quad(_beam.bessel_fourier_kernel,
@@ -127,10 +188,34 @@ def besselFourierKernel(m, zero, rho):
                                        args = (m, zero, rho))[0]
 
 def bessel_fourier_kernel(theta,m,zero,rho):
+    """ older, slower, version of the f2py C code"""
     return scipy.cos(m*theta)*scipy.sin(zero*(scipy.cos(theta)-rho))
 
 def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], rcond=2e-2):
+    """Calculates the distance weight matrix for specified fourier components
 
+    Args:
+        beam: geometry Object with reference origin
+
+        rcent: geometry Object with reference origin
+        
+        zcent:
+        
+        rmax:
+
+    Kwargs:
+        l:
+
+        mcos:
+
+        msin:
+        
+        rcond:
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
+    """
     # find and store bessel zeros 
     m = scipy.unique(mcos+msin)
     length = len(l)
@@ -202,7 +287,38 @@ def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], 
 
     
 def bFInvert(beams, bright, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], zeros=None, plasma=None, rcond=2e-2, out=False):
-    """ zeros adds the capability of providing guaranteed edge zeros"""
+    """Calculates the distance weight matrix for specified fourier components
+
+    Args:
+        beam: geometry Object with reference origin
+
+        bright:
+
+        rcent: geometry Object with reference origin
+        
+        zcent:
+        
+        rmax:
+
+    Kwargs:
+        l:
+
+        mcos:
+
+        msin:
+        
+        zeros:
+
+        plasma:
+
+        rcond:
+
+        out:
+
+    Returns:
+        Vector object: Vector points from pt1 to pt2.
+    
+    """
     bright = bright*4*scipy.pi
     for i in xrange(len(bright)):
         bright[i] = bright[i]/beams[i].etendue

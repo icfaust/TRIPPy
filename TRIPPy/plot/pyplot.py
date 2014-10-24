@@ -1,6 +1,5 @@
 import scipy
 import scipy.special
-import TRIPPy
 import matplotlib.pyplot as plt
 
 def plotTokamak(tokamak, pltobj=None, axis=True, pargs=None, **kwargs):

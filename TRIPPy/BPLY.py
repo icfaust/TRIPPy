@@ -40,7 +40,7 @@ def getBeamFluxSpline(beam,plasma,t,lim1,lim2,points = 1000):
     lim = beam.norm.s
     beam.norm.s = scipy.linspace(0,lim[-1],points)
     h = time.time()
-    psi = plasma.eq.rz2rmid(beam.x()[0],beam.x()[2],t) #evaluates all psi's at once
+    psi = plasma.eq.rz2rmid(beam.r()[0],beam.r()[2],t) #evaluates all psi's at once
     print(time.time()-h)
     outspline = len(t)*[0]
     inspline = len(t)*[0]
@@ -95,11 +95,11 @@ def calcArea(points):
 def viewPoints(surf1,surf2,plasma,t,lim1 = .88,lim2 = .92,fillorder = True):
     h=time.time()
     beam = beamin.Beam(surf1,surf2)
-    ray1 = beamin.Ray(surf1.edge().split(plasma)[0][0],surf2.edge().split(plasma)[1][1])
-    ray2 = beamin.Ray(surf1.edge().split(plasma)[1][1],surf2.edge().split(plasma)[0][0])
-    beam.trace(plasma,step=1e-3)
-    ray1.trace(plasma,step=1e-3) #there has to be a way to improve this /only calculate this once
-    ray2.trace(plasma,step=1e-3)
+    ray1 = beamin.Ray(surf1.edge().split(plasma)[0],surf2.edge().split(plasma)[2])
+    ray2 = beamin.Ray(surf1.edge().split(plasma)[2],surf2.edge().split(plasma)[0])
+    plasma.trace(beam)
+    plasma.trace(ray1) #there has to be a way to improve this /only calculate this once
+    plasma.trace(ray2)
     blim = beam.norm.s
     r1lim = ray1.norm.s
     r2lim = ray2.norm.s
@@ -219,12 +219,12 @@ def writeToTree(inp):
         outstr = '0' + outstr
     try:    
         Tree = MDSplus.Tree('spectroscopy',shot)
-        b = plasma.Tokamak(eqtools.CModEFITTree(shot,tspline=True)) # I HATE THIS
+        b = plasma.Tokamak(eqtools.CModEFITTree(shot)) # I HATE THIS
         output = effectiveHeight(surf1,surf2,b,scipy.mgrid[b.eq.getTimeBase()[0]:b.eq.getTimeBase()[-1]:1e-3])
         dummy =  MDSplus.Data.compile('build_signal($1,*,$2)',output,scipy.mgrid[b.eq.getTimeBase()[0]:b.eq.getTimeBase()[-1]:1e-3])
         Tree.getNode('.BOLOMETER.RESULTS.DIODE.BPLY.AREA:CHORD_'+outstr).putData(dummy)
         print('channel '+str(chan)+':\t '+str(time.time()-timeout))
-    except:
+    except IndexError:
         print('ERROR IN THIS CHANNEL: '+str(chan))
 
 def calctoTree(shot):
@@ -290,7 +290,7 @@ def writeGlobal(shot):
         Tree = MDSplus.Tree('spectroscopy',shot)
         dummy =  MDSplus.Data.compile('build_signal($1,*,$2)',out[1],out[0])
         Tree.getNode('.BOLOMETER.RESULTS.DIODE.LYMAN_AVE').putData(dummy)
-    except:
+    except ValueError:
         print('error in shot: '+str(shot))
 
             

@@ -1,6 +1,5 @@
 import warnings
 import sys
-import TRIPPy.geometry as geometry
 import scipy
 
 try:
