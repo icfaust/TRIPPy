@@ -17,20 +17,20 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
     Args:
         beam: geometry Object with reference origin
 
-        plasmameth: geometry Object with reference origin
+        plasmameth: basis function which to map to
 
-        centerment:
+        centermeth: function which determines the plasma center
         
-        time:
+        time: equilibrium time
         
-        points:
+        points: points in basis function space in which to map to.
 
     Kwargs:
-        mcos:
+        mcos: number of cosine fourier components to generate
 
-        msin:
+        msin: number of sine fourier components to generate
         
-        ds:
+        ds: step size along beam/ray in which to evaluate
 
     Returns:
         Vector object: Vector points from pt1 to pt2.
@@ -94,6 +94,8 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
 
     except AttributeError:
         output = scipy.zeros((len(time),len(beam),length*len(mcos+msin)))
+
+        #this for loop should be parallellized (well compartmentalized)
         for i in xrange(len(beam)):
             output[:,i,:] = fluxFourierSens(beam[i],
                                             plasmameth,
@@ -114,18 +116,18 @@ def fluxFourierSensRho(beams,plasma,time,points,mcos=[0],msin=[],ds=1e-3,meth='p
 
         plasma: geometry Object with reference origin
         
-        time:
+        time:  equilibrium time
         
-        points:
+        points: points in basis function space in which to map to.
 
     Kwargs:
-        mcos:
+        mcos: number of cosine fourier components to generate
 
-        msin:
+        msin: number of sine fourier components to generate
         
-        ds:
+        ds:  step size along beam/ray in which to evaluate
         
-        meth:
+        meth: normalization method (psinorm,phinorm,volnorm)
 
     Returns:
         Vector object: Vector points from pt1 to pt2.
