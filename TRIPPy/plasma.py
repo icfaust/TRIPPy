@@ -4,7 +4,48 @@ import scipy.linalg
 import _beam
 
 class Tokamak(geometry.Center):
+ """Tokamak object for handling geometry and equilibria.
+     
+    Creates a new Point instance which is set to a default 
+    coordinate system of cartesian or cylindrical coordinates
+    determined from the reference coordinate system. All vector
+    mathematics are accomplished in cartesian to simplify 
+    computation effort. Cylindrical vectors are converted at
+    last step for return.
 
+    Args:
+        equilib: An eqtools Equilibrium object which defines the
+             flux surfaces (psi) on a regular grid, as well as 
+             the wall geometry amongst a host of other important 
+             parameters used within the invert.py submodule.
+             This requires the installation of the eqtools package
+             which handles tokamak equilibria in a standardized 
+             pythonic form.  It is the use of different equilibria
+             in a standardized form which allows TRIPPy to be 
+             abstract, and capable for use on any tokamak.
+
+    Kwargs:
+        flag: Origin object.
+            Sets the default coordinate nature 
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though
+        all data is stored in numpy arrays.
+
+        Generate a point 1m in x from point U (xdir)::
+            
+                xdir = Vec((1.,0.,0.),U) #implicitly in cyl. coords.
+
+        Generate a cartesian point into direction (2,2,2) from Q::
+            
+                vec2 = Vec((2.,2.,2.), ref=Q)
+
+        Generate a cylindrical radial vector (vec2) into direction (1,0,1)::
+            
+                cent = Center() #implicitly in cyl. coords.
+                vec2 = Vec(vec1, ref=cent)
+    """
+ 
     def __init__(self, equilib, flag=True):
         """
         """
