@@ -48,6 +48,8 @@ class Ray(geometry.Point):
             self.norm = inp2
             
         super(Ray,self).__init__(pt1)
+
+        self.norm.s = scipy.atleast_1d(self.norm.s)
         self.norm.s = scipy.insert(self.norm.s,0,0.)
 
     def x(self):
@@ -274,6 +276,7 @@ class Beam(geometry.Origin):
         self.etendue = a1*a2/(normal.s ** 2)
 
         # give inital beam, which is two points      
+        self.norm.s = scipy.atleast_1d(self.norm.s)
         self.norm.s = scipy.insert(self.norm.s,0,0.)
 
     def x(self):
