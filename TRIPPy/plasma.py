@@ -4,8 +4,8 @@ import scipy.linalg
 import _beam
 
 class Tokamak(geometry.Center):
- """Tokamak object for handling geometry and equilibria.
-     
+    """Tokamak object for handling geometry and equilibria.
+    
     Creates a new Point instance which is set to a default 
     coordinate system of cartesian or cylindrical coordinates
     determined from the reference coordinate system. All vector
@@ -45,7 +45,7 @@ class Tokamak(geometry.Center):
                 cent = Center() #implicitly in cyl. coords.
                 vec2 = Vec(vec1, ref=cent)
     """
- 
+    
     def __init__(self, equilib, flag=True):
         """
         """
