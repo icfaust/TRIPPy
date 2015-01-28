@@ -104,7 +104,8 @@ class Tokamak(geometry.Center):
                                                scipy.atleast_2d(ray.norm.unit),
                                                self.meri.s,
                                                self.norm.s) + ray.norm.s[-1]
-                ray.norm.s[-1] = intersect
+                if scipy.isfinite(intersect):
+                    ray.norm.s[-1] = intersect                    
         
         except AttributeError:
             for i in ray:

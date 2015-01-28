@@ -45,7 +45,7 @@ class Ray(geometry.Point):
         try:
             self.norm = geometry.pts2Vec(pt1, inp2)
         except AttributeError:
-            self.norm = inp2
+            self.norm = inp2.copy()
             
         super(Ray,self).__init__(pt1)
 
