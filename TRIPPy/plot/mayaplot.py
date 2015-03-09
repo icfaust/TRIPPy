@@ -102,13 +102,15 @@ def plotLine(vector,val=1.0, close=False, tube_radius=None, index=None, **kwargs
 
 def plotTokamak(tokamak, angle=[0,scipy.pi*2], pts=250, section=None, **kwargs):
     temp = []
-    temp += [tokamak.getMachineCrossSection()]
-    for i in xrange(temp[0].s.size):
+    for i in xrange(tokamak.norm.s.size):
         temp += [tokamak.getVessel(i).edge(angle=angle, pts=pts)]
 
     if not section is None:
+        
+        outline = tokamak.getMachineCrossSection()
+
         for i in scipy.linspace(angle[0],angle[1],section+1):
-            temp += [temp[0].copy()]
+            temp += [outline.copy()]
             temp[-1].spin(i)
         plotLine(temp,**kwargs)
     else:

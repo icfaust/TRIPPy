@@ -698,3 +698,38 @@ def _genBFEdgeZero(plasma, zeros, rcent, zcent):
                                         -scipy.cos(theta[i])]))]
 
     return zerobeam
+
+
+def pos2Beam(pos, tokamak, angle=None):
+    r"""Take in GENIE pos vectors and convert it into TRIPPy rays
+    
+    Args:
+        pos: 4 element tuple or 4x scipy-array
+            Each pos is assembled into points of (R1,Z1,RT,phi)
+
+        tokamak: 
+            Tokamak object in which the pos vectors are defined.
+            
+    Returns:
+        Ray: Ray object or typle of ray objects.
+        
+    """
+
+    r1 = scipy.array(pos[0])
+    z1 = scipy.array(pos[1])
+    rt = scipy.array(pos[2])
+    phi = scipy.array(pos[3])
+
+    zt = z1 - scipy.tan(phi)*scipy.sqrt(r1**2 - rt**2)
+    angle2  = scipy.arccos(rt/r1)
+
+    if angle is None:
+        angle = scipy.zeros(r1.shape)
+
+    pt1 = geometry.Point((r1,angle,z1),tokamak)
+    pt2 = geometry.Point((rt,angle+angle2,zt),tokamak)
+
+    output = Ray(pt1,pt2)
+    tokamak.trace(output)
+    return output
+    
