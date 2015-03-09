@@ -730,7 +730,7 @@ def pos2Beam(pos, tokamak, angle=None, eps=1e-6):
     pt2 = geometry.Point((rt,angle+angle2,zt),tokamak)
 
     output = Ray(pt1,pt2)
-    output.norm.s = eps
+    output.norm.s = scipy.atleast_1d(eps)
     tokamak.trace(output)
     return output
     
