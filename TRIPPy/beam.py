@@ -700,7 +700,7 @@ def _genBFEdgeZero(plasma, zeros, rcent, zcent):
     return zerobeam
 
 
-def pos2Beam(pos, tokamak, angle=None):
+def pos2Beam(pos, tokamak, angle=None, eps=1e-6):
     r"""Take in GENIE pos vectors and convert it into TRIPPy rays
     
     Args:
@@ -730,6 +730,7 @@ def pos2Beam(pos, tokamak, angle=None):
     pt2 = geometry.Point((rt,angle+angle2,zt),tokamak)
 
     output = Ray(pt1,pt2)
+    output.norm.s = eps
     tokamak.trace(output)
     return output
     
