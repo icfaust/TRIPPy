@@ -1,5 +1,6 @@
 import geometry
 import scipy
+import scipy.linalg
 
 edges = scipy.array(([-1,-1],
                      [-1, 1],
@@ -143,15 +144,16 @@ class Surf(geometry.Origin):
         """
         if self._origin is ray._origin:
             try:
-                params = scipy.dot(scipy.inv(scipy.array([ray.norm.unit,
-                                                          self.meri.unit,
-                                                          self.sagi.unit])),
+
+                params = scipy.dot(scipy.linalg.inv(scipy.array([ray.norm.unit,
+                                                                 self.meri.unit,
+                                                                 self.sagi.unit]).T),
                                    (ray-self).x())
 
                 if self.edgetest(params[2],params[1]):
                     return params[0]
                 else:
-                    return []
+                    return None
 
             except AttributeError:
                 raise ValueError('not a surface object')
@@ -262,7 +264,7 @@ class Rect(Surf):
 
     def edgetest(self,sagi,meri):
 
-        if abs(meri) <= self.meri and abs(sagi) <= self.sagi:
+        if abs(meri) <= self.meri.s and abs(sagi) <= self.sagi.s:
             return True
         else:
             return False
