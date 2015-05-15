@@ -14,26 +14,46 @@ import time as timer
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
     """Calculates the distance weight matrix for specified fourier components
 
+    This function is used directly for poloidal tomography used extensively on 
+    many tokamaks. It assumes that the sinogram space can be parameterized
+    with a flux-based radial variable (which is defined using the eqtools
+    methods such as rz2psinorm, rz2volnorm, etc.) and an angular variable
+    dependent on the plasma center (which typically use the tokamak.center
+    method). 
+    It returns a matrix which is [time,beam,radial x fourier components] in
+    size, which is necessary for inverting the measured brightnesses. Each
+    value in the array is a length, which is the effective weight of a radial
+    surface with specific fourier dependence. Each weight along a chord can be
+    summed to represent the beam line-integral through the vessel.
+    It is assumed that the toroidal mode number is small such that there is no
+    cross coupling of the modes in the line integrals of the chords. This is 
+    the cylindrical mode limit, where the ratio of inverse aspect ratio
+    to toroidal mode number is negligible.
+
+
     Args:
-        beam: geometry Object with reference origin
+        beam: geometry Object with reference origin (either beam OR ray)
 
-        plasmameth: basis function which to map to
+        plasmameth: flux-based radial method (from plasma object) 
 
-        centermeth: function which determines the plasma center
+        centermeth: plasma center method (from plasma object)
         
         time: equilibrium time
         
-        points: points in basis function space in which to map to.
+        points: points in radial sinogram in which to map to.
 
     Kwargs:
         mcos: number of cosine fourier components to generate
 
         msin: number of sine fourier components to generate
         
-        ds: step size along beam/ray in which to evaluate
+        ds: step size along beam/ray in which to evaluate in meters
 
     Returns:
-        Vector object: Vector points from pt1 to pt2.
+        output: A 3-dimensional array of weights in meters which
+            follows is [time,beam,radial x fourier components].
+            The order of the last dimension is grouped by fourier
+            component, cosine radial terms then sine radial terms.
     
     """
     time = scipy.atleast_1d(time)

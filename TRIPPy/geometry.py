@@ -515,6 +515,7 @@ class Vec(object):
             angle: Singule element float or scipy array.
         """
         temp = self.r0()/self.s
+        angle = self.r1() + angle
         self.unit[0] = temp*scipy.cos(angle)
         self.unit[1] = temp*scipy.sin(angle)
 

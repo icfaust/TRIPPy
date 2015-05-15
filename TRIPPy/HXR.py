@@ -1,6 +1,6 @@
 import surface, geometry, beam, scipy
 
-def HXR(origin, place = (1.87,0.,0.), angle=(0.,0.,0.)):
+def HXR(origin, place = (1.87,-.03,0.), angle=(0.,0.,0.)):
     pos = geometry.Origin(place, origin, angle=angle)
     area = [5e-3,5e-3]
     vec = [geometry.Vecx((0.,0.,1.)), geometry.Vecx((1.,0.,0.))]
