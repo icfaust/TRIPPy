@@ -14,7 +14,7 @@ import time as timer
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
     """Calculates the distance weight matrix for specified fourier components
 
-    This function is used directly for poloidal tomography used extensively on 
+    This function is used directly for poloidal tomography extensibly for 
     many tokamaks. It assumes that the sinogram space can be parameterized
     with a flux-based radial variable (which is defined using the eqtools
     methods such as rz2psinorm, rz2volnorm, etc.) and an angular variable
@@ -131,12 +131,18 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
 def fluxFourierSensRho(beams,plasma,time,points,mcos=[0],msin=[],ds=1e-3,meth='psinorm'):
     """Calculates the distance weight matrix for specified fourier components
 
+    Similar to fluxFourierSens, it instead derives weightings from the plasma 
+    equilibrium assuming that the plasma object contains a method .rz2rho. 
+    It should return a value of normalized radius to some basis function
+    related to the plasma equilibrium.
+
+
     Args:
         beams: geometry Object with reference origin
 
         plasma: geometry Object with reference origin
         
-        time:  equilibrium time
+        time:  equilibrium time for inversion
         
         points: points in basis function space in which to map to.
 
@@ -150,8 +156,10 @@ def fluxFourierSensRho(beams,plasma,time,points,mcos=[0],msin=[],ds=1e-3,meth='p
         meth: normalization method (psinorm,phinorm,volnorm)
 
     Returns:
-        Vector object: Vector points from pt1 to pt2.
-    
+       output: A 3-dimensional numpy-array of weights in meters which
+            follows is [time,beam,radial x fourier components].
+            The order of the last dimension is grouped by fourier
+            component, cosine radial terms then sine radial terms.
     """
     time = scipy.atleast_1d(time)
     interp = scipy.interpolate.interp1d(points,scipy.arange(len(points)),kind='cubic')
@@ -187,17 +195,24 @@ def fluxFourierSensRho(beams,plasma,time,points,mcos=[0],msin=[],ds=1e-3,meth='p
     return output
 
 def besselFourierKernel(m, zero, rho):
-    """Calculates the distance weight matrix for specified fourier components
+    """ Function kernel for the bessel Fourier method inversion
+    
+    Uses the mathematical formulation laid out in L. Wang and R. Granetz,
+    Review of Scientific Instruments, 62, p.842, 1991. This generates
+    the necessary weighting for a given chord in bessel/fourier space
+    for a given tangency radius rho. There should be little reason to
+    use this function unless modified and generating a new inversion
+    scheme utilizing this kernel.
 
     Args:
         m: geometry Object with reference origin
 
         zero: geometry Object with reference origin
         
-        rho:
+        rho: normalized tangency radius
 
     Returns:
-        Vector object: Vector points from pt1 to pt2.
+        numpy array: Vector points from pt1 to pt2.
     
     """
 
@@ -209,12 +224,19 @@ def besselFourierKernel(m, zero, rho):
                                        scipy.arccos(rho),
                                        args = (m, zero, rho))[0]
 
-def bessel_fourier_kernel(theta,m,zero,rho):
-    """ older, slower, version of the f2py C code"""
+def _bessel_fourier_kernel(theta,m,zero,rho):
+    """ Depreciated, older, slower, version. See besselFourierKernel"""
     return scipy.cos(m*theta)*scipy.sin(zero*(scipy.cos(theta)-rho))
 
 def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], rcond=2e-2):
     """Calculates the distance weight matrix for specified fourier components
+
+    This function is used directly for poloidal tomography exstensibly for 
+    many tokamaks. It assumes that the sinogram space can be parameterized
+    with a radial variable and an angular variable dependent on the plasma
+    center (which typically use the tokamak.center method). 
+
+
 
     Args:
         beam: geometry Object with reference origin
@@ -309,7 +331,28 @@ def besselFourierSens(beam, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], 
 
     
 def bFInvert(beams, bright, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], zeros=None, plasma=None, rcond=2e-2, out=False):
-    """Calculates the distance weight matrix for specified fourier components
+    """Bessel/Fourier inversion function for a given center, chords and brightnesses.
+
+    This function inverts poloidal brightness data using Bessel/Fourier
+    methods with conditioned singular value decomposition (SVD). This
+    matches the standard inversion technique for Soft X-ray emission
+    on Alcator C-Mod, and represents the gold standard for future 
+    inversion comparison.
+    It contains many of the features native to the original IDL
+    tomography codes on Alcator C-Mod including the capability to add 
+    `forced' zero chords representing zero emssion outside the vessel. 
+    The number of zeros increasingly minimize the false edge emission
+    at the cost of increased computational time. When used with a limited
+    number of polodial harmonics, the nautre of the reconstructed
+    emission is strongly modified.
+    It returns a matrix which contains the emissivities for the specified 
+    Bessel/Fourier harmonics, specified by the l, mcos and msin keyword
+    arguments.  The mcos=0 value must be included in order to yield the
+    poloidally symmetric emission value.
+    It is assumed that the toroidal mode number is small such that there is no
+    cross coupling of the modes in the line integrals of the chords. This is 
+    the cylindrical mode limit, where the ratio of inverse aspect ratio
+    to toroidal mode number is negligible.
 
     Args:
         beam: geometry Object with reference origin
@@ -333,9 +376,9 @@ def bFInvert(beams, bright, rcent, zcent, rmax, l=range(15), mcos=[0], msin=[], 
 
         plasma:
 
-        rcond:
+        rcond: float - conditioning value for pseudoinverse truncation
 
-        out:
+        out: 
 
     Returns:
         Vector object: Vector points from pt1 to pt2.
