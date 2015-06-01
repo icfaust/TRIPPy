@@ -303,9 +303,64 @@ class Rect(Surf):
                                        obj=type(temp))
 """
 class Parabola(Surf):
-
+"""
 class Cylinder(Surf):
 
+    def intercept(self,ray):
+        """Solves for intersection point of surface and a ray or Beam
+    
+        Args:
+            ray: Ray or Beam object
+                It must be in the same coordinate space as the surface object.
+            
+        Returns:
+            s: value of s [meters] which intercepts along norm, otherwise an
+            empty tuple (for no intersection).
+        
+        Examples:
+            Accepts all point and point-derived object inputs, though all data 
+            is stored as a python object.
+
+            Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                    cen = geometry.Center(flag=True)
+                    ydir = geometry.Vecx((0,1,0))
+                    zpt = geometry.Point((0,0,1),cen)
+
+        """
+        if self._origin is ray._origin:
+            try:
+
+                params = scipy.dot(scipy.linalg.inv(scipy.array([ray.norm.unit,
+                                                                 self.meri.unit,
+                                                                 self.sagi.unit]).T),
+                                   (ray-self).x())
+
+                if self.edgetest(params[2],params[1]):
+                    return params[0]
+                else:
+                    return None
+
+            except AttributeError:
+                raise ValueError('not a surface object')
+        else:           
+            raise ValueError('not in same coordinate system, use redefine and try again')
+
+    def edge(self):
+        pass
+
+    def area(self):
+        pass
+
+    def split(self):
+        pass
+
+    def edgetest(self):
+        pass
+    
+
+
+"""
 class Sphere(Surf):
 """
 class Ellipse(Surf):
