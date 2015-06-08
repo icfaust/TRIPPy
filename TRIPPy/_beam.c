@@ -58,12 +58,12 @@ void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner
 	  B = 0;
 	  C = 0;
 	  
-	  delr = outliner[i+1]-outliner[i];
-	  delz = outlinez[i+1]-outlinez[i];
+	  delr = outliner[i+1] - outliner[i];
+	  delz = outlinez[i+1] - outlinez[i];
 	  
 	  if(delz)
 	    {
-	      temp = outliner[i] + (delr/delz)*(pt0[j][2]-outlinez[i]);
+	      temp = outliner[i] + (delr/delz)*(pt0[j][2] - outlinez[i]);
 	      
 	      A = A0 - pow((delr/delz)*norm[j][2],2);
 	      B = B0 - 2*temp*(delr/delz)*norm[j][2];
@@ -74,7 +74,7 @@ void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner
 	    { 
 	      /*prevents rest of quadratic iteration from occuring */
 	      s1 = (outlinez[i] - pt0[j][2])/norm[j][2];
-	      temp = (sqrt(pow(pt0[j][0]+norm[j][0]*s1,2) + pow(pt0[j][1]+norm[j][1]*s1,2)) - outliner[i])/delr;
+	      temp = (sqrt(pow(pt0[j][0] + norm[j][0]*s1,2) + pow(pt0[j][1] + norm[j][1]*s1,2)) - outliner[i])/delr;
 	      
 	      if((temp > 0) & (temp <= 1) & (s1 < stemp) & (s1 > res))
 		{
@@ -107,7 +107,7 @@ void interceptCyl(double s[], double pt0[][3], double norm[][3], double outliner
 	  else if((B != 0) & (C != 0)) /*for directly radial views */
 	    {
 	      s1 = -B/C;
-	      temp = (s1*norm[j][2]+(pt0[j][2]-outlinez[0]))/delz; /*length along cylinder parameterization of intercept */
+	      temp = (s1*norm[j][2] + (pt0[j][2] - outlinez[i]))/delz; /*length along cylinder parameterization of intercept */
 	      if((temp > 0) & (temp <= 1) & (s1 < stemp) & (s1 > res))
 		{
 		  stemp = s1;

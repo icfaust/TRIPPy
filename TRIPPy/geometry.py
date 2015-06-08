@@ -685,7 +685,7 @@ class Point(Vec):
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
         self._depth = neworigin._depth + 1
-
+        print(lca)
         # convert vector to proper coordinate system matching new origin and save
         # arot forces the coordinate system to that of the new origin
         
@@ -763,13 +763,15 @@ class Point(Vec):
         # negative index which corresponds to the last match
         while temp:
             if not (lim - idx):
-                idx += 1 # this takes care of ambiguity associated with the centerpoint
+                if not lim:
+                    idx += 1 # this takes care of ambiguity associated with the centerpoint
                 temp = False
             elif (pt1[idx] is pt2[idx]):                
                 idx += 1
             else:
                 temp = False
 
+        print(lim,idx,pt1,pt2)
         
         return (pt1[idx:],pt2[idx:])
     

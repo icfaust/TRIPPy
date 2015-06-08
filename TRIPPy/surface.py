@@ -328,6 +328,9 @@ class Cylinder(Surf):
                     zpt = geometry.Point((0,0,1),cen)
 
         """
+
+
+        # Proceedure will be to generate 
         if self._origin is ray._origin:
             try:
 
