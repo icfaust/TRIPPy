@@ -1,6 +1,7 @@
 import geometry
 import scipy
 import scipy.linalg
+import _beam
 
 edges = scipy.array(([-1,-1],
                      [-1, 1],
@@ -120,7 +121,7 @@ class Surf(geometry.Origin):
         #to define the cross sectional area of the surface, and the norm is
         #the normal.
 
-    def intercept(self,ray):
+    def intercept(self, ray):
         """Solves for intersection point of surface and a ray or Beam
     
         Args:
@@ -245,7 +246,7 @@ class Rect(Surf):
 
     """
 
-    def area(self,sagi = None, meri = None):
+    def area(self, sagi = None, meri = None):
         if not sagi is None:
             sagi = self.sagi.s
         if not meri is None:
@@ -262,19 +263,19 @@ class Rect(Surf):
                                                        [temp1,temp2]).T)),
                               self._origin)
 
-    def edgetest(self,sagi,meri):
+    def edgetest(self, sagi, meri):
 
         if abs(meri) <= self.meri.s and abs(sagi) <= self.sagi.s:
             return True
         else:
             return False
 
-    def split(self,sagi,meri):
+    def split(self, sagi, meri):
         """ utilizes geometry.grid to change the rectangle into a generalized surface,
         it is specified with a single set of basis vectors to describe the meridonial,
         normal, and sagittal planes."""
-        ins = float((sagi-1))/sagi
-        inm = float((meri-1))/meri
+        ins = float((sagi - 1))/sagi
+        inm = float((meri - 1))/meri
         stemp = self.sagi.s/sagi
         mtemp = self.meri.s/meri
 
@@ -306,7 +307,24 @@ class Parabola(Surf):
 """
 class Cylinder(Surf):
 
-    def intercept(self,ray):
+    def __init__(self, x_hat, ref, area, radius, vec=None, angle=None, flag=None):
+        """
+        """
+
+        if flag is None:
+            flag = ref.flag
+
+        super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
+        self.sagi.s = scipy.atleast_1d(area[0])/2 #
+        self.meri.s = scipy.atleast_1d(area[1])/2
+        self.norm.s = scipy.array(radius)
+        # this utilizes an unused attribute of the geometry.Origin where 
+        #the length of the defining coordinate system unit vectors are used
+        #to define the cross sectional area of the surface, and the norm is
+        #the normal.
+
+
+    def intercept(self, ray):
         """Solves for intersection point of surface and a ray or Beam
     
         Args:
@@ -333,33 +351,126 @@ class Cylinder(Surf):
         # Proceedure will be to generate 
         if self._origin is ray._origin:
             try:
-
-                params = scipy.dot(scipy.linalg.inv(scipy.array([ray.norm.unit,
-                                                                 self.meri.unit,
-                                                                 self.sagi.unit]).T),
-                                   (ray-self).x())
-
-                if self.edgetest(params[2],params[1]):
-                    return params[0]
-                else:
+                rcopy = ray.copy()
+                rcopy.redefine(self)
+                
+                intersect = _beam.interceptCyl(scipy.atleast_2d(rcopy.x()[:,-1]), 
+                                               scipy.atleast_2d(rcopy.norm.unit), 
+                                               scipy.array([self.norm.s,self.norm.s]),
+                                               scipy.array([-self.sagi.s,self.sagi.s])) + rcopy.norm.s[-1]
+                
+                if not scipy.isfinite(intersect):
+                    #relies on r1 using arctan2 so that it sets the branch cut properly (-pi,pi]
                     return None
+                elif self.edgetest(intersect, (rcopy(intersect)).r1()):
+                        return intersect
+                else:
+                    rcopy.norm.s[-1] = intersect
+                    intersect = _beam.interceptCyl(scipy.atleast_2d(rcopy.x()[:,-1]), 
+                                                   scipy.atleast_2d(rcopy.norm.unit), 
+                                                   scipy.array([self.norm.s,self.norm.s]),
+                                                   scipy.array([-self.sagi.s,self.sagi.s])) + rcopy.norm.s[-1]
+                    if not scipy.isfinite(intersect):
+                        #relies on r1 using arctan2 so that it sets the branch cut properly (-pi,pi]
+                        return None
+                    elif self.edgetest(intersect, (rcopy(intersect)).r1()):
+                        return None
+                    else:
+                        return None
 
             except AttributeError:
                 raise ValueError('not a surface object')
         else:           
             raise ValueError('not in same coordinate system, use redefine and try again')
 
-    def edge(self):
-        pass
+    def edge(self, pts=20):
 
-    def area(self):
-        pass
+        if pts%2 == 1:
+            raise ValueError('pts must be an even number')
+            
+        theta = scipy.linspace(-self.meri.s, self.meri.s, pts/2.)
+        theta = scipy.concatenate([theta,theta[::-1]])
+        z = self.meri.s*scipy.ones((pts,))
+        z[pts/2:] = z[pts/2:] - 2*self.meri.s
+        
+        temp = geometry.Point(geometry.Vecr((self.norm.s*scipy.ones((pts,)),
+                                            theta,
+                                             z))
+                              ,self)
+        
+        temp.redefine(self._origin)
+        return temp
+        
 
-    def split(self):
-        pass
+    def area(self, sagi=None, meri=None):
+        if not sagi is None:
+            sagi = self.sagi.s
+        if not meri is None:
+            meri = self.meri.s
 
-    def edgetest(self):
-        pass
+        return self.ang*self.norm.s*self.meri.s
+
+
+    def split(self, sagi, meri):
+        """ utilizes geometry.grid to change the rectangle into a generalized surface,
+        it is specified with a single set of basis vectors to describe the meridonial,
+        normal, and sagittal planes."""
+        ins = float((sagi - 1))/sagi
+        inm = float((meri - 1))/meri
+        stemp = self.sagi.s/sagi
+        mtemp = self.meri.s/meri
+
+        theta,z = scipy.meshgrid(scipy.linspace(-self.sagi.s*ins,
+                                                self.sagi.s*ins,
+                                                sagi),
+                                 scipy.linspace(-self.meri.s*inm,
+                                                self.meri.s*inm,
+                                                meri))
+
+        vecin =geometry.Vecr((self.norm.s*scipy.ones(theta.shape),
+                                              theta,
+                                              z))
+               
+        pt1 = geometry.Point(vecin,self)
+         
+        pt1.redefine(self._origin)
+        vecin = pt1.vec()
+        
+        self.sagi.s = 1.
+
+        print(vecin.unit.shape)
+        print(self.sagi.unit.shape)
+
+        vec2in = geometry.cross(self.sagi,vecin)
+
+        x_hat = self + pt1 #creates a vector which includes all the centers of the subsurface
+        self.sagi.s = stemp*sagi #returns values to previous numbers
+
+        print(vecin.x().shape)
+
+   
+        temp = Cylinder(x_hat,
+                        self._origin,
+                        [2*stemp,2*mtemp],
+                        self.norm.s,
+                        vec=[vec2in, vecin],
+                        flag=self.flag)
+        #return temp
+
+        return super(Rect, temp).split(temp._origin,
+                                       [2*stemp,2*mtemp],
+                                       vec=[temp.meri,temp.norm],
+                                       flag=temp.flag,
+                                       obj=type(temp))
+
+                           
+
+    def edgetest(self, radius, angle):
+
+        if abs(angle) <= self.meri.s:
+            return True
+        else:
+            return False          
     
 
 

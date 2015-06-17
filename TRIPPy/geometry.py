@@ -367,7 +367,7 @@ class Vec(object):
             temp[...,2,0] = -temp[...,0,2]
             temp[...,2,1] = -temp[...,1,2]
             return scipy.dot(temp,vec.unit.reshape((3,vec.unit.size/3)))
-            
+                
     def x0(self):
         """returns cartesian coordinate along first dimension
 
@@ -562,6 +562,7 @@ def cross(Vec1, Vec2):
      
     """
     new = Vec(Vec1._cross(Vec2),Vec1.s*Vec2.s)
+
     new.flag = Vec1.flag
     return new
 
@@ -685,7 +686,6 @@ class Point(Vec):
         # what is the vector which points from the new origin to the point?
         self._origin = neworigin
         self._depth = neworigin._depth + 1
-        print(lca)
         # convert vector to proper coordinate system matching new origin and save
         # arot forces the coordinate system to that of the new origin
         
@@ -771,12 +771,10 @@ class Point(Vec):
             else:
                 temp = False
 
-        print(lim,idx,pt1,pt2)
-        
         return (pt1[idx:],pt2[idx:])
     
-    def c(self):
-        raise NotImplementedError('point locked by reference coordinate system')
+    def vec(self):
+        return Vecx(self.x())
 
 
 class Origin(Point):
