@@ -88,7 +88,12 @@ def Vecx(x_hat, s=None):
             
                 vec3 = Vecx(vec2.unit,s=scipy.array(3.0))
     """
+
+    if type(x_hat) is Vec:
+        return x_hat
+
     flag = False
+
     xin = scipy.array(x_hat, dtype=float)
     if s is None:
         s = scipy.sqrt(scipy.sum(xin**2, axis=0)) 
@@ -154,7 +159,11 @@ def Vecr(x_hat, s=None):
                 vec3 = Vecr(vec2.r()/vec2.s,s=scipy.array(.1))
     """
 
+    if type(x_hat) is Vec:
+        return x_hat
+
     flag = True    
+
     xin = scipy.array(x_hat, dtype=float)
         
     if s is None:
@@ -167,8 +176,8 @@ def Vecr(x_hat, s=None):
             
     return Vec((xin[0]*scipy.cos(xin[1]),
                 xin[0]*scipy.sin(xin[1]),
-                xin[2])
-               ,s, flag=flag)       
+                xin[2]),
+               s, flag=flag)       
 
 
 class Vec(object):
@@ -218,6 +227,7 @@ class Vec(object):
     def __init__(self, x_hat, s, flag=False):
         """ 
         """
+
         s = scipy.array(s)
         self.unit = unit(x_hat)
         self.s = scipy.squeeze(s)
@@ -359,6 +369,7 @@ class Vec(object):
                                           (-self.unit[1],self.unit[0],0))),vec.unit)
 
         except ValueError:
+            shape = vec.unit.shape
             temp = scipy.zeros((self.unit.size/3,3,3))
             temp[...,0,1] = -self.unit[2].flatten()
             temp[...,0,2] = self.unit[1].flatten()
@@ -366,8 +377,10 @@ class Vec(object):
             temp[...,1,2] = -self.unit[0].flatten()
             temp[...,2,0] = -temp[...,0,2]
             temp[...,2,1] = -temp[...,1,2]
-            return scipy.dot(temp,vec.unit.reshape((3,vec.unit.size/3)))
-                
+            out = scipy.dot(temp,vec.unit.reshape((3,vec.unit.size/3)))
+            out = out.reshape(shape)
+            return out
+
     def x0(self):
         """returns cartesian coordinate along first dimension
 
@@ -519,7 +532,6 @@ class Vec(object):
         self.unit[0] = temp*scipy.cos(angle)
         self.unit[1] = temp*scipy.sin(angle)
 
-
     def point(self,ref):
         """returns point based off of vector
 
@@ -531,6 +543,28 @@ class Vec(object):
 
         """
         return Point(self, ref)
+
+    def split(self, *args, **kwargs):
+        """split coordinate values into seperate objects
+
+        Kwargs:
+            obj: geometry-derived object which to form from data
+
+        Returns:
+            Object tuple size N for N points. Works to arbitrary
+            dimension.
+
+        """
+        
+        obj = kwargs.pop('obj', None)
+        if obj is None:
+            obj = Vecx
+        temp = self.x()
+
+        if temp.size > 3:
+            # initialize
+            return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
+
                    
 
 def angle(Vec1, Vec2):
@@ -696,27 +730,6 @@ class Point(Vec):
             self.unit = temp.unit
             self.s = temp.s
 
-    def split(self, *args, **kwargs):
-        """split coordinate values into seperate objects
-
-        Kwargs:
-            obj: geometry-derived object which to form from data
-
-        Returns:
-            Object tuple size N for N points. Works to arbitrary
-            dimension.
-
-        """
-        
-        obj = kwargs.pop('obj', None)
-        if obj is None:
-            obj = type(self)
-        temp = self.x()
-
-        if temp.size > 3:
-            # initialize
-            return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
-
     def _genOriginsToParent(self):
         """Tuple of Origins to Center of space.
 
@@ -775,6 +788,28 @@ class Point(Vec):
     
     def vec(self):
         return Vecx(self.x())
+
+    def split(self, *args, **kwargs):
+        """split coordinate values into seperate objects
+
+        Kwargs:
+            obj: geometry-derived object which to form from data
+
+        Returns:
+            Object tuple size N for N points. Works to arbitrary
+            dimension.
+
+        """
+        
+        obj = kwargs.pop('obj', None)
+        if obj is None:
+            obj = type(self)
+        temp = self.x()
+
+        if temp.size > 3:
+            # initialize
+            return fill(obj,temp[0],temp[1],temp[2], *args, **kwargs)
+
 
 
 class Origin(Point):
@@ -1084,7 +1119,7 @@ class Center(Origin):
         # lower references or rotations to this, the main coordinate system
 
 def pts2Vec(pt1,pt2):
-    """Returns angle between two vectors.
+    """Returns a vector connecting to points.
 
     Args:
         pt1: geometry Object with reference origin
@@ -1100,7 +1135,7 @@ def pts2Vec(pt1,pt2):
     else:
         raise ValueError("points must exist in same coordinate system")
 
-def fill(funtype,x0,x1,x2,*args,**kwargs):
+def fill(funtype, x0, x1, x2, *args, **kwargs):
     """Recursive function to generate TRIPPy Objects
 
     Args:
@@ -1108,7 +1143,7 @@ def fill(funtype,x0,x1,x2,*args,**kwargs):
         
         x0: coordinate of 1st direction
 
-        x1: coordinate of 2md direction
+        x1: coordinate of 2nd direction
         
         x2: coordinate of 3rd direction
 
@@ -1119,7 +1154,15 @@ def fill(funtype,x0,x1,x2,*args,**kwargs):
     try:
         temp = []
         for i in xrange(x0.shape[0]):
-            temp+= [fill(funtype,x0[i],x1[i],x2[i],*args,**kwargs)]
+            temp+= [fill(funtype,
+                         x0[i],
+                         x1[i],
+                         x2[i],
+                         *args,
+                         **kwargs)]
         return temp
     except IndexError:
-        return funtype(Vecx((x0,x1,x2)),*args,**kwargs)
+        return funtype(Vecx((x0,x1,x2)),
+                       *args,
+                       **kwargs)
+

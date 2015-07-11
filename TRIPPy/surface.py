@@ -5,8 +5,8 @@ import _beam
 
 edges = scipy.array(([-1,-1],
                      [-1, 1],
-                     [ 1,-1],
-                     [ 1, 1]))
+                     [ 1, 1],
+                     [ 1,-1]))
 
 class Surf(geometry.Origin):
     """Surf object with inherent cartesian backend mathematics.
@@ -286,9 +286,11 @@ class Rect(Surf):
                                                                  self.meri.s*inm,
                                                                  meri))
 
-        x_hat = self + self.sagi + self.meri #creates a vector which includes all the centers of the subsurface
+        x_hat = self + (self.sagi + self.meri) #creates a vector which includes all the centers of the subsurface
         self.sagi.s = stemp*sagi #returns values to previous numbers
         self.meri.s = mtemp*meri
+
+        print(x_hat.x().shape)
 
         temp = Rect(x_hat,
                     self._origin,
@@ -310,14 +312,17 @@ class Cylinder(Surf):
     def __init__(self, x_hat, ref, area, radius, vec=None, angle=None, flag=None):
         """
         """
-
         if flag is None:
             flag = ref.flag
 
         super(Surf,self).__init__(x_hat, ref, vec=vec, angle=angle, flag=flag)
-        self.sagi.s = scipy.atleast_1d(area[0])/2 #
-        self.meri.s = scipy.atleast_1d(area[1])/2
-        self.norm.s = scipy.array(radius)
+        self.norm.s = scipy.atleast_1d(area[0])/2
+        self.meri.s = scipy.atleast_1d(area[1])/2 
+
+        if self.meri.s > scipy.pi:
+            raise ValueError('angle of cylinder can only be < 2*pi')
+        self.sagi.s = abs(scipy.array(radius))
+
         # this utilizes an unused attribute of the geometry.Origin where 
         #the length of the defining coordinate system unit vectors are used
         #to define the cross sectional area of the surface, and the norm is
@@ -356,8 +361,8 @@ class Cylinder(Surf):
                 
                 intersect = _beam.interceptCyl(scipy.atleast_2d(rcopy.x()[:,-1]), 
                                                scipy.atleast_2d(rcopy.norm.unit), 
-                                               scipy.array([self.norm.s,self.norm.s]),
-                                               scipy.array([-self.sagi.s,self.sagi.s])) + rcopy.norm.s[-1]
+                                               scipy.array([self.sagi.s,self.sagi.s]),
+                                               scipy.array([-self.norm.s,self.norm.s])) + rcopy.norm.s[-1]
                 
                 if not scipy.isfinite(intersect):
                     #relies on r1 using arctan2 so that it sets the branch cut properly (-pi,pi]
@@ -368,8 +373,8 @@ class Cylinder(Surf):
                     rcopy.norm.s[-1] = intersect
                     intersect = _beam.interceptCyl(scipy.atleast_2d(rcopy.x()[:,-1]), 
                                                    scipy.atleast_2d(rcopy.norm.unit), 
-                                                   scipy.array([self.norm.s,self.norm.s]),
-                                                   scipy.array([-self.sagi.s,self.sagi.s])) + rcopy.norm.s[-1]
+                                                   scipy.array([self.sagi.s,self.sagi.s]),
+                                                   scipy.array([-self.norm.s,self.norm.s])) + rcopy.norm.s[-1]
                     if not scipy.isfinite(intersect):
                         #relies on r1 using arctan2 so that it sets the branch cut properly (-pi,pi]
                         return None
@@ -390,10 +395,10 @@ class Cylinder(Surf):
             
         theta = scipy.linspace(-self.meri.s, self.meri.s, pts/2.)
         theta = scipy.concatenate([theta,theta[::-1]])
-        z = self.meri.s*scipy.ones((pts,))
-        z[pts/2:] = z[pts/2:] - 2*self.meri.s
+        z = self.norm.s*scipy.ones((pts,))
+        z[pts/2:] = z[pts/2:] - 2*self.norm.s
         
-        temp = geometry.Point(geometry.Vecr((self.norm.s*scipy.ones((pts,)),
+        temp = geometry.Point(geometry.Vecr((self.sagi.s*scipy.ones((pts,)),
                                             theta,
                                              z))
                               ,self)
@@ -408,7 +413,7 @@ class Cylinder(Surf):
         if not meri is None:
             meri = self.meri.s
 
-        return self.ang*self.norm.s*self.meri.s
+        return self.sagi.s*self.norm.s*self.meri.s
 
 
     def split(self, sagi, meri):
@@ -417,51 +422,68 @@ class Cylinder(Surf):
         normal, and sagittal planes."""
         ins = float((sagi - 1))/sagi
         inm = float((meri - 1))/meri
-        stemp = self.sagi.s/sagi
+        stemp = self.norm.s/sagi
         mtemp = self.meri.s/meri
 
-        theta,z = scipy.meshgrid(scipy.linspace(-self.sagi.s*ins,
-                                                self.sagi.s*ins,
+        z,theta = scipy.meshgrid(scipy.linspace(-self.norm.s*ins,
+                                                self.norm.s*ins,
                                                 sagi),
                                  scipy.linspace(-self.meri.s*inm,
                                                 self.meri.s*inm,
                                                 meri))
+        print(theta)
+        print(z)
 
-        vecin =geometry.Vecr((self.norm.s*scipy.ones(theta.shape),
-                                              theta,
-                                              z))
+        vecin =geometry.Vecr((self.sagi.s*scipy.ones(theta.shape),
+                              theta+scipy.pi/2,
+                              scipy.zeros(theta.shape))) #this produces an artificial
+        # meri vector, which is in the 'y_hat' direction in the space of the cylinder
+        # This is a definite patch over the larger problem, where norm is not normal
+        # to the cylinder surface, but is instead the axis of rotation.  This was
+        # done to match the Vecr input, which works better with norm in the z direction
                
-        pt1 = geometry.Point(vecin,self)
-         
+        pt1 = geometry.Point(geometry.Vecr((scipy.zeros(theta.shape),
+                                            theta,
+                                            z)),
+                             self)
+
         pt1.redefine(self._origin)
-        vecin = pt1.vec()
-        
-        self.sagi.s = 1.
+                
+        print(vecin.r())
 
-        print(vecin.unit.shape)
-        print(self.sagi.unit.shape)
 
-        vec2in = geometry.cross(self.sagi,vecin)
+        #self.rot(vecin)
+        vecin = vecin.split()
 
         x_hat = self + pt1 #creates a vector which includes all the centers of the subsurface
-        self.sagi.s = stemp*sagi #returns values to previous numbers
 
-        print(vecin.x().shape)
 
-   
-        temp = Cylinder(x_hat,
-                        self._origin,
-                        [2*stemp,2*mtemp],
-                        self.norm.s,
-                        vec=[vec2in, vecin],
-                        flag=self.flag)
-        #return temp
+        out = []
+        #this for loop makes me cringe super hard
+        for i in xrange(meri):
+            try:
+                temp = []
+                for j in xrange(sagi):
+                    inp = self.rot(vecin[i][j])
+                    print(inp.r())
+                    temp += [Cylinder(x_hat.x()[:,i,j],
+                                      self._origin,
+                                      [2*stemp,2*mtemp],
+                                      self.sagi.s,
+                                      vec=[vecin[i][j], self.norm.copy()],
+                                      flag=self.flag)]
+                out += [temp]
+            except IndexError:
+                inp = self.rot(vecin[i])
+                out += [Cylinder(x_hat.x()[:,i],
+                                 self._origin,
+                                 [2*stemp,2*mtemp],
+                                 self.norm.s,
+                                 vec=[vecin[i], self.norm.copy()],
+                                 flag=self.flag)]
 
-        return super(Rect, temp).split(temp._origin,
-                                       [2*stemp,2*mtemp],
-                                       vec=[temp.meri,temp.norm],
-                                       flag=temp.flag,
-                                       obj=type(temp))
+
+        return out
 
                            
 
@@ -472,6 +494,12 @@ class Cylinder(Surf):
         else:
             return False          
     
+
+    def pixelate(self, sagi, meri):
+        """ convert surface into number of rectangular surfaces"""
+
+        pass
+
 
 
 """
@@ -573,8 +601,8 @@ class Ellipse(Surf):
 
     def edge(self, angle=[0,2*scipy.pi], pts=20):
         theta = scipy.linspace(angle[0], angle[1], pts)
-        temp = geometry.Point(geometry.Vecr((scipy.sqrt((self.sagi.s*scipy.cos(theta))**2
-                                                        +(self.meri.s*scipy.sin(theta))**2)*scipy.ones(theta.shape),
+        temp = geometry.Point(geometry.Vecr((self.sagi.s*self.meri.s/scipy.sqrt((scipy.cos(theta)*self.meri.s)**2 
+                                                                                +(scipy.sin(theta)*self.sagi.s)**2)*scipy.ones(theta.shape),
                                             theta,
                                             scipy.zeros(theta.shape)))
                               ,self)
