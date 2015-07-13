@@ -431,8 +431,6 @@ class Cylinder(Surf):
                                  scipy.linspace(-self.meri.s*inm,
                                                 self.meri.s*inm,
                                                 meri))
-        print(theta)
-        print(z)
 
         vecin =geometry.Vecr((self.sagi.s*scipy.ones(theta.shape),
                               theta+scipy.pi/2,
@@ -448,11 +446,7 @@ class Cylinder(Surf):
                              self)
 
         pt1.redefine(self._origin)
-                
-        print(vecin.r())
 
-
-        #self.rot(vecin)
         vecin = vecin.split()
 
         x_hat = self + pt1 #creates a vector which includes all the centers of the subsurface
@@ -497,8 +491,63 @@ class Cylinder(Surf):
 
     def pixelate(self, sagi, meri):
         """ convert surface into number of rectangular surfaces"""
+        ins = float((sagi - 1))/sagi
+        inm = float((meri - 1))/meri
+        stemp = self.norm.s/sagi
+        mtemp = self.meri.s/meri
 
-        pass
+        z,theta = scipy.meshgrid(scipy.linspace(-self.norm.s*ins,
+                                                self.norm.s*ins,
+                                                sagi),
+                                 scipy.linspace(-self.meri.s*inm,
+                                                self.meri.s*inm,
+                                                meri))
+
+        vecin = geometry.Vecr((self.sagi.s*scipy.ones(theta.shape),
+                               theta+scipy.pi/2,
+                               scipy.zeros(theta.shape))) #this produces an artificial
+        # meri vector, which is in the 'y_hat' direction in the space of the cylinder
+        # This is a definite patch over the larger problem, where norm is not normal
+        # to the cylinder surface, but is instead the axis of rotation.  This was
+        # done to match the Vecr input, which works better with norm in the z direction
+               
+        pt1 = geometry.Point(geometry.Vecr((scipy.zeros(theta.shape),
+                                            theta,
+                                            z)),
+                             self)
+
+        pt1.redefine(self._origin)
+                
+        vecin = vecin.split()
+
+        x_hat = self + pt1 #creates a vector which includes all the centers of the subsurface
+
+        out = []
+        #this for loop makes me cringe super hard
+        for i in xrange(meri):
+            try:
+                temp = []
+                for j in xrange(sagi):
+                    inp = self.rot(vecin[i][j])
+                    print(inp.r())
+                    temp += [Cylinder(x_hat.x()[:,i,j],
+                                      self._origin,
+                                      [2*stemp,2*mtemp],
+                                      self.sagi.s,
+                                      vec=[vecin[i][j], self.norm.copy()],
+                                      flag=self.flag)]
+                out += [temp]
+            except IndexError:
+                inp = self.rot(vecin[i])
+                out += [Cylinder(x_hat.x()[:,i],
+                                 self._origin,
+                                 [2*stemp,2*mtemp],
+                                 self.norm.s,
+                                 vec=[vecin[i], self.norm.copy()],
+                                 flag=self.flag)]
+
+
+        return out
 
 
 
