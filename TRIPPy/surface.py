@@ -511,7 +511,7 @@ class Cylinder(Surf):
         # to the cylinder surface, but is instead the axis of rotation.  This was
         # done to match the Vecr input, which works better with norm in the z direction
                
-        pt1 = geometry.Point(geometry.Vecr((scipy.zeros(theta.shape),
+        pt1 = geometry.Point(geometry.Vecr((self.sagi.s*scipy.ones(theta.shape),
                                             theta,
                                             z)),
                              self)
@@ -530,21 +530,19 @@ class Cylinder(Surf):
                 for j in xrange(sagi):
                     inp = self.rot(vecin[i][j])
                     print(inp.r())
-                    temp += [Cylinder(x_hat.x()[:,i,j],
-                                      self._origin,
-                                      [2*stemp,2*mtemp],
-                                      self.sagi.s,
-                                      vec=[vecin[i][j], self.norm.copy()],
-                                      flag=self.flag)]
+                    temp += [Rect(x_hat.x()[:,i,j],
+                                  self._origin,
+                                  [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
+                                  vec=[vecin[i][j], self.norm.copy()],
+                                  flag=self.flag)]
                 out += [temp]
             except IndexError:
                 inp = self.rot(vecin[i])
-                out += [Cylinder(x_hat.x()[:,i],
-                                 self._origin,
-                                 [2*stemp,2*mtemp],
-                                 self.norm.s,
-                                 vec=[vecin[i], self.norm.copy()],
-                                 flag=self.flag)]
+                out += [Rect(x_hat.x()[:,i],
+                             self._origin,
+                             [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
+                             vec=[vecin[i], self.norm.copy()],
+                             flag=self.flag)]
 
 
         return out
