@@ -533,7 +533,7 @@ class Cylinder(Surf):
                     temp += [Rect(x_hat.x()[:,i,j],
                                   self._origin,
                                   [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
-                                  vec=[vecin[i][j], self.norm.copy()],
+                                  vec=[vecin[i][j], self.sagi.copy()],
                                   flag=self.flag)]
                 out += [temp]
             except IndexError:
@@ -541,7 +541,7 @@ class Cylinder(Surf):
                 out += [Rect(x_hat.x()[:,i],
                              self._origin,
                              [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
-                             vec=[vecin[i], self.norm.copy()],
+                             vec=[vecin[i], self.sagi.copy()],
                              flag=self.flag)]
 
 
