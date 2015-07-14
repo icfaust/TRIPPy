@@ -307,7 +307,7 @@ class Rect(Surf):
 """
 class Parabola(Surf):
 """
-class Cylinder(Surf):
+class Cyl(Surf):
 
     def __init__(self, x_hat, ref, area, radius, vec=None, angle=None, flag=None):
         """
@@ -459,23 +459,22 @@ class Cylinder(Surf):
                 temp = []
                 for j in xrange(sagi):
                     inp = self.rot(vecin[i][j])
-                    print(inp.r())
-                    temp += [Cylinder(x_hat.x()[:,i,j],
-                                      self._origin,
-                                      [2*stemp,2*mtemp],
-                                      self.sagi.s,
-                                      vec=[vecin[i][j], self.norm.copy()],
-                                      flag=self.flag)]
+                    temp += [Cyl(geometry.Vecx(x_hat.x()[:,i,j]),
+                                 self._origin,
+                                 [2*stemp,2*mtemp],
+                                 self.sagi.s,
+                                 vec=[inp, self.norm.copy()],
+                                 flag=self.flag)]
                 out += [temp]
             except IndexError:
                 inp = self.rot(vecin[i])
-                out += [Cylinder(x_hat.x()[:,i],
-                                 self._origin,
-                                 [2*stemp,2*mtemp],
-                                 self.norm.s,
-                                 vec=[vecin[i], self.norm.copy()],
-                                 flag=self.flag)]
-
+                out += [Cyl(geometry.Vecx(x_hat.x()[:,i]),
+                            self._origin,
+                            [2*stemp,2*mtemp],
+                            self.norm.s,
+                            vec=[inp, self.norm.copy()],
+                            flag=self.flag)]
+                
 
         return out
 
@@ -529,19 +528,18 @@ class Cylinder(Surf):
                 temp = []
                 for j in xrange(sagi):
                     inp = self.rot(vecin[i][j])
-                    print(inp.r())
-                    temp += [Rect(x_hat.x()[:,i,j],
+                    temp += [Rect(geometry.Vecx(x_hat.x()[:,i,j]),
                                   self._origin,
-                                  [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
-                                  vec=[vecin[i][j], self.sagi.copy()],
+                                  [2*stemp,2*scipy.tan(mtemp)*self.sagi.s],
+                                  vec=[inp, self.sagi.copy()],
                                   flag=self.flag)]
                 out += [temp]
             except IndexError:
                 inp = self.rot(vecin[i])
-                out += [Rect(x_hat.x()[:,i],
+                out += [Rect(geometry.Vecx(x_hat.x()[:,i]),
                              self._origin,
-                             [2*scipy.cos(stemp)*self.sagi.s,2*mtemp],
-                             vec=[vecin[i], self.sagi.copy()],
+                             [2*stemp,2*scipy.tan(mtemp)*self.sagi.s],
+                             vec=[inp, self.sagi.copy()],
                              flag=self.flag)]
 
 

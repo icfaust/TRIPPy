@@ -595,8 +595,8 @@ def cross(Vec1, Vec2):
         It is in the coordinate system of the first argument.
      
     """
-    new = Vec(Vec1._cross(Vec2),Vec1.s*Vec2.s)
-
+    new = Vecx(Vec1._cross(Vec2))
+    new.s = Vec1.s*Vec2.s
     new.flag = Vec1.flag
     return new
 
