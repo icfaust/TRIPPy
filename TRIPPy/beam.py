@@ -664,7 +664,11 @@ def volWeightBeam(beam, rgrid, zgrid, trace=True, ds=2e-3, toroidal=None, **kwar
                                      weights=scipy.ones(temp[0].shape)*beam.etendue*ds)[0]
     except AttributeError:
         for i in beam:
-            out += volWeightBeam(i, rgrid, zgrid, trace=trace, ds=ds, toroidal=toroidal, **kwargs)
+            try:
+                out += volWeightBeam(i, rgrid, zgrid, trace=trace, ds=ds, toroidal=toroidal, **kwargs)
+            except TypeError:
+                pass
+
     return out
 
 

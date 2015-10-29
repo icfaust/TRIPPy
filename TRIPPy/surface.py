@@ -247,9 +247,9 @@ class Rect(Surf):
     """
 
     def area(self, sagi = None, meri = None):
-        if not sagi is None:
+        if sagi is None:
             sagi = self.sagi.s
-        if not meri is None:
+        if meri is None:
             meri = self.meri.s
 
         return sagi*meri*4
@@ -307,7 +307,93 @@ class Rect(Surf):
 """
 class Parabola(Surf):
 """
-class Cyl(Surf):
+class Cyl(Surf):  
+    """Origin object with inherent cartesian backend mathematics.
+     
+    Creates a new Origin instance which can be set to a default 
+    coordinate system of cartesian or cylindrical coordinates.
+    All vector mathematics are accomplished in cartesian to 
+    simplify computation effort. Cylindrical vectors are
+    converted at last step for return.
+    
+    An Origin is defined by a point and two vectors. The two 
+    vectors being: 1st the normal to the surface, principal axis,
+    z-vector or the (0,0,1) vector of the new system defined in
+    the reference system. The second vector along with the 
+    first fully defines meridonial ray paths, y-vector or the
+    (0,1,0) vector (.meri). The sagittal ray path, x-vector or
+    the (1,0,0) is defined through a cross product (.sagi).
+    Point position and rotation matricies are stored at
+    instantiation.
+
+    These conventions of norm to z, meri to y axis and sagi to
+    x axis are exactly as perscribed in the OSLO optical code,
+    allowing for easier translation from its data into Toroidal
+    systems.
+           
+    If the angles alpha, beta, and gamma are specified following
+    the eulerian rotation formalism, it is processed in the 
+    following manner: alpha is the rotation from the principal
+    axis in the meridonial plane, beta is the rotation about the
+    plane normal to the meridonial ray, or 2nd specified vector,
+    and gamma is the 2nd rotation about the principal axis. 
+    This might change based on what is most physically intuitive.
+    These are converted to vectors and stored as attributes.
+    
+    Args:
+        x_hat: geometry-derived object or Array-like of size 3 or 3xN.
+
+    Kwargs:
+        ref: Origin or Origin-derived object.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+
+        vec: Tuple of two Vector objects
+            The two vectors describe the normal (or z) axis and
+            the meridonial (or y) axis. Inputs should follow
+            [meri,normal]. If not specified, it assumed that angle
+            is specified.
+
+        angle: tuple or array of 3 floats
+            alpha, beta and gamma are eulerian rotation angles which
+            describe the rotation and thus the sagittal and 
+            meridonial rays.
+            
+        flag: Boolean.
+            Sets the default coordinate nature of the vector to 
+            cartesian if False, or cylindrical if True.
+                
+    Examples:   
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an origin at (0,0,0) with a :math:`\pi/2` rotation:
+            
+                cent = Center() #implicitly in cyl. coords.
+                newy = Vecr((1.,scipy.pi,0.))
+                z = Vecr((0.,0.,1.))
+                ex = Origin((0.,0.,0.), cent, vec=[newy,z])
+
+        Generate an origin at (0,0,0) with a :math:`\pi/2` rotation:
+            
+                cent = Center() #implicitly in cyl. coords.
+                ex1 = Origin((0.,0.,0.), cent, angle=(scipy.pi/2,0.,0.))
+
+        Generate an origin at (1,10,-7) with a cartesian coord system:
+
+                cent = Center() #implicitly in cyl. coords.
+                place = Vecx((1.,10.,-7.))
+                ex2 = Origin(place, cent, angle=(0.,0.,0.), flag=False)
+
+        Generate an origin at (1,1,1) with a cartesian coord system:
+
+                cent = Center(flag=False) #cartesian coords.
+                ex3 = Origin((1.,1.,1.), cent, angle=(0.,0.,0.))
+
+    """
+
+
+
 
     def __init__(self, x_hat, ref, area, radius, vec=None, angle=None, flag=None):
         """
@@ -408,9 +494,9 @@ class Cyl(Surf):
         
 
     def area(self, sagi=None, meri=None):
-        if not sagi is None:
+        if sagi is None:
             sagi = self.sagi.s
-        if not meri is None:
+        if meri is None:
             meri = self.meri.s
 
         return self.sagi.s*self.norm.s*self.meri.s
@@ -451,7 +537,6 @@ class Cyl(Surf):
 
         x_hat = self + pt1 #creates a vector which includes all the centers of the subsurface
 
-
         out = []
         #this for loop makes me cringe super hard
         for i in xrange(meri):
@@ -477,8 +562,7 @@ class Cyl(Surf):
                 
 
         return out
-
-                           
+                       
 
     def edgetest(self, radius, angle):
 
@@ -487,7 +571,6 @@ class Cyl(Surf):
         else:
             return False          
     
-
     def pixelate(self, sagi, meri):
         """ convert surface into number of rectangular surfaces"""
         ins = float((sagi - 1))/sagi
@@ -656,9 +739,9 @@ class Ellipse(Surf):
         return temp
 
     def area(self, sagi=None, meri=None):
-        if not sagi is None:
+        if sagi is None:
             sagi = self.sagi.s
-        if not meri is None:
+        if meri is None:
             meri = self.meri.s
 
         return scipy.pi*sagi*meri
@@ -762,13 +845,17 @@ class Circle(Ellipse):
         self.sagi.s = scipy.atleast_1d(radius)
         self.meri.s = scipy.atleast_1d(radius)
 
-    def area(self, radius=None):
-        if not radius is None:
-            radius = self.sagi
+    def area(self, radius=None, radius2=None):
+        if radius is None:
+            radius = self.sagi.s
+        if radius2 is None:
+            radius2 = self.meri.s
 
-        super(Circle, self).area(radius, radius)
+
+        return super(Circle, self).area(radius, radius2)
 
     def edgetest(self, radius=None):
-        if not radius is None:
-            radius = self.sagi
-        super(Circle, self).edgetest(radius, 0)
+        if radius is None:
+            radius = self.sagi.s
+
+        return super(Circle, self).edgetest(radius, 0)

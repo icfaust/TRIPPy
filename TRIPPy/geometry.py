@@ -177,7 +177,70 @@ def Vecr(x_hat, s=None):
     return Vec((xin[0]*scipy.cos(xin[1]),
                 xin[0]*scipy.sin(xin[1]),
                 xin[2]),
-               s, flag=flag)       
+               s, flag=flag)   
+
+def Vecs(x_hat, s=None):
+    r"""Generates a cylindrical coordinate vector object from spherical coordinates
+        
+    Uses the definition:
+        
+    .. math::
+    
+        \vec{x}= \texttt{xhat}[0]\hat{r} + \texttt{xhat}[1]\hat{\theta} + \texttt{xhat}[2]\hat{\phi}
+    
+    Capable of storing multiple directions and lengths as a single
+    vector, but highly discouraged (from POLS).
+        
+    Args:
+        x_hat: Array-like, 3 or 3xN.
+            3 dimensional cylindrical vector input, which is stores the 
+            direction and magnitude as seperate values.  All values of 
+            theta will be aliased to :math:`(\pi,\pi]`
+ 
+    Kwargs:
+        s: Array-like or scalar float.
+            Vector magnitude in meters. When specified, it is assumed that 
+            x_hat is representative of direction only and is of unit
+            length. Saves in computation as length calculation avoided.
+            
+    Returns:
+        Vec: Vector object.
+        
+    Examples:
+        Accepts all array like (tuples included) inputs, though all data 
+        is stored in numpy arrays.
+
+        Generate an y direction unit vector in cylindrical coords (ydir)::
+            
+                ydir = Vecr((1.,scipy.pi/2,0.))
+
+        Generate a cartesian vector (vec1) into direction (1,pi/3,-4)::
+            
+                vec1 = Vecr(scipy.array([1.,scipy.pi/3,-4.]))
+
+        Generate a cartesian vector (vec2) into direction (6,0,8)::
+            
+                vec2 = Vecr(scipy.array([3.,0.,4.])/5.0,s=scipy.array(10.0))
+
+        Generate a cartesian vector (vec3) into direction (.3,0,.4)::
+            
+                vec3 = Vecr(vec2.r()/vec2.s,s=scipy.array(.1))
+    """
+
+    if type(x_hat) is Vec:
+        return x_hat
+
+    flag = True    
+
+    xin = scipy.array(x_hat, dtype=float)
+        
+    if s is None:
+        s = x_hat[0]
+            
+    return Vec((scipy.cos(xin[1])*scipy.cos(xin[2]),
+                scipy.sin(xin[1])*scipy.cos(xin[2]),
+                scipy.sin(xin[2])),
+               s, flag=flag)
 
 
 class Vec(object):
