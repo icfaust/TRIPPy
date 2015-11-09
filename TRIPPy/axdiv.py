@@ -3,7 +3,7 @@ import TRIPPy
 import AXUV
 import scipy
 import eqtools
-import TRIPPy.plot.mayaplot
+#import TRIPPy.plot.mayaplot
 
 #data I found from /home/hutch/work/bolo/ this is horrid and there IS NO DOCUMENTATION
 # this is all I've been able to glean JESUS FUCKING CHRIST
@@ -18,7 +18,7 @@ def ap(plasma, loc=(.9344,.0,-.0311),angle=.863204): #.042962
     area = [.297e-2,.074e-2]
     return TRIPPy.surface.Rect(vloc1, plasma, area, vec=[meri,vloc2])
 
-def det(origin, x0=(1.64e-2,-.717e-2,-3.55e-2), x1=(2.64e-2,-.717e-2,-3.55e-2), x2=(1.64e-2,.284e-2,-3.64e-2)):
+def det(origin,x0=(1.719e-2,-.834e-2,-3.492e-2), x1=(2.719e-2,-.834e-2,-3.492e-2), x2=(1.719e-2,.166e-2,-3.522e-2)):#x0=(1.64e-2,-.717e-2,-3.55e-2), x1=(2.64e-2,-.717e-2,-3.55e-2), x2=(1.64e-2,.284e-2,-3.64e-2
 
     x0vec = TRIPPy.Vecx(x0)
     x1vec = TRIPPy.Vecx(x1)
@@ -42,7 +42,7 @@ def axdiv(plasma):
     return temp
 
 
-def det2(origin, x0=(1.64e-2,-.717e-2,-3.55e-2), x1=(2.64e-2,-.717e-2,-3.55e-2), x2=(1.64e-2,.284e-2,-3.64e-2)):
+def det2(origin, x0=(1.64e-2,-.717e-2,-3.55e-2), x1=(2.64e-2,-.717e-2,-3.55e-2), x2=(1.64e-2,.284e-2,-3.64e-2)):#
 
     x0vec = TRIPPy.Vecx(x0)
     x1vec = TRIPPy.Vecx(x1)

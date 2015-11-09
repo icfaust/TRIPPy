@@ -1,7 +1,7 @@
 import TRIPPy.surface
 import scipy
 import eqtools
-import TRIPPy.plot.mayaplot
+#import TRIPPy.plot.mayaplot
 
 #data I found from /home/hutch/work/bolo/ this is horrid and there IS NO DOCUMENTATION
 # this is all I've been able to glean JESUS FUCKING CHRIST
