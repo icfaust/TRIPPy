@@ -1,4 +1,5 @@
 import TRIPPy.surface
+import TRIPPy.beam
 import scipy
 import eqtools
 #import TRIPPy.plot.mayaplot
@@ -20,12 +21,15 @@ def det(origin, angle=(0.,scipy.pi/2, 0.), loc=(0,0,.0245*.235), radius=50e-6):
 
 def dmbolo(num, plasma):
     
-    loc = [[1.03220, .198424, .00045],
-           [1.0416, 2.452484, .090805],
-           [1.02981, 2.89147, -.05969],
-           [1.03090, 3.33748, -.002550],
-           [1.0305, 5.38974, .00545],
-           [1.02872, 6.11321, .00145]]
+    loc = scipy.array([[1.03220, .198424, .00045],
+                       [1.0416, 2.452484, .090805],
+                       [1.02981, 2.89147, -.05969],
+                       [1.03090, 3.33748, -.002550],
+                       [1.0305, 5.38974, .00545],
+                       [1.02872, 6.11321, .00145]])
+
+    loc[:,1] -= scipy.pi/10
+
     
     place = loc[num]
 
@@ -65,3 +69,21 @@ def volweight(num,numsplit=(3,3), factor=1, fact2=None, eq='/home/ian/python/g11
             #out += TRIPPy.beam.volWeightBeam(beam,rgrid,zgrid)
     
     return out
+
+def dmbolorays(num, plasma, avg=True):
+    temp =  dmbolo(num, plasma)
+    k = temp[1].edge()
+
+    if avg:
+        inp1 = TRIPPy.Point((k[:,0]+k[:,1])/2.,plasma)
+        inp2 = TRIPPy.Point((k[:,2]+k[:,3])/2.,plasma)
+    else:
+        inp1 = TRIPPy.Point((k[:,0]+k[:,3])/2.,plasma)
+        inp2 = TRIPPy.Point((k[:,1]+k[:,2])/2.,plasma)
+
+    ray1 = TRIPPy.beam.Ray(temp[0],inp1)
+    ray2 = TRIPPy.beam.Ray(temp[0],inp2)
+    plasma.trace(ray1)
+    plasma.trace(ray2)
+
+    return (ray1,ray2)
