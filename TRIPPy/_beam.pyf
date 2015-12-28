@@ -86,5 +86,23 @@ C    Copyright 2013 Ian C. Faust
    end subroutine idx_add
 
 
+   subroutine idx_add2(output,idx1,idx2,data,mult,ds,lim2,ix,jx1,jx2)
+      intent(c) idx_add2
+      intent(c)
+
+      integer intent(hide),depend(output) :: ix = shape(output,0)
+      integer intent(hide),depend(idx1) :: jx1 = shape(idx1,1)
+      integer intent(hide),depend(output) :: jx2 = shape(output,1)
+      double precision intent(inout) :: output(ix,jx2)
+      integer precision intent(in) :: idx1(ix,jx1)
+      integer precision intent(in) :: idx2(ix,jx1)
+      integer precision intent(in) :: lim2
+      double precision intent(in) :: data(ix,jx1)
+      double precision intent(in) :: mult(ix,jx1)
+      double precision intent(in) :: ds
+      
+   end subroutine idx_add2
+
+
 end interface
 end python module _beam

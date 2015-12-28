@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import warnings
 import time as timer
 
+
 def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[], ds=1e-3):
     """Calculates the distance weight matrix for specified fourier components
 
@@ -63,14 +64,14 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
     length = len(points)
   
     try:
- 
+        
         output = scipy.zeros((len(time),length*len(mcos+msin))) 
         temp = beam(scipy.mgrid[beam.norm.s[-2]:beam.norm.s[-1]:ds])
         
         mapped = scipy.atleast_2d(plasmameth(temp.r0(),
                                              temp.x2(),
                                              time))
-
+        print(output.shape,mapped.shape,length,len(mcos+msin))
         # recover angles of each position in temp vector utlizing the t2 method
         # to geometry.Vec improper vectorization strategy in t2 causes the use
         # of a for loop
@@ -98,18 +99,22 @@ def fluxFourierSens(beam, plasmameth, centermeth, time, points, mcos=[0], msin=[
 
         idx2 = idx1 + 1
         scipy.clip(idx2, 0, length-1, out=idx2)
+
         # reduce out to the fraction in nearby bins
-        out = (out % 1.)*ds
+        out = (1 - (out % 1.))*ds
         lim = 0
 
         for i in mcos:
             angin = scipy.cos(i*angle)
-            _beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds)
+            print(output.shape,idx1.shape,idx2.shape,out.shape,angin.shape,ds)
+            #_beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds)
+            _beam.idx_add2(output,idx1,idx2,out,angin,ds,lim)
             lim += length
 
         for i in msin:
             angin = scipy.sin(i*angle)
-            _beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds)             
+            #_beam.idx_add(output[:,lim:lim+length],idx1,idx2,out,angin,ds) 
+            _beam.idx_add2(output,idx1,idx2,out,angin,ds,lim)
             lim += length
 
     except AttributeError:
