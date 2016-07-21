@@ -672,6 +672,60 @@ def volWeightBeam(beam, rgrid, zgrid, trace=True, ds=2e-3, toroidal=None, **kwar
     return out
 
 
+
+def volWeightBeam3d(beam, xgrid, ygrid, zgrid, trace=0, ds=2e-3, **kwargs):
+    r"""Generate a tuple of Beam objects from tuples of surface objects
+    
+    Args:
+        beam: tuple of Surfaces or a Surface object
+            Beam origin surfaces, based on the coordinate system
+            of the surfaces.  Center position is accessible through Beam(0),
+            Beam.x()[...,0] or Beam.r()[...,0] (last two options create
+            numpy arrays, the first generats a geometry.Vec object).
+
+        rgrid: tuple of Surfaces or a Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+            
+        zgrid: tuple of Surfaces or a Surface object
+            Direction of the ray can be defined by a vector object (assumed
+            to be in the space of the pt1 origin) from pt1, or a point, which 
+            generates a vector pointing from pt1 to pt2.
+
+    Returns:
+        output: tuple of beam objects.
+        
+    Examples:
+        Accepts all surface or surface-derived object inputs, though all data 
+        is stored as a python object.
+
+        Generate an y direction Ray in cartesian coords using a Vec from (0,0,1)::
+            
+                cen = geometry.Center(flag=True)
+                ydir = geometry.Vecx((0,1,0))
+                zpt = geometry.Point((0,0,1),cen)
+
+    """
+    out = scipy.zeros((len(xgrid)-1,len(ygrid)-1,len(zgrid)-1))
+    try:
+        temp = beam(scipy.mgrid[beam.norm.s[trace]:beam.norm.s[-1]:ds]).x()
+            
+        out += scipy.histogramdd(temp.T, 
+                                 bins = [xgrid, ygrid, zgrid],
+                                 weights=scipy.ones(temp[0].shape)*beam.etendue*ds)[0]
+    except AttributeError:
+        for i in beam:
+            try:
+                out += volWeightBeam(i, xgrid, ygrid, zgrid, trace=trace, ds=ds, **kwargs)
+            except TypeError:
+                pass
+
+    return out
+
+
+
+
 def _genBFEdgeZero(plasma, zeros, rcent, zcent):
     """ this will absolutely need to be rewritten"""
 

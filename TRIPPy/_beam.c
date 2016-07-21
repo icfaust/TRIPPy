@@ -148,7 +148,23 @@ void bessel_fourier_kernel(double theta[], double m, double zero, double rho, do
     }
 }
 
-void idx_add(double output[], int idx1[], int idx2[], double data[], double mult[], double ds, int ix, int jx1, int jx2)
+void idx_add(double output[], int idx1[], int idx2[], double data[], double mult[], double ds, int lim2, int ix, int jx1, int jx2)
+{ int i,j,lim1 = 0;
+
+  for(i=0; i < ix; i++)
+    {
+      for(j=0; j < jx1; j++)
+	{
+	  output[lim2 + idx1[lim1 + j]] = output[lim2 + idx1[lim1 + j]] + mult[lim1 + j]*(ds - data[lim1 + j]);
+	  output[lim2 + idx2[lim1 + j]] = output[lim2 + idx2[lim1 + j]] + mult[lim1 + j]*data[lim1 + j];
+	}
+      lim1 = lim1 + jx1;
+      lim2 = lim2 + jx2;
+    }
+}
+
+
+void idx_add2(double output[], int idx1[], int idx2[], double data[], double mult[], double ds, int ix, int jx1, int jx2)
 { int i,j,lim1 = 0,lim2 = 0;
 
   for(i=0; i < ix; i++)
@@ -162,19 +178,3 @@ void idx_add(double output[], int idx1[], int idx2[], double data[], double mult
       lim2 = lim2 + jx2;
     }
 }
-
-void idx_add2(double output[], int idx1[], int idx2[], double data[], double mult[], double ds, int lim2, int ix, int jx1, int jx2)
-{ int i,j,lim1 = 0;
-
-  for(i=0; i < ix; i++)
-    {
-      for(j=0; j < jx1; j++)
-	{
-	  output[lim2 + idx1[lim1 + j]] = output[lim2 + idx1[lim1 + j]] + mult[lim1 + j]*data[lim1 + j];
-	  output[lim2 + idx2[lim1 + j]] = output[lim2 + idx2[lim1 + j]] + mult[lim1 + j]*(ds - data[lim1 + j]);
-	}
-      lim1 = lim1 + jx1;
-      lim2 = lim2 + jx2;
-    }
-}
-
